@@ -1,0 +1,3265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vdex xmlns="http://www.imsglobal.org/xsd/imsvdex_v1p0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.imsglobal.org/xsd/imsvdex_v1p0
+                          imsvdex_v1p0.xsd imsvdex_v1p0_thesaurus.xsd
+                          http://www.imsglobal.org/xsd/imsmd_rootv1p2p1
+                          imsmd_rootv1p2p1.xsd"
+      orderSignificant="true"
+      profileType="flatTokenTerms"
+      language="en">
+  <vocabName>
+    <langstring language="en">International Standard Classification of Occupations, ISCO-88</langstring>
+  </vocabName>
+  <vocabIdentifier>ISCO88</vocabIdentifier>
+  <term>
+    <termIdentifier>1</termIdentifier>
+    <caption>
+      <langstring language="en">LEGISLATORS, SENIOR OFFICIALS AND MANAGERS</langstring>
+    </caption>
+    <term>
+      <termIdentifier>11</termIdentifier>
+      <caption>
+        <langstring language="en">LEGISLATORS AND SENIOR OFFICIALS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>111</termIdentifier>
+        <caption>
+          <langstring language="en">LEGISLATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>1110</termIdentifier>
+          <caption>
+            <langstring language="en">Legislators</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>112</termIdentifier>
+        <caption>
+          <langstring language="en">SENIOR GOVERNMENT OFFICIALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>1120</termIdentifier>
+          <caption>
+            <langstring language="en">Senior government officials</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>113</termIdentifier>
+        <caption>
+          <langstring language="en">TRADITIONAL CHIEFS AND HEADS OF VILLAGES</langstring>
+        </caption>
+        <term>
+          <termIdentifier>1130</termIdentifier>
+          <caption>
+            <langstring language="en">Traditional chiefs and heads of villages</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>114</termIdentifier>
+        <caption>
+          <langstring language="en">SENIOR OFFICIALS OF SPECIAL-INTEREST ORGANISATIONS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>1141</termIdentifier>
+          <caption>
+            <langstring language="en">Senior officials of political-party organisations</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1142</termIdentifier>
+          <caption>
+            <langstring language="en">Senior officials of employers', workers' and other economic-interest organisations</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1143</termIdentifier>
+          <caption>
+            <langstring language="en">Senior officials of humanitarian and other special-interest organisations</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>12</termIdentifier>
+      <caption>
+        <langstring language="en">CORPORATE MANAGERS</langstring>
+      </caption>
+      <description>
+        <langstring language="en">
+      This group is intended to include persons who - as directors, chief executives or department managers - manage enterprises or organisations, or departments, requiring a total of three or more managers.
+        </langstring>
+      </description>
+      <term>
+        <termIdentifier>121</termIdentifier>
+        <caption>
+          <langstring language="en">DIRECTORS AND CHIEF EXECUTIVES</langstring>
+        </caption>
+        <term>
+          <termIdentifier>1210</termIdentifier>
+          <caption>
+            <langstring language="en">Directors and chief executives</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>122</termIdentifier>
+        <caption>
+          <langstring language="en">PRODUCTION AND OPERATIONS DEPARTMENT MANAGERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>1221</termIdentifier>
+          <caption>
+            <langstring language="en">Production and operations department managers in agriculture, hunting, forestry and fishing</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1222</termIdentifier>
+          <caption>
+            <langstring language="en">Production and operations department managers in manufacturing</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1223</termIdentifier>
+          <caption>
+            <langstring language="en">Production and operations department managers in construction</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1224</termIdentifier>
+          <caption>
+            <langstring language="en">Production and operations department managers in wholesale and retail trade</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1225</termIdentifier>
+          <caption>
+            <langstring language="en">Production and operations department managers in restaurants and hotels</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1226</termIdentifier>
+          <caption>
+            <langstring language="en">Production and operations department managers in transport, storage and communications</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1227</termIdentifier>
+          <caption>
+            <langstring language="en">Production and operations department managers in business services</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1228</termIdentifier>
+          <caption>
+            <langstring language="en">Production and operations department managers in personal care, cleaning and related services</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1229</termIdentifier>
+          <caption>
+            <langstring language="en">Production and operations department managers not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>123</termIdentifier>
+        <caption>
+          <langstring language="en">OTHER DEPARTMENT MANAGERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>1231</termIdentifier>
+          <caption>
+            <langstring language="en">Finance and administration department managers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1232</termIdentifier>
+          <caption>
+            <langstring language="en">Personnel and industrial relations department managers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1233</termIdentifier>
+          <caption>
+            <langstring language="en">Sales and marketing department managers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1234</termIdentifier>
+          <caption>
+            <langstring language="en">Advertising and public relations department managers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1235</termIdentifier>
+          <caption>
+            <langstring language="en">Supply and distribution department managers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1236</termIdentifier>
+          <caption>
+            <langstring language="en">Computing services department managers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1237</termIdentifier>
+          <caption>
+            <langstring language="en">Research and development department managers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1239</termIdentifier>
+          <caption>
+            <langstring language="en">Other department managers not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>13</termIdentifier>
+      <caption>
+        <langstring language="en">GENERAL MANAGERS</langstring>
+      </caption>
+      <description>
+         <langstring language="en">
+This group is intended to include persons who manage enterprises, or in some cases organisations, on their own behalf, or on behalf of the proprietor, with some non-managerial help and the assistance of no more than one other manager who should also be classified in this sub- major group as, in most cases, the tasks will be broader than those of a specialised manager in a larger enterprise or organisation. Non-managerial staff should be classified according to their specific tasks.
+         </langstring>
+      </description>
+      <term>
+        <termIdentifier>131</termIdentifier>
+        <caption>
+          <langstring language="en">GENERAL MANAGERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>1311</termIdentifier>
+          <caption>
+            <langstring language="en">General managers in agriculture, hunting, forestry/ and fishing</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1312</termIdentifier>
+          <caption>
+            <langstring language="en">General managers in manufacturing</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1313</termIdentifier>
+          <caption>
+            <langstring language="en">General managers in construction</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1314</termIdentifier>
+          <caption>
+            <langstring language="en">General managers in wholesale and retail trade</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1315</termIdentifier>
+          <caption>
+            <langstring language="en">General managers of restaurants and hotels</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1316</termIdentifier>
+          <caption>
+            <langstring language="en">General managers in transport, storage and communications</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1317</termIdentifier>
+          <caption>
+            <langstring language="en">General managers of business services</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1318</termIdentifier>
+          <caption>
+            <langstring language="en">General managers in personal care, cleaning and related services</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>1319</termIdentifier>
+          <caption>
+            <langstring language="en">General managers not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+  </term>
+  <term>
+    <termIdentifier>2</termIdentifier>
+    <caption>
+      <langstring language="en">PROFESSIONALS</langstring>
+    </caption>
+    <term>
+      <termIdentifier>21</termIdentifier>
+      <caption>
+        <langstring language="en">PHYSICAL, MATHEMATICAL AND ENGINEERING SCIENCE PROFESSIONALS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>211</termIdentifier>
+        <caption>
+          <langstring language="en">PHYSICISTS, CHEMISTS AND RELATED PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2111</termIdentifier>
+          <caption>
+            <langstring language="en">Physicists and astronomers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2112</termIdentifier>
+          <caption>
+            <langstring language="en">Meteorologists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2113</termIdentifier>
+          <caption>
+            <langstring language="en">Chemists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2114</termIdentifier>
+          <caption>
+            <langstring language="en">Geologists and geophysicists</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>212</termIdentifier>
+        <caption>
+          <langstring language="en">MATHEMATICIANS, STATISTICIANS AND RELATED PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2121</termIdentifier>
+          <caption>
+            <langstring language="en">Mathematicians and related professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2122</termIdentifier>
+          <caption>
+            <langstring language="en">Statisticians</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>213</termIdentifier>
+        <caption>
+          <langstring language="en">COMPUTING PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2131</termIdentifier>
+          <caption>
+            <langstring language="en">Computer systems designers and analysts</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2132</termIdentifier>
+          <caption>
+            <langstring language="en">Computer programmers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2139</termIdentifier>
+          <caption>
+            <langstring language="en">Computing professionals not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>214</termIdentifier>
+        <caption>
+          <langstring language="en">ARCHITECTS, ENGINEERS AND RELATED PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2141</termIdentifier>
+          <caption>
+            <langstring language="en">Architects, town and traffic planners</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2142</termIdentifier>
+          <caption>
+            <langstring language="en">Civil engineers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2143</termIdentifier>
+          <caption>
+            <langstring language="en">Electrical engineers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2144</termIdentifier>
+          <caption>
+            <langstring language="en">Electronics and telecommunications engineers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2145</termIdentifier>
+          <caption>
+            <langstring language="en">Mechanical engineers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2146</termIdentifier>
+          <caption>
+            <langstring language="en">Chemical engineers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2147</termIdentifier>
+          <caption>
+            <langstring language="en">Mining engineers, metallurgists and related professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2148</termIdentifier>
+          <caption>
+            <langstring language="en">Cartographers and surveyors</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2149</termIdentifier>
+          <caption>
+            <langstring language="en">Architects, engineers and related professionals not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>22</termIdentifier>
+      <caption>
+        <langstring language="en">LIFE SCIENCE AND HEALTH PROFESSIONALS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>221</termIdentifier>
+        <caption>
+          <langstring language="en">LIFE SCIENCE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2211</termIdentifier>
+          <caption>
+            <langstring language="en">Biologists, botanists, zoologists and related professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2212</termIdentifier>
+          <caption>
+            <langstring language="en">Pharmacologists, pathologists and related professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2213</termIdentifier>
+          <caption>
+            <langstring language="en">Agronomists and related professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>222</termIdentifier>
+        <caption>
+          <langstring language="en">HEALTH PROFESSIONALS (except nursing)</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2221</termIdentifier>
+          <caption>
+            <langstring language="en">Medical doctors</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2222</termIdentifier>
+          <caption>
+            <langstring language="en">Dentists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2223</termIdentifier>
+          <caption>
+            <langstring language="en">Veterinarians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2224</termIdentifier>
+          <caption>
+            <langstring language="en">Pharmacists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2229</termIdentifier>
+          <caption>
+            <langstring language="en">Health professionals (except nursing) not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>223</termIdentifier>
+        <caption>
+          <langstring language="en">NURSING AND MIDWIFERY PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2230</termIdentifier>
+          <caption>
+            <langstring language="en">Nursing and midwifery professionals</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>23</termIdentifier>
+      <caption>
+        <langstring language="en">TEACHING PROFESSIONALS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>231</termIdentifier>
+        <caption>
+          <langstring language="en">COLLEGE, UNIVERSITY AND HIGHER EDUCATION TEACHING PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2310</termIdentifier>
+          <caption>
+            <langstring language="en">College, university and higher education teaching professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>232</termIdentifier>
+        <caption>
+          <langstring language="en">SECONDARY EDUCATION TEACHING PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2320</termIdentifier>
+          <caption>
+            <langstring language="en">Secondary education teaching professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>233</termIdentifier>
+        <caption>
+          <langstring language="en">PRIMARY AND PRE-PRIMARY EDUCATION TEACHING PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2331</termIdentifier>
+          <caption>
+            <langstring language="en">Primary education teaching professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2332</termIdentifier>
+          <caption>
+            <langstring language="en">Pre-primary education teaching professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>234</termIdentifier>
+        <caption>
+          <langstring language="en">SPECIAL EDUCATION TEACHING PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2340</termIdentifier>
+          <caption>
+            <langstring language="en">Special education teaching professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>235</termIdentifier>
+        <caption>
+          <langstring language="en">OTHER TEACHING PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2351</termIdentifier>
+          <caption>
+            <langstring language="en">Education methods specialists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2352</termIdentifier>
+          <caption>
+            <langstring language="en">School inspectors</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2359</termIdentifier>
+          <caption>
+            <langstring language="en">Other teaching professionals not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>24</termIdentifier>
+      <caption>
+        <langstring language="en">OTHER PROFESSIONALS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>241</termIdentifier>
+        <caption>
+          <langstring language="en">BUSINESS PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2411</termIdentifier>
+          <caption>
+            <langstring language="en">Accountants</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2412</termIdentifier>
+          <caption>
+            <langstring language="en">Personnel and careers professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2419</termIdentifier>
+          <caption>
+            <langstring language="en">Business professionals not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>242</termIdentifier>
+        <caption>
+          <langstring language="en">LEGAL PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2421</termIdentifier>
+          <caption>
+            <langstring language="en">Lawyers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2422</termIdentifier>
+          <caption>
+            <langstring language="en">Judges</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2429</termIdentifier>
+          <caption>
+            <langstring language="en">Legal professionals not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>243</termIdentifier>
+        <caption>
+          <langstring language="en">ARCHIVISTS, LIBRARIANS AND RELATED INFORMATION PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2431</termIdentifier>
+          <caption>
+            <langstring language="en">Archivists and curators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2432</termIdentifier>
+          <caption>
+            <langstring language="en">Librarians and related information professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>244</termIdentifier>
+        <caption>
+          <langstring language="en">SOCIAL SCIENCE AND RELATED PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2441</termIdentifier>
+          <caption>
+            <langstring language="en">Economists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2442</termIdentifier>
+          <caption>
+            <langstring language="en">Sociologists, anthropologists and related professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2443</termIdentifier>
+          <caption>
+            <langstring language="en">Philosophers, historians and political scientists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2444</termIdentifier>
+          <caption>
+            <langstring language="en">Philologists, translators and interpreters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2445</termIdentifier>
+          <caption>
+            <langstring language="en">Psychologists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2446</termIdentifier>
+          <caption>
+            <langstring language="en">Social work professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>245</termIdentifier>
+        <caption>
+          <langstring language="en">WRITERS AND CREATIVE OR PERFORMING ARTISTS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2451</termIdentifier>
+          <caption>
+            <langstring language="en">Authors, journalists and other writers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2452</termIdentifier>
+          <caption>
+            <langstring language="en">Sculptors, painters and related artists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2453</termIdentifier>
+          <caption>
+            <langstring language="en">Composers, musicians and singers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2454</termIdentifier>
+          <caption>
+            <langstring language="en">Choreographers and dancers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>2455</termIdentifier>
+          <caption>
+            <langstring language="en">Film, stage and related actors and directors</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>246</termIdentifier>
+        <caption>
+          <langstring language="en">RELIGIOUS PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>2460</termIdentifier>
+          <caption>
+            <langstring language="en">Religious professionals</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+  </term>
+  <term>
+    <termIdentifier>3</termIdentifier>
+    <caption>
+      <langstring language="en">TECHNICIANS AND ASSOCIATE PROFESSIONALS</langstring>
+    </caption>
+    <term>
+      <termIdentifier>31</termIdentifier>
+      <caption>
+        <langstring language="en">PHYSICAL AND ENGINEERING SCIENCE ASSOCIATE PROFESSIONALS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>311</termIdentifier>
+        <caption>
+          <langstring language="en">PHYSICAL AND ENGINEERING SCIENCE TECHNICIANS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3111</termIdentifier>
+          <caption>
+            <langstring language="en">Chemical and physical science technicians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3112</termIdentifier>
+          <caption>
+            <langstring language="en">Civil engineering technicians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3113</termIdentifier>
+          <caption>
+            <langstring language="en">Electrical engineering technicians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3114</termIdentifier>
+          <caption>
+            <langstring language="en">Electronics and telecommunications engineering technicians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3115</termIdentifier>
+          <caption>
+            <langstring language="en">Mechanical engineering technicians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3116</termIdentifier>
+          <caption>
+            <langstring language="en">Chemical engineering technicians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3117</termIdentifier>
+          <caption>
+            <langstring language="en">Mining and metallurgical technicians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3118</termIdentifier>
+          <caption>
+            <langstring language="en">Draughtspersons</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3119</termIdentifier>
+          <caption>
+            <langstring language="en">Physical and engineering science technicians not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>312</termIdentifier>
+        <caption>
+          <langstring language="en">COMPUTER ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3121</termIdentifier>
+          <caption>
+            <langstring language="en">Computer assistants</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3122</termIdentifier>
+          <caption>
+            <langstring language="en">Computer equipment operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3123</termIdentifier>
+          <caption>
+            <langstring language="en">Industrial robot controllers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>313</termIdentifier>
+        <caption>
+          <langstring language="en">OPTICAL AND ELECTRONIC EQUIPMENT OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3131</termIdentifier>
+          <caption>
+            <langstring language="en">Photographers and image and sound recording equipment operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3132</termIdentifier>
+          <caption>
+            <langstring language="en">Broadcasting and telecommunications equipment operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3133</termIdentifier>
+          <caption>
+            <langstring language="en">Medical equipment operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3139</termIdentifier>
+          <caption>
+            <langstring language="en">Optical and electronic equipment operators not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>314</termIdentifier>
+        <caption>
+          <langstring language="en">SHIP AND AIRCRAFT CONTROLLERS AND TECHNICIANS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3141</termIdentifier>
+          <caption>
+            <langstring language="en">Ships' engineers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3142</termIdentifier>
+          <caption>
+            <langstring language="en">Ships' deck officers and pilots</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3143</termIdentifier>
+          <caption>
+            <langstring language="en">Aircraft pilots and related associate professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3144</termIdentifier>
+          <caption>
+            <langstring language="en">Air traffic controllers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3145</termIdentifier>
+          <caption>
+            <langstring language="en">Air traffic safety technicians</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>315</termIdentifier>
+        <caption>
+          <langstring language="en">SAFETY AND QUALITY INSPECTORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3151</termIdentifier>
+          <caption>
+            <langstring language="en">Building and fire inspectors</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3152</termIdentifier>
+          <caption>
+            <langstring language="en">Safety, health and quality inspectors</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>32</termIdentifier>
+      <caption>
+        <langstring language="en">LIFE SCIENCE AND HEALTH ASSOCIATE PROFESSIONALS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>321</termIdentifier>
+        <caption>
+          <langstring language="en">LIFE SCIENCE TECHNICIANS AND RELATED ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3211</termIdentifier>
+          <caption>
+            <langstring language="en">Life science technicians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3212</termIdentifier>
+          <caption>
+            <langstring language="en">Agronomy and forestry technicians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3213</termIdentifier>
+          <caption>
+            <langstring language="en">Farming and forestry advisers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>322</termIdentifier>
+        <caption>
+          <langstring language="en">MODERN HEALTH ASSOCIATE PROFESSIONALS (except nursing)</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3221</termIdentifier>
+          <caption>
+            <langstring language="en">Medical assistants</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3222</termIdentifier>
+          <caption>
+            <langstring language="en">Sanitarians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3223</termIdentifier>
+          <caption>
+            <langstring language="en">Dieticians and nutritionists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3224</termIdentifier>
+          <caption>
+            <langstring language="en">Optometrists and opticians</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3225</termIdentifier>
+          <caption>
+            <langstring language="en">Dental assistants</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3226</termIdentifier>
+          <caption>
+            <langstring language="en">Physiotherapists and related associate professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3227</termIdentifier>
+          <caption>
+            <langstring language="en">Veterinary assistants</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3228</termIdentifier>
+          <caption>
+            <langstring language="en">Pharmaceutical assistants</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3229</termIdentifier>
+          <caption>
+            <langstring language="en">Modern health associate professionals (except nursing) not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>323</termIdentifier>
+        <caption>
+          <langstring language="en">NURSING AND MIDWIFERY ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3231</termIdentifier>
+          <caption>
+            <langstring language="en">Nursing associate professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3232</termIdentifier>
+          <caption>
+            <langstring language="en">Midwifery associate professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>324</termIdentifier>
+        <caption>
+          <langstring language="en">TRADITIONAL MEDICINE PRACTITIONERS AND FAITH HEALERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3241</termIdentifier>
+          <caption>
+            <langstring language="en">Traditional medicine practitioners</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3242</termIdentifier>
+          <caption>
+            <langstring language="en">Faith healers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>33</termIdentifier>
+      <caption>
+        <langstring language="en">TEACHING ASSOCIATE PROFESSIONALS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>331</termIdentifier>
+        <caption>
+          <langstring language="en">PRIMARY EDUCATION TEACHING ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3310</termIdentifier>
+          <caption>
+            <langstring language="en">Primary education teaching associate professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>332</termIdentifier>
+        <caption>
+          <langstring language="en">PRE-PRIMARY EDUCATION TEACHING ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3320</termIdentifier>
+          <caption>
+            <langstring language="en">Pre-primary education teaching associate professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>333</termIdentifier>
+        <caption>
+          <langstring language="en">SPECIAL EDUCATION TEACHING ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3330</termIdentifier>
+          <caption>
+            <langstring language="en">Special education teaching associate professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>334</termIdentifier>
+        <caption>
+          <langstring language="en">OTHER TEACHING ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3340</termIdentifier>
+          <caption>
+            <langstring language="en">Other teaching associate professionals</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>34</termIdentifier>
+      <caption>
+        <langstring language="en">OTHER ASSOCIATE PROFESSIONALS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>341</termIdentifier>
+        <caption>
+          <langstring language="en">FINANCE AND SALES ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3411</termIdentifier>
+          <caption>
+            <langstring language="en">Securities and finance dealers and brokers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3412</termIdentifier>
+          <caption>
+            <langstring language="en">Insurance representatives</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3413</termIdentifier>
+          <caption>
+            <langstring language="en">Estate agents</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3414</termIdentifier>
+          <caption>
+            <langstring language="en">Travel consultants and organisers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3415</termIdentifier>
+          <caption>
+            <langstring language="en">Technical and commercial sales representatives</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3416</termIdentifier>
+          <caption>
+            <langstring language="en">Buyers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3417</termIdentifier>
+          <caption>
+            <langstring language="en">Appraisers, valuers and auctioneers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3419</termIdentifier>
+          <caption>
+            <langstring language="en">Finance and sales associate professionals not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>342</termIdentifier>
+        <caption>
+          <langstring language="en">BUSINESS SERVICES AGENTS AND TRADE BROKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3421</termIdentifier>
+          <caption>
+            <langstring language="en">Trade brokers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3422</termIdentifier>
+          <caption>
+            <langstring language="en">Clearing and forwarding agents</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3423</termIdentifier>
+          <caption>
+            <langstring language="en">Employment agents and labour contractors</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3429</termIdentifier>
+          <caption>
+            <langstring language="en">Business services agents and trade brokers not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>343</termIdentifier>
+        <caption>
+          <langstring language="en">ADMINISTRATIVE ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3431</termIdentifier>
+          <caption>
+            <langstring language="en">Administrative secretaries and related associate professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3432</termIdentifier>
+          <caption>
+            <langstring language="en">Legal and related business associate professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3433</termIdentifier>
+          <caption>
+            <langstring language="en">Bookkeepers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3434</termIdentifier>
+          <caption>
+            <langstring language="en">Statistical, mathematical and related associate professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3439</termIdentifier>
+          <caption>
+            <langstring language="en">Administrative associate professionals not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>344</termIdentifier>
+        <caption>
+          <langstring language="en">CUSTOMS, TAX AND RELATED GOVERNMENT ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3441</termIdentifier>
+          <caption>
+            <langstring language="en">Customs and border inspectors</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3442</termIdentifier>
+          <caption>
+            <langstring language="en">Government tax and excise officials</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3443</termIdentifier>
+          <caption>
+            <langstring language="en">Government social benefits officials</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3444</termIdentifier>
+          <caption>
+            <langstring language="en">Government licensing officials</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3449</termIdentifier>
+          <caption>
+            <langstring language="en">Customs, tax and related government associate professionals not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>345</termIdentifier>
+        <caption>
+          <langstring language="en">POLICE INSPECTORS AND DETECTIVES</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3450</termIdentifier>
+          <caption>
+            <langstring language="en">Police inspectors and detectives</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>346</termIdentifier>
+        <caption>
+          <langstring language="en">SOCIAL WORK ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3460</termIdentifier>
+          <caption>
+            <langstring language="en">Social work associate professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>347</termIdentifier>
+        <caption>
+          <langstring language="en">ARTISTIC, ENTERTAINMENT AND SPORTS ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3471</termIdentifier>
+          <caption>
+            <langstring language="en">Decorators and commercial designers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3472</termIdentifier>
+          <caption>
+            <langstring language="en">Radio, television and other announcers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3473</termIdentifier>
+          <caption>
+            <langstring language="en">Street, night-club and related musicians, singers and dancers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3474</termIdentifier>
+          <caption>
+            <langstring language="en">Clowns, magicians, acrobats and related associate professionals</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>3475</termIdentifier>
+          <caption>
+            <langstring language="en">Athletes, sportspersons and related associate professionals</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>348</termIdentifier>
+        <caption>
+          <langstring language="en">RELIGIOUS ASSOCIATE PROFESSIONALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>3480</termIdentifier>
+          <caption>
+            <langstring language="en">Religious associate professionals</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+  </term>
+  <term>
+    <termIdentifier>4</termIdentifier>
+    <caption>
+      <langstring language="en">CLERKS</langstring>
+    </caption>
+    <term>
+      <termIdentifier>41</termIdentifier>
+      <caption>
+        <langstring language="en">OFFICE CLERKS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>411</termIdentifier>
+        <caption>
+          <langstring language="en">SECRETARIES AND KEYBOARD-OPERATING CLERKS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>4111</termIdentifier>
+          <caption>
+            <langstring language="en">Stenographers and typists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4112</termIdentifier>
+          <caption>
+            <langstring language="en">Word-processor and related operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4113</termIdentifier>
+          <caption>
+            <langstring language="en">Data entry operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4114</termIdentifier>
+          <caption>
+            <langstring language="en">Calculating-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4115</termIdentifier>
+          <caption>
+            <langstring language="en">Secretaries</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>412</termIdentifier>
+        <caption>
+          <langstring language="en">NUMERICAL CLERKS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>4121</termIdentifier>
+          <caption>
+            <langstring language="en">Accounting and bookkeeping clerks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4122</termIdentifier>
+          <caption>
+            <langstring language="en">Statistical and finance clerks</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>413</termIdentifier>
+        <caption>
+          <langstring language="en">MATERIAL-RECORDING AND TRANSPORT CLERKS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>4131</termIdentifier>
+          <caption>
+            <langstring language="en">Stock clerks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4132</termIdentifier>
+          <caption>
+            <langstring language="en">Production clerks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4133</termIdentifier>
+          <caption>
+            <langstring language="en">Transport clerks</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>414</termIdentifier>
+        <caption>
+          <langstring language="en">LIBRARY, MAIL AND RELATED CLERKS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>4141</termIdentifier>
+          <caption>
+            <langstring language="en">Library and filing clerks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4142</termIdentifier>
+          <caption>
+            <langstring language="en">Mail carriers and sorting clerks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4143</termIdentifier>
+          <caption>
+            <langstring language="en">Coding, proof-reading and related clerks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4144</termIdentifier>
+          <caption>
+            <langstring language="en">Scribes and related workers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>419</termIdentifier>
+        <caption>
+          <langstring language="en">OTHER OFFICE CLERKS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>4190</termIdentifier>
+          <caption>
+            <langstring language="en">Other office clerks</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>42</termIdentifier>
+      <caption>
+        <langstring language="en">CUSTOMER SERVICES CLERKS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>421</termIdentifier>
+        <caption>
+          <langstring language="en">CASHIERS, TELLERS AND RELATED CLERKS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>4211</termIdentifier>
+          <caption>
+            <langstring language="en">Cashiers and ticket clerks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4212</termIdentifier>
+          <caption>
+            <langstring language="en">Tellers and other counter clerks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4213</termIdentifier>
+          <caption>
+            <langstring language="en">Bookmakers and croupiers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4214</termIdentifier>
+          <caption>
+            <langstring language="en">Pawnbrokers and money-lenders</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4215</termIdentifier>
+          <caption>
+            <langstring language="en">Debt-collectors and related workers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>422</termIdentifier>
+        <caption>
+          <langstring language="en">CLIENT INFORMATION CLERKS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>4221</termIdentifier>
+          <caption>
+            <langstring language="en">Travel agency and related clerks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4222</termIdentifier>
+          <caption>
+            <langstring language="en">Receptionists and information clerks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>4223</termIdentifier>
+          <caption>
+            <langstring language="en">Telephone switchboard operators</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+  </term>
+  <term>
+    <termIdentifier>5</termIdentifier>
+    <caption>
+      <langstring language="en">SERVICE WORKERS AND SHOP AND MARKET SALES WORKERS</langstring>
+    </caption>
+    <term>
+      <termIdentifier>51</termIdentifier>
+      <caption>
+        <langstring language="en">PERSONAL AND PROTECTIVE SERVICES WORKERS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>511</termIdentifier>
+        <caption>
+          <langstring language="en">TRAVEL ATTENDANTS AND RELATED WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>5111</termIdentifier>
+          <caption>
+            <langstring language="en">Travel attendants and travel stewards</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5112</termIdentifier>
+          <caption>
+            <langstring language="en">Transport conductors</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5113</termIdentifier>
+          <caption>
+            <langstring language="en">Travel guides</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>512</termIdentifier>
+        <caption>
+          <langstring language="en">HOUSEKEEPING AND RESTAURANT SERVICES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>5121</termIdentifier>
+          <caption>
+            <langstring language="en">Housekeepers and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5122</termIdentifier>
+          <caption>
+            <langstring language="en">Cooks</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5123</termIdentifier>
+          <caption>
+            <langstring language="en">Waiters, waitresses and bartenders</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>513</termIdentifier>
+        <caption>
+          <langstring language="en">PERSONAL CARE AND RELATED WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>5131</termIdentifier>
+          <caption>
+            <langstring language="en">Child-care workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5132</termIdentifier>
+          <caption>
+            <langstring language="en">Institution-based personal care workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5133</termIdentifier>
+          <caption>
+            <langstring language="en">Home-based personal care workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5139</termIdentifier>
+          <caption>
+            <langstring language="en">Personal care and related workers not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>514</termIdentifier>
+        <caption>
+          <langstring language="en">OTHER PERSONAL SERVICES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>5141</termIdentifier>
+          <caption>
+            <langstring language="en">Hairdressers, barbers, beauticians and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5142</termIdentifier>
+          <caption>
+            <langstring language="en">Companions and valets</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5143</termIdentifier>
+          <caption>
+            <langstring language="en">Undertakers and embalmers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5149</termIdentifier>
+          <caption>
+            <langstring language="en">Other personal services workers not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>515</termIdentifier>
+        <caption>
+          <langstring language="en">ASTROLOGERS, FORTUNE-TELLERS AND RELATED WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>5151</termIdentifier>
+          <caption>
+            <langstring language="en">Astrologers and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5152</termIdentifier>
+          <caption>
+            <langstring language="en">Fortune-tellers, palmists and related workers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>516</termIdentifier>
+        <caption>
+          <langstring language="en">PROTECTIVE SERVICES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>5161</termIdentifier>
+          <caption>
+            <langstring language="en">Fire-fighters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5162</termIdentifier>
+          <caption>
+            <langstring language="en">Police officers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5163</termIdentifier>
+          <caption>
+            <langstring language="en">Prison guards</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>5169</termIdentifier>
+          <caption>
+            <langstring language="en">Protective services workers not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>52</termIdentifier>
+      <caption>
+        <langstring language="en">MODELS, SALESPERSONS AND DEMONSTRATORS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>521</termIdentifier>
+        <caption>
+          <langstring language="en">FASHION AND OTHER MODELS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>5210</termIdentifier>
+          <caption>
+            <langstring language="en">Fashion and other models</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>522</termIdentifier>
+        <caption>
+          <langstring language="en">SHOP SALESPERSONS AND DEMONSTRATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>5220</termIdentifier>
+          <caption>
+            <langstring language="en">Shop salespersons and demonstrators</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>523</termIdentifier>
+        <caption>
+          <langstring language="en">STALL AND MARKET SALESPERSONS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>5230</termIdentifier>
+          <caption>
+            <langstring language="en">Stall and market salespersons</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+  </term>
+  <term>
+    <termIdentifier>6</termIdentifier>
+    <caption>
+      <langstring language="en">SKILLED AGRICULTURAL AND FISHERY WORKERS</langstring>
+    </caption>
+    <term>
+      <termIdentifier>61</termIdentifier>
+      <caption>
+        <langstring language="en">MARKET-ORIENTED SKILLED AGRICULTURAL AND FISHERY WORKERS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>611</termIdentifier>
+        <caption>
+          <langstring language="en">MARKET GARDENERS AND CROP GROWERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>6111</termIdentifier>
+          <caption>
+            <langstring language="en">Field crop and vegetable growers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6112</termIdentifier>
+          <caption>
+            <langstring language="en">Tree and shrub crop growers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6113</termIdentifier>
+          <caption>
+            <langstring language="en">Gardeners, horticultural and nursery growers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6114</termIdentifier>
+          <caption>
+            <langstring language="en">Mixed-crop growers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>612</termIdentifier>
+        <caption>
+          <langstring language="en">MARKET-ORIENTED ANIMAL PRODUCERS AND RELATED WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>6121</termIdentifier>
+          <caption>
+            <langstring language="en">Dairy and livestock producers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6122</termIdentifier>
+          <caption>
+            <langstring language="en">Poultry producers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6123</termIdentifier>
+          <caption>
+            <langstring language="en">Apiarists and sericulturists</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6124</termIdentifier>
+          <caption>
+            <langstring language="en">Mixed-animal producers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6129</termIdentifier>
+          <caption>
+            <langstring language="en">Market-oriented animal producers and related workers not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>613</termIdentifier>
+        <caption>
+          <langstring language="en">MARKET-ORIENTED CROP AND ANIMAL PRODUCERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>6130</termIdentifier>
+          <caption>
+            <langstring language="en">Market-oriented crop and animal producers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>614</termIdentifier>
+        <caption>
+          <langstring language="en">FORESTRY AND RELATED WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>6141</termIdentifier>
+          <caption>
+            <langstring language="en">Forestry workers and loggers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6142</termIdentifier>
+          <caption>
+            <langstring language="en">Charcoal burners and related workers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>615</termIdentifier>
+        <caption>
+          <langstring language="en">FISHERY WORKERS, HUNTERS AND TRAPPERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>6151</termIdentifier>
+          <caption>
+            <langstring language="en">Aquatic-life cultivation workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6152</termIdentifier>
+          <caption>
+            <langstring language="en">Inland and coastal waters fishery workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6153</termIdentifier>
+          <caption>
+            <langstring language="en">Deep-sea fishery workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>6154</termIdentifier>
+          <caption>
+            <langstring language="en">Hunters and trappers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>62</termIdentifier>
+      <caption>
+        <langstring language="en">SUBSISTENCE AGRICULTURAL AND FISHERY WORKERS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>621</termIdentifier>
+        <caption>
+          <langstring language="en">SUBSISTENCE AGRICULTURAL AND FISHERY WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>6210</termIdentifier>
+          <caption>
+            <langstring language="en">Subsistence agricultural and fishery workers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+  </term>
+  <term>
+    <termIdentifier>7</termIdentifier>
+    <caption>
+      <langstring language="en">CRAFT AND RELATED TRADES WORKERS</langstring>
+    </caption>
+    <term>
+      <termIdentifier>71</termIdentifier>
+      <caption>
+        <langstring language="en">EXTRACTION AND BUILDING TRADES WORKERS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>711</termIdentifier>
+        <caption>
+          <langstring language="en">MINERS, SHOTFIRERS, STONE CUTTERS AND CARVERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7111</termIdentifier>
+          <caption>
+            <langstring language="en">Miners and quarry workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7112</termIdentifier>
+          <caption>
+            <langstring language="en">Shotfirers and blasters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7113</termIdentifier>
+          <caption>
+            <langstring language="en">Stone splitters, cutters and carvers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>712</termIdentifier>
+        <caption>
+          <langstring language="en">BUILDING FRAME AND RELATED TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7121</termIdentifier>
+          <caption>
+            <langstring language="en">Builders, traditional materials</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7122</termIdentifier>
+          <caption>
+            <langstring language="en">Bricklayers and stonemasons</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7123</termIdentifier>
+          <caption>
+            <langstring language="en">Concrete placers, concrete finishers and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7124</termIdentifier>
+          <caption>
+            <langstring language="en">Carpenters and joiners</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7129</termIdentifier>
+          <caption>
+            <langstring language="en">Building frame and related trades workers not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>713</termIdentifier>
+        <caption>
+          <langstring language="en">BUILDING FINISHERS AND RELATED TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7131</termIdentifier>
+          <caption>
+            <langstring language="en">Roofers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7132</termIdentifier>
+          <caption>
+            <langstring language="en">Floor layers and tile setters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7133</termIdentifier>
+          <caption>
+            <langstring language="en">Plasterers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7134</termIdentifier>
+          <caption>
+            <langstring language="en">Insulation workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7135</termIdentifier>
+          <caption>
+            <langstring language="en">Glaziers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7136</termIdentifier>
+          <caption>
+            <langstring language="en">Plumbers and pipe fitters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7137</termIdentifier>
+          <caption>
+            <langstring language="en">Building and related electricians</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>714</termIdentifier>
+        <caption>
+          <langstring language="en">PAINTERS, BUILDING STRUCTURE CLEANERS AND RELATED TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7141</termIdentifier>
+          <caption>
+            <langstring language="en">Painters and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7142</termIdentifier>
+          <caption>
+            <langstring language="en">Varnishers and related painters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7143</termIdentifier>
+          <caption>
+            <langstring language="en">Building structure cleaners</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>72</termIdentifier>
+      <caption>
+        <langstring language="en">METAL, MACHINERY AND RELATED TRADES WORKERS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>721</termIdentifier>
+        <caption>
+          <langstring language="en">METAL MOULDERS, WELDERS, SHEET-METAL WORKERS, STRUCTURAL- METAL PREPARERS, AND RELATED TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7211</termIdentifier>
+          <caption>
+            <langstring language="en">Metal moulders and coremakers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7212</termIdentifier>
+          <caption>
+            <langstring language="en">Welders and flamecutters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7213</termIdentifier>
+          <caption>
+            <langstring language="en">Sheet metal workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7214</termIdentifier>
+          <caption>
+            <langstring language="en">Structural-metal preparers and erectors</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7215</termIdentifier>
+          <caption>
+            <langstring language="en">Riggers and cable splicers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7216</termIdentifier>
+          <caption>
+            <langstring language="en">Underwater workers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>722</termIdentifier>
+        <caption>
+          <langstring language="en">BLACKSMITHS, TOOL-MAKERS AND RELATED TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7221</termIdentifier>
+          <caption>
+            <langstring language="en">Blacksmiths, hammer-smiths and forging-press workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7222</termIdentifier>
+          <caption>
+            <langstring language="en">Tool-makers and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7223</termIdentifier>
+          <caption>
+            <langstring language="en">Machine-tool setters and setter-operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7224</termIdentifier>
+          <caption>
+            <langstring language="en">Metal wheel-grinders, polishers and tool sharpeners</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>723</termIdentifier>
+        <caption>
+          <langstring language="en">MACHINERY MECHANICS AND FITTERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7231</termIdentifier>
+          <caption>
+            <langstring language="en">Motor vehicle mechanics and fitters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7232</termIdentifier>
+          <caption>
+            <langstring language="en">Aircraft engine mechanics and fitters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7233</termIdentifier>
+          <caption>
+            <langstring language="en">Agricultural- or industrial-machinery mechanics and fitters</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>724</termIdentifier>
+        <caption>
+          <langstring language="en">ELECTRICAL AND ELECTRONIC EQUIPMENT MECHANICS AND FITTERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7241</termIdentifier>
+          <caption>
+            <langstring language="en">Electrical mechanics and fitters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7242</termIdentifier>
+          <caption>
+            <langstring language="en">Electronics fitters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7243</termIdentifier>
+          <caption>
+            <langstring language="en">Electronics mechanics and servicers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7244</termIdentifier>
+          <caption>
+            <langstring language="en">Telegraph and telephone installers and servicers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7245</termIdentifier>
+          <caption>
+            <langstring language="en">Electrical line installers, repairers and cable jointers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>73</termIdentifier>
+      <caption>
+        <langstring language="en">PRECISION, HANDICRAFT, PRINTING AND RELATED TRADES WORKERS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>731</termIdentifier>
+        <caption>
+          <langstring language="en">PRECISION WORKERS IN METAL AND RELATED MATERIALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7311</termIdentifier>
+          <caption>
+            <langstring language="en">Precision-instrument makers and repairers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7312</termIdentifier>
+          <caption>
+            <langstring language="en">Musical instrument makers and tuners</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7313</termIdentifier>
+          <caption>
+            <langstring language="en">Jewellery and precious-metal workers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>732</termIdentifier>
+        <caption>
+          <langstring language="en">POTTERS, GLASS-MAKERS AND RELATED TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7321</termIdentifier>
+          <caption>
+            <langstring language="en">Abrasive wheel formers, potters and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7322</termIdentifier>
+          <caption>
+            <langstring language="en">Glass makers, cutters, grinders and finishers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7323</termIdentifier>
+          <caption>
+            <langstring language="en">Glass engravers and etchers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7324</termIdentifier>
+          <caption>
+            <langstring language="en">Glass, ceramics and related decorative painters</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>733</termIdentifier>
+        <caption>
+          <langstring language="en">HANDICRAFT WORKERS IN WOOD,TEXTILE, LEATHER AND RELATED MATERIALS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7331</termIdentifier>
+          <caption>
+            <langstring language="en">Handicraft workers in wood and related materials</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7332</termIdentifier>
+          <caption>
+            <langstring language="en">Handicraft workers in textile, leather and related materials</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>734</termIdentifier>
+        <caption>
+          <langstring language="en">PRINTING AND RELATED TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7341</termIdentifier>
+          <caption>
+            <langstring language="en">Compositors, typesetters and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7342</termIdentifier>
+          <caption>
+            <langstring language="en">Stereotypers and electrotypers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7343</termIdentifier>
+          <caption>
+            <langstring language="en">Printing engravers and etchers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7344</termIdentifier>
+          <caption>
+            <langstring language="en">Photographic and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7345</termIdentifier>
+          <caption>
+            <langstring language="en">Bookbinders and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7346</termIdentifier>
+          <caption>
+            <langstring language="en">Silk-screen, block and textile printers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>74</termIdentifier>
+      <caption>
+        <langstring language="en">OTHER CRAFT AND RELATED TRADES WORKERS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>741</termIdentifier>
+        <caption>
+          <langstring language="en">FOOD PROCESSING AND RELATED TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7411</termIdentifier>
+          <caption>
+            <langstring language="en">Butchers, fishmongers and related food preparers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7412</termIdentifier>
+          <caption>
+            <langstring language="en">Bakers, pastry-cooks and confectionery makers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7413</termIdentifier>
+          <caption>
+            <langstring language="en">Dairy-products makers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7414</termIdentifier>
+          <caption>
+            <langstring language="en">Fruit, vegetable and related preservers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7415</termIdentifier>
+          <caption>
+            <langstring language="en">Food and beverage tasters and graders</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7416</termIdentifier>
+          <caption>
+            <langstring language="en">Tobacco preparers and tobacco products makers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>742</termIdentifier>
+        <caption>
+          <langstring language="en">WOOD TREATERS, CABINET-MAKERS AND RELATED TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7421</termIdentifier>
+          <caption>
+            <langstring language="en">Wood treaters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7422</termIdentifier>
+          <caption>
+            <langstring language="en">Cabinet makers and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7423</termIdentifier>
+          <caption>
+            <langstring language="en">Woodworking machine setters and setter-operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7424</termIdentifier>
+          <caption>
+            <langstring language="en">Basketry weavers, brush makers and related workers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>743</termIdentifier>
+        <caption>
+          <langstring language="en">TEXTILE, GARMENT AND RELATED TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7431</termIdentifier>
+          <caption>
+            <langstring language="en">Fibre preparers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7432</termIdentifier>
+          <caption>
+            <langstring language="en">Weavers, knitters and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7433</termIdentifier>
+          <caption>
+            <langstring language="en">Tailors, dressmakers and hatters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7434</termIdentifier>
+          <caption>
+            <langstring language="en">Furriers and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7435</termIdentifier>
+          <caption>
+            <langstring language="en">Textile, leather and related pattern-makers and cutters</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7436</termIdentifier>
+          <caption>
+            <langstring language="en">Sewers, embroiderers and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7437</termIdentifier>
+          <caption>
+            <langstring language="en">Upholsterers and related workers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>744</termIdentifier>
+        <caption>
+          <langstring language="en">PELT, LEATHER AND SHOEMAKING TRADES WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>7441</termIdentifier>
+          <caption>
+            <langstring language="en">Pelt dressers, tanners and fellmongers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>7442</termIdentifier>
+          <caption>
+            <langstring language="en">Shoe-makers and related workers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+  </term>
+  <term>
+    <termIdentifier>8</termIdentifier>
+    <caption>
+      <langstring language="en">PLANT AND MACHINE OPERATORS AND ASSEMBLERS</langstring>
+    </caption>
+    <term>
+      <termIdentifier>81</termIdentifier>
+      <caption>
+        <langstring language="en">STATIONARY-PLANT AND RELATED OPERATORS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>811</termIdentifier>
+        <caption>
+          <langstring language="en">MINING- AND MINERAL-PROCESSING-PLANT OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8111</termIdentifier>
+          <caption>
+            <langstring language="en">Mining-plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8112</termIdentifier>
+          <caption>
+            <langstring language="en">Mineral-ore- and stone-processing-plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8113</termIdentifier>
+          <caption>
+            <langstring language="en">Well drillers and borers and related workers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>812</termIdentifier>
+        <caption>
+          <langstring language="en">METAL-PROCESSING-PLANT OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8121</termIdentifier>
+          <caption>
+            <langstring language="en">Ore and metal furnace operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8122</termIdentifier>
+          <caption>
+            <langstring language="en">Metal melters, casters and rolling-mill operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8123</termIdentifier>
+          <caption>
+            <langstring language="en">Metal-heat-treating-plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8124</termIdentifier>
+          <caption>
+            <langstring language="en">Metal drawers and extruders</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>813</termIdentifier>
+        <caption>
+          <langstring language="en">GLASS, CERAMICS AND RELATED PLANT OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8131</termIdentifier>
+          <caption>
+            <langstring language="en">Glass and ceramics kiln and related machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8139</termIdentifier>
+          <caption>
+            <langstring language="en">Glass, ceramics and related plant operators not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>814</termIdentifier>
+        <caption>
+          <langstring language="en">WOOD-PROCESSING- AND PAPERMAKING-PLANT OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8141</termIdentifier>
+          <caption>
+            <langstring language="en">Wood-processing-plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8142</termIdentifier>
+          <caption>
+            <langstring language="en">Paper-pulp plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8143</termIdentifier>
+          <caption>
+            <langstring language="en">Papermaking-plant operators</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>815</termIdentifier>
+        <caption>
+          <langstring language="en">CHEMICAL-PROCESSING-PLANT OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8151</termIdentifier>
+          <caption>
+            <langstring language="en">Crushing-, grinding- and chemical-mixing-machinery operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8152</termIdentifier>
+          <caption>
+            <langstring language="en">Chemical-heat-treating-plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8153</termIdentifier>
+          <caption>
+            <langstring language="en">Chemical-filtering- and separating-equipment operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8154</termIdentifier>
+          <caption>
+            <langstring language="en">Chemical-still and reactor operators (except petroleum and natural gas)</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8155</termIdentifier>
+          <caption>
+            <langstring language="en">Petroleum- and natural-gas-refining-plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8159</termIdentifier>
+          <caption>
+            <langstring language="en">Chemical-processing-plant operators not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>816</termIdentifier>
+        <caption>
+          <langstring language="en">POWER-PRODUCTION AND RELATED PLANT OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8161</termIdentifier>
+          <caption>
+            <langstring language="en">Power-production plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8162</termIdentifier>
+          <caption>
+            <langstring language="en">Steam-engine and boiler operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8163</termIdentifier>
+          <caption>
+            <langstring language="en">Incinerator, water-treatment and related plant operators</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>817</termIdentifier>
+        <caption>
+          <langstring language="en">AUTOMATED-ASSEMBLY-LINE AND INDUSTRIAL-ROBOT OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8171</termIdentifier>
+          <caption>
+            <langstring language="en">Automated-assembly-line operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8172</termIdentifier>
+          <caption>
+            <langstring language="en">Industrial-robot operators</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>82</termIdentifier>
+      <caption>
+        <langstring language="en">MACHINE OPERATORS AND ASSEMBLERS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>821</termIdentifier>
+        <caption>
+          <langstring language="en">METAL- AND MINERAL-PRODUCTS MACHINE OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8211</termIdentifier>
+          <caption>
+            <langstring language="en">Machine-tool operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8212</termIdentifier>
+          <caption>
+            <langstring language="en">Cement and other mineral products machine operators</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>822</termIdentifier>
+        <caption>
+          <langstring language="en">CHEMICAL-PRODUCTS MACHINE OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8221</termIdentifier>
+          <caption>
+            <langstring language="en">Pharmaceutical- and toiletry-products machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8222</termIdentifier>
+          <caption>
+            <langstring language="en">Ammunition- and explosive-products machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8223</termIdentifier>
+          <caption>
+            <langstring language="en">Metal finishing-, plating- and coating-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8224</termIdentifier>
+          <caption>
+            <langstring language="en">Photographic-products machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8229</termIdentifier>
+          <caption>
+            <langstring language="en">Chemical-products machine operators not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>823</termIdentifier>
+        <caption>
+          <langstring language="en">RUBBER- AND PLASTIC-PRODUCTS MACHINE OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8231</termIdentifier>
+          <caption>
+            <langstring language="en">Rubber-products machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8232</termIdentifier>
+          <caption>
+            <langstring language="en">Plastic-products machine operators</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>824</termIdentifier>
+        <caption>
+          <langstring language="en">WOOD-PRODUCTS MACHINE OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8240</termIdentifier>
+          <caption>
+            <langstring language="en">Wood-products machine operators</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>825</termIdentifier>
+        <caption>
+          <langstring language="en">PRINTING-, BINDING- AND PAPER-PRODUCTS MACHINE OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8251</termIdentifier>
+          <caption>
+            <langstring language="en">Printing-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8252</termIdentifier>
+          <caption>
+            <langstring language="en">Bookbinding-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8253</termIdentifier>
+          <caption>
+            <langstring language="en">Paper-products machine operators</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>826</termIdentifier>
+        <caption>
+          <langstring language="en">TEXTILE-, FUR- AND LEATHER-PRODUCTS MACHINE OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8261</termIdentifier>
+          <caption>
+            <langstring language="en">Fibre-preparing-, spinning- and winding-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8262</termIdentifier>
+          <caption>
+            <langstring language="en">Weaving- and knitting-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8263</termIdentifier>
+          <caption>
+            <langstring language="en">Sewing-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8264</termIdentifier>
+          <caption>
+            <langstring language="en">Bleaching-, dyeing- and cleaning-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8265</termIdentifier>
+          <caption>
+            <langstring language="en">Fur and leather-preparing-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8266</termIdentifier>
+          <caption>
+            <langstring language="en">Shoemaking- and related machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8269</termIdentifier>
+          <caption>
+            <langstring language="en">Textile-, fur- and leather-products machine operators not elsewhere classified</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>827</termIdentifier>
+        <caption>
+          <langstring language="en">FOOD AND RELATED PRODUCTS MACHINE OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8271</termIdentifier>
+          <caption>
+            <langstring language="en">Meat- and fish-processing-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8272</termIdentifier>
+          <caption>
+            <langstring language="en">Dairy-products machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8273</termIdentifier>
+          <caption>
+            <langstring language="en">Grain- and spice-milling-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8274</termIdentifier>
+          <caption>
+            <langstring language="en">Baked-goods, cereal and chocolate-products machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8275</termIdentifier>
+          <caption>
+            <langstring language="en">Fruit-, vegetable- and nut-processing-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8276</termIdentifier>
+          <caption>
+            <langstring language="en">Sugar production machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8277</termIdentifier>
+          <caption>
+            <langstring language="en">Tea-, coffee-, and cocoa-processing-machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8278</termIdentifier>
+          <caption>
+            <langstring language="en">Brewers, wine and other beverage machine operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8279</termIdentifier>
+          <caption>
+            <langstring language="en">Tobacco production machine operators</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>828</termIdentifier>
+        <caption>
+          <langstring language="en">ASSEMBLERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8281</termIdentifier>
+          <caption>
+            <langstring language="en">Mechanical-machinery assemblers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8282</termIdentifier>
+          <caption>
+            <langstring language="en">Electrical-equipment assemblers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8283</termIdentifier>
+          <caption>
+            <langstring language="en">Electronic-equipment assemblers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8284</termIdentifier>
+          <caption>
+            <langstring language="en">Metal-, rubber- and plastic-products assemblers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8285</termIdentifier>
+          <caption>
+            <langstring language="en">Wood and related products assemblers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8286</termIdentifier>
+          <caption>
+            <langstring language="en">Paperboard, textile and related products assemblers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>829</termIdentifier>
+        <caption>
+          <langstring language="en">OTHER MACHINE OPERATORS AND ASSEMBLERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8290</termIdentifier>
+          <caption>
+            <langstring language="en">Other machine operators and assemblers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>83</termIdentifier>
+      <caption>
+        <langstring language="en">DRIVERS AND MOBILE-PLANT OPERATORS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>831</termIdentifier>
+        <caption>
+          <langstring language="en">LOCOMOTIVE-ENGINE DRIVERS AND RELATED WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8311</termIdentifier>
+          <caption>
+            <langstring language="en">Locomotive-engine drivers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8312</termIdentifier>
+          <caption>
+            <langstring language="en">Railway brakers, signallers and shunters</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>832</termIdentifier>
+        <caption>
+          <langstring language="en">MOTOR-VEHICLE DRIVERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8321</termIdentifier>
+          <caption>
+            <langstring language="en">Motor-cycle drivers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8322</termIdentifier>
+          <caption>
+            <langstring language="en">Car, taxi and van drivers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8323</termIdentifier>
+          <caption>
+            <langstring language="en">Bus and tram drivers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8324</termIdentifier>
+          <caption>
+            <langstring language="en">Heavy-truck and lorry drivers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>833</termIdentifier>
+        <caption>
+          <langstring language="en">AGRICULTURAL AND OTHER MOBILE-PLANT OPERATORS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8331</termIdentifier>
+          <caption>
+            <langstring language="en">Motorised farm and forestry plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8332</termIdentifier>
+          <caption>
+            <langstring language="en">Earth-moving- and related plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8333</termIdentifier>
+          <caption>
+            <langstring language="en">Crane, hoist and related plant operators</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>8334</termIdentifier>
+          <caption>
+            <langstring language="en">Lifting-truck operators</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>834</termIdentifier>
+        <caption>
+          <langstring language="en">SHIPS' DECK CREWS AND RELATED WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>8340</termIdentifier>
+          <caption>
+            <langstring language="en">Ships' deck crews and related workers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+  </term>
+  <term>
+    <termIdentifier>9</termIdentifier>
+    <caption>
+      <langstring language="en">ELEMENTARY OCCUPATIONS</langstring>
+    </caption>
+    <term>
+      <termIdentifier>91</termIdentifier>
+      <caption>
+        <langstring language="en">SALES AND SERVICES ELEMENTARY OCCUPATIONS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>911</termIdentifier>
+        <caption>
+          <langstring language="en">STREET VENDORS AND RELATED WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>9111</termIdentifier>
+          <caption>
+            <langstring language="en">Street food vendors</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9112</termIdentifier>
+          <caption>
+            <langstring language="en">Street vendors, non-food products</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9113</termIdentifier>
+          <caption>
+            <langstring language="en">Door-to-door and telephone salespersons</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>912</termIdentifier>
+        <caption>
+          <langstring language="en">SHOE CLEANING AND OTHER STREET SERVICES ELEMENTARY OCCUPATIONS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>9120</termIdentifier>
+          <caption>
+            <langstring language="en">Shoe cleaning and other street services elementary occupations</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>913</termIdentifier>
+        <caption>
+          <langstring language="en">DOMESTIC AND RELATED HELPERS, CLEANERS AND LAUNDERERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>9131</termIdentifier>
+          <caption>
+            <langstring language="en">Domestic helpers and cleaners</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9132</termIdentifier>
+          <caption>
+            <langstring language="en">Helpers and cleaners in offices, hotels and other establishments</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9133</termIdentifier>
+          <caption>
+            <langstring language="en">Hand-launderers and pressers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>914</termIdentifier>
+        <caption>
+          <langstring language="en">BUILDING CARETAKERS, WINDOW AND RELATED CLEANERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>9141</termIdentifier>
+          <caption>
+            <langstring language="en">Building caretakers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9142</termIdentifier>
+          <caption>
+            <langstring language="en">Vehicle, window and related cleaners</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>915</termIdentifier>
+        <caption>
+          <langstring language="en">MESSENGERS, PORTERS, DOORKEEPERS AND RELATED WORKERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>9151</termIdentifier>
+          <caption>
+            <langstring language="en">Messengers, package and luggage porters and deliverers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9152</termIdentifier>
+          <caption>
+            <langstring language="en">Doorkeepers, watchpersons and related workers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9153</termIdentifier>
+          <caption>
+            <langstring language="en">Vending-machine money collectors, meter readers and related workers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>916</termIdentifier>
+        <caption>
+          <langstring language="en">GARBAGE COLLECTORS AND RELATED LABOURERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>9161</termIdentifier>
+          <caption>
+            <langstring language="en">Garbage collectors</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9162</termIdentifier>
+          <caption>
+            <langstring language="en">Sweepers and related labourers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>92</termIdentifier>
+      <caption>
+        <langstring language="en">AGRICULTURAL, FISHERY AND RELATED LABOURERS</langstring>
+      </caption>
+      <term>
+        <termIdentifier>921</termIdentifier>
+        <caption>
+          <langstring language="en">AGRICULTURAL, FISHERY AND RELATED LABOURERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>9211</termIdentifier>
+          <caption>
+            <langstring language="en">Farm-hands and labourers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9212</termIdentifier>
+          <caption>
+            <langstring language="en">Forestry labourers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9213</termIdentifier>
+          <caption>
+            <langstring language="en">Fishery, hunting and trapping labourers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+    <term>
+      <termIdentifier>93</termIdentifier>
+      <caption>
+        <langstring language="en">LABOURERS IN MINING, CONSTRUCTION, MANUFACTURING AND TRANSPORT</langstring>
+      </caption>
+      <term>
+        <termIdentifier>931</termIdentifier>
+        <caption>
+          <langstring language="en">MINING AND CONSTRUCTION LABOURERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>9311</termIdentifier>
+          <caption>
+            <langstring language="en">Mining and quarrying labourers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9312</termIdentifier>
+          <caption>
+            <langstring language="en">Construction and maintenance labourers: roads, dams and similar constructions</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9313</termIdentifier>
+          <caption>
+            <langstring language="en">Building construction labourers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>932</termIdentifier>
+        <caption>
+          <langstring language="en">MANUFACTURING LABOURERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>9321</termIdentifier>
+          <caption>
+            <langstring language="en">Assembling labourers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9322</termIdentifier>
+          <caption>
+            <langstring language="en">Hand packers and other manufacturing labourers</langstring>
+          </caption>
+        </term>
+      </term>
+      <term>
+        <termIdentifier>933</termIdentifier>
+        <caption>
+          <langstring language="en">TRANSPORT LABOURERS AND FREIGHT HANDLERS</langstring>
+        </caption>
+        <term>
+          <termIdentifier>9331</termIdentifier>
+          <caption>
+            <langstring language="en">Hand or pedal vehicle drivers</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9332</termIdentifier>
+          <caption>
+            <langstring language="en">Drivers of animal-drawn vehicles and machinery</langstring>
+          </caption>
+        </term>
+        <term>
+          <termIdentifier>9333</termIdentifier>
+          <caption>
+            <langstring language="en">Freight handlers</langstring>
+          </caption>
+        </term>
+      </term>
+    </term>
+  </term>
+</vdex>

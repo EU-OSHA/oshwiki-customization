@@ -1,0 +1,51 @@
+Treeview extension ChangeLog
+============================
+
+VERSION 1.5.2
+
+  BUGFIXES:
+    * Fix: When using the initOnload parameter some other parameters like level
+      and useTsc got lost.
+    * Fix bug 12651: Tree was not accessing the correct pages.
+    * Fix bug 12709: The content of the urlparam was encoded twice and so the links
+      in the tree contained the wrong url parameters.
+    * Fix bug 12337: Treeview displays nodes twice.
+
+
+VERSION 1.4.1
+
+  BUGFIXES:
+    * Fix bug determining the sub categories of a given category.
+
+VERSION 1.4_3
+
+  BUGFIXES:
+    * Fix bug 11964: if an element had several parents it was appended several
+      times below each parent.
+
+VERSION 1.4_2
+
+  BUGFIXES:
+    * Make extension compatible to work with SMW 1.5.1
+    * Does not depend on OntoSkin3 anymore
+
+VERSION 1.4_1
+
+  BUGFIXES:
+    * With SMW 1.5.0 the sub category determination didn't seem to work anymore
+
+VERSION 1.4
+
+
+  FEATURES:
+    * A connected triple store can be used to retrieve the relations to build
+      the tree.
+    * A link target (taken from a property value) can be specified instead of
+      linking to the page directly.
+
+
+  CHANGES:
+
+
+  BUGFIXES:
+
