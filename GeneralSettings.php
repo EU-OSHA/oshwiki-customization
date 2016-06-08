@@ -6,8 +6,10 @@ $wgSitename			= "OSHWiki";
 ## defaults for all runtime URL paths are based off of this.
 ## For more information on customizing the URLs please see:
 ## http://www.mediawiki.org/wiki/Manual:Short_URL
-$wgScriptPath		= "/mediawiki";
+$wgScriptPath		= "";
 $wgScriptExtension	= ".php";
+$wgArticlePath      = "/wiki/$1";
+$wgUsePathInfo      = true;
 
 ## The relative URL path to the skins directory
 /* $wgStylePath		= "$wgScriptPath/skins"; */
