@@ -1,6 +1,5 @@
 <?php
 /**
- * @file
  * @ingroup SMWDataValues
  */
 
@@ -12,7 +11,7 @@
  * namespace, Whether a namespace is fixed is decided based on the
  * type ID when the object is constructed.
  *
- * The short display simulates the behaviour of the MediaWiki "pipe trick"
+ * The short display simulates the behavior of the MediaWiki "pipe trick"
  * but always includes fragments. This can be overwritten by setting a
  * caption, which is also done by default when generating a value from user
  * input. The long display always includes all relevant information. Only if a
@@ -90,6 +89,12 @@ class SMWWikiPageValue extends SMWDataValue {
 		// support inputs like " [[Test]] ";
 		// note that this only works in pages if $smwgLinksInValues is set to true
 		$value = ltrim( rtrim( $value, ' ]' ), ' [' );
+
+		// #1066, Manipulate the output only for when the value has no caption
+		// assigned and only if a single :Foo is being present, ::Foo is not permitted
+		if ( $this->m_caption === false && isset( $value[2] ) && $value[0] === ':' && $value[1] !== ':' ) {
+			$value = substr( $value, 1 );
+		}
 
 		if ( $this->m_caption === false ) {
 			$this->m_caption = $value;
@@ -183,34 +188,53 @@ class SMWWikiPageValue extends SMWDataValue {
 	 * @return string
 	 */
 	public function getShortWikiText( $linked = null ) {
+
 		if ( is_null( $linked ) || $linked === false ||
 			$this->m_outformat == '-' || !$this->isValid() ||
 			$this->m_caption === '' ) {
 			return $this->m_caption !== false ? $this->m_caption : $this->getWikiValue();
-		} else {
-			if ( $this->m_dataitem->getNamespace() == NS_FILE ) {
-				$linkEscape = '';
-				$defaultCaption = '|' . $this->getShortCaptionText() . '|frameless|border|text-top';
-			} else {
-				$linkEscape = ':';
-				$defaultCaption = '|' . $this->getShortCaptionText();
-			}
-			if ( $this->m_caption === false ) {
-				return '[[' . $linkEscape . $this->getWikiLinkTarget() . $defaultCaption . ']]';
-			} else {
-				return '[[' . $linkEscape . $this->getWikiLinkTarget() . '|' . $this->m_caption . ']]';
-			}
 		}
+
+		if ( $this->m_dataitem->getNamespace() == NS_FILE ) {
+			$linkEscape = '';
+			$defaultCaption = '|' . $this->getShortCaptionText() . '|frameless|border|text-top';
+		} else {
+			$linkEscape = ':';
+			$defaultCaption = '|' . $this->getShortCaptionText();
+		}
+
+		if ( $this->m_caption === false ) {
+			$link = '[[' . $linkEscape . $this->getWikiLinkTarget() . $defaultCaption . ']]';
+		} else {
+			$link = '[[' . $linkEscape . $this->getWikiLinkTarget() . '|' . $this->m_caption . ']]';
+		}
+
+		if ( $this->m_fragment !== '' ) {
+			$link = \Html::rawElement(
+				'span',
+				array(
+					'class' => 'smw-subobject-entity'
+				),
+				$link
+			);
+		}
+
+		return $link;
 	}
 
 	/**
 	 * Display the value as in getShortWikiText() but create HTML.
 	 * The only difference is that images are not embedded.
 	 *
-	 * @param $linker mixed the Linker object to use or null if no linking is desired
+	 * @param Linker $linker mixed the Linker object to use or null if no linking is desired
 	 * @return string
 	 */
 	public function getShortHTMLText( $linker = null ) {
+
+		$attributes = array(
+			'class' => $this->m_fragment !== '' ? 'smw-subobject-entity' : ''
+		);
+
 		// init the Title object, may reveal hitherto unnoticed errors:
 		if ( !is_null( $linker ) && $linker !== false &&
 				$this->m_caption !== '' && $this->m_outformat != '-' ) {
@@ -219,16 +243,23 @@ class SMWWikiPageValue extends SMWDataValue {
 
 		if ( is_null( $linker ) || $linker === false || !$this->isValid() ||
 				$this->m_outformat == '-' || $this->m_caption === '' ) {
-			return htmlspecialchars( $this->m_caption !== false ? $this->m_caption : $this->getWikiValue() );
-		} else {
-			$caption = htmlspecialchars(
-				$this->m_caption !== false ? $this->m_caption : $this->getShortCaptionText() );
-			if ( $this->getNamespace() == NS_MEDIA ) { // this extra case *is* needed
-				return $linker->makeMediaLinkObj( $this->getTitle(), $caption );
-			} else {
-				return $linker->makeLinkObj( $this->getTitle(), $caption );
-			}
+
+			$caption = $this->m_caption === false ? $this->getWikiValue() : $this->m_caption;
+			return htmlspecialchars( $caption );
 		}
+
+		$caption = $this->m_caption === false ? $this->getShortCaptionText() : $this->m_caption;
+		$caption = htmlspecialchars( $caption );
+
+		if ( $this->getNamespace() == NS_MEDIA ) { // this extra case *is* needed
+			return $linker->makeMediaLinkObj( $this->getTitle(), $caption );
+		}
+
+		return $linker->link(
+			$this->getTitle(),
+			$caption,
+			$attributes
+		);
 	}
 
 	/**
@@ -253,9 +284,21 @@ class SMWWikiPageValue extends SMWDataValue {
 			// other values (whether formatted or not).
 			return '[[' . $this->getWikiLinkTarget() . '|' .
 				$this->getLongCaptionText() . '|frameless|border|text-top]]';
-		} else {
-			return '[[:' . $this->getWikiLinkTarget() . '|' . $this->getLongCaptionText() . ']]';
 		}
+
+		$link = '[[:' . $this->getWikiLinkTarget() . '|' . $this->getLongCaptionText() . ']]';
+
+		if ( $this->m_fragment !== '' ) {
+			$link = \Html::rawElement(
+				'span',
+				array(
+					'class' => 'smw-subobject-entity'
+				),
+				$link
+			);
+		}
+
+		return $link;
 	}
 
 	/**
@@ -266,10 +309,16 @@ class SMWWikiPageValue extends SMWDataValue {
 	 * @return string
 	 */
 	public function getLongHTMLText( $linker = null ) {
+
+		$attributes = array(
+			'class' => $this->m_fragment !== '' ? 'smw-subobject-entity' : ''
+		);
+
 		// init the Title object, may reveal hitherto unnoticed errors:
 		if ( !is_null( $linker ) && ( $this->m_outformat != '-' ) ) {
 			$this->getTitle();
 		}
+
 		if ( !$this->isValid() ) {
 			return $this->getErrorText();
 		}
@@ -279,10 +328,13 @@ class SMWWikiPageValue extends SMWDataValue {
 		} elseif ( $this->getNamespace() == NS_MEDIA ) { // this extra case is really needed
 			return $linker->makeMediaLinkObj( $this->getTitle(),
 				htmlspecialchars( $this->getLongCaptionText() ) );
-		} else { // all others use default linking, no embedding of images here
-			return $linker->makeLinkObj( $this->getTitle(),
-				htmlspecialchars( $this->getLongCaptionText() ) );
 		}
+
+		// all others use default linking, no embedding of images here
+		return $linker->link( $this->getTitle(),
+			htmlspecialchars( $this->getLongCaptionText() ),
+			$attributes
+		);
 	}
 
 	/**
@@ -480,7 +532,7 @@ class SMWWikiPageValue extends SMWDataValue {
 	 * @return string sortkey
 	 */
 	public function getSortKey() {
-		return smwfGetStore()->getWikiPageSortKey( $this->m_dataitem );
+		return \SMW\StoreFactory::getStore()->getWikiPageSortKey( $this->m_dataitem );
 	}
 
 	/**
@@ -521,3 +573,9 @@ class SMWWikiPageValue extends SMWDataValue {
 
 }
 
+/**
+ * SMW\WikiPageValue
+ *
+ * @since 1.9
+ */
+class_alias( 'SMWWikiPageValue', 'SMW\WikiPageValue' );

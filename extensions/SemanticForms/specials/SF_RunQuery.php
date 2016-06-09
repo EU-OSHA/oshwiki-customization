@@ -32,7 +32,7 @@ class SFRunQuery extends IncludableSpecialPage {
 
 	function printPage( $form_name, $embedded = false ) {
 		global $wgOut, $wgRequest, $sfgFormPrinter, $wgParser, $sfgRunQueryFormAtTop;
-		global $wgUser, $wgTitle;
+		global $wgUser;
 
 		// Get contents of form-definition page.
 		$form_title = Title::makeTitleSafe( SF_NS_FORM, $form_name );
@@ -49,8 +49,7 @@ class SFRunQuery extends IncludableSpecialPage {
 		}
 
 		// Initialize variables.
-		$form_article = new Article( $form_title, 0 );
-		$form_definition = $form_article->getContent();
+		$form_definition = SFUtils::getPageText( $form_title );
 		if ( $embedded ) {
 			$run_query = false;
 			$content = null;
@@ -64,20 +63,9 @@ class SFRunQuery extends IncludableSpecialPage {
 		if ( $raw ) {
 			$wgOut->setArticleBodyOnly( true );
 		}
-		// If user already made some action, ignore the edited
-		// page and just get data from the query string.
-		if ( !$embedded && $wgRequest->getVal( 'query' ) == 'true' ) {
-			$edit_content = null;
-			$is_text_source = false;
-		} elseif ( $content != null ) {
-			$edit_content = $content;
-			$is_text_source = true;
-		} else {
-			$edit_content = null;
-			$is_text_source = true;
-		}
-		list ( $form_text, $javascript_text, $data_text, $form_page_title ) =
-			$sfgFormPrinter->formHTML( $form_definition, $form_submitted, $is_text_source, $form_article->getID(), $edit_content, null, null, true, $embedded );
+
+		list ( $form_text, $data_text, $form_page_title ) =
+			$sfgFormPrinter->formHTML( $form_definition, $form_submitted, false, $form_title->getArticleID(), $content, null, null, true, $embedded );
 		$text = "";
 
 		// Get the text of the results.
@@ -97,7 +85,7 @@ class SFRunQuery extends IncludableSpecialPage {
 			}
 
 			$wgParser->mOptions = ParserOptions::newFromUser( $wgUser );
-			$resultsText = $wgParser->parse( $data_text, $wgTitle, $wgParser->mOptions )->getText();
+			$resultsText = $wgParser->parse( $data_text, $this->getTitle(), $wgParser->mOptions )->getText();
 		}
 
 		// Get the full text of the form.
@@ -128,13 +116,17 @@ END;
 		if ( $wgRequest->getVal( 'additionalquery' ) == 'false' ) {
 			$text .= $resultsText;
 		} elseif ( $sfgRunQueryFormAtTop ) {
+			$text .= Html::openElement( 'div', array( 'class' => 'sf-runquery-formcontent' ) );
 			$text .= $fullFormText;
 			$text .= $dividerText;
+			$text .= Html::closeElement( 'div' );
 			$text .= $resultsText;
 		} else {
 			$text .= $resultsText;
+			$text .= Html::openElement( 'div', array( 'class' => 'sf-runquery-formcontent' ) );
 			$text .= $additionalQueryHeader;
 			$text .= $fullFormText;
+			$text .= Html::closeElement( 'div' );
 		}
 
 		if ( $embedded ) {
@@ -146,15 +138,16 @@ END;
 
 		// Now write everything to the screen.
 		$wgOut->addHTML( $text );
-		SFUtils::addJavascriptAndCSS( $embedded ? $wgParser : null );
-		$script = "\t\t" . '<script type="text/javascript">' . "\n" . $javascript_text . '</script>' . "\n";
-		if ( $embedded ) {
-			$wgParser->getOutput()->addHeadItem( $script );
-		} else {
-			$wgOut->addScript( $script );
+		SFUtils::addFormRLModules( $embedded ? $wgParser : null );
+		if ( !$embedded ) {
 			$po = $wgParser->getOutput();
 			if ( $po ) {
-				$wgOut->addParserOutputNoText( $po );
+				// addParserOutputMetadata was introduced in 1.24 when addParserOutputNoText was deprecated
+				if( method_exists( $wgOut, 'addParserOutputMetadata' ) ){
+					$wgOut->addParserOutputMetadata( $po );
+				} else {
+					$wgOut->addParserOutputNoText( $po );
+				}
 			}
 		}
 
@@ -169,5 +162,9 @@ END;
 				$wgOut->setPageTitle( $s );
 			}
 		}
+	}
+
+	protected function getGroupName() {
+		return 'sf_group';
 	}
 }

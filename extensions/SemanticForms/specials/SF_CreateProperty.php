@@ -45,6 +45,7 @@ class SFCreateProperty extends SpecialPage {
 			$text .= "\n\n" . wfMessage( 'sf_property_allowedvals' )
 				->numParams( count( $allowed_values_array ) )->inContentLanguage()->text();
 			foreach ( $allowed_values_array as $i => $value ) {
+				if ( $value == '' ) continue;
 				// replace beep back with comma, trim
 				$value = str_replace( "\a", $sfgListSeparator, trim( $value ) );
 				$prop_labels = $smwgContLang->getPropertyLabels();
@@ -55,70 +56,62 @@ class SFCreateProperty extends SpecialPage {
 	}
 
 	function printCreatePropertyForm( $query ) {
-		global $wgOut, $wgRequest, $sfgScriptPath;
 		global $smwgContLang;
+
+		$out = $this->getOutput();
+		$req = $this->getRequest();
 
 		// Cycle through the query values, setting the appropriate
 		// local variables.
 		$presetPropertyName = str_replace( '_', ' ', $query );
 		if ( $presetPropertyName !== '' ) {
-			$wgOut->setPageTitle( wfMessage( 'sf-createproperty-with-name', $presetPropertyName)->text() );
+			$out->setPageTitle( wfMessage( 'sf-createproperty-with-name', $presetPropertyName)->text() );
 			$property_name = $presetPropertyName;
 		} else {
-			$property_name = $wgRequest->getVal( 'property_name' );
+			$property_name = $req->getVal( 'property_name' );
 		}
-		$property_type = $wgRequest->getVal( 'property_type' );
-		$default_form = $wgRequest->getVal( 'default_form' );
-		$allowed_values = $wgRequest->getVal( 'values' );
+		$property_type = $req->getVal( 'property_type' );
+		$default_form = $req->getVal( 'default_form' );
+		$allowed_values = $req->getVal( 'values' );
 
 		$save_button_text = wfMessage( 'savearticle' )->text();
 		$preview_button_text = wfMessage( 'preview' )->text();
 
 		$property_name_error_str = '';
-		$save_page = $wgRequest->getCheck( 'wpSave' );
-		$preview_page = $wgRequest->getCheck( 'wpPreview' );
+		$save_page = $req->getCheck( 'wpSave' );
+		$preview_page = $req->getCheck( 'wpPreview' );
 		if ( $save_page || $preview_page ) {
-			# validate property name
+			$validToken = $this->getUser()->matchEditToken( $req->getVal( 'csrf' ), 'CreateProperty' );
+			if ( !$validToken ) {
+				$text = "This appears to be a cross-site request forgery; canceling save.";
+				$out->addHTML( $text );
+				return;
+			}
+
+			// Validate property name.
 			if ( $property_name === '' ) {
 				$property_name_error_str = wfMessage( 'sf_blank_error' )->text();
 			} else {
 				// Redirect to wiki interface.
-				$wgOut->setArticleBodyOnly( true );
+				$out->setArticleBodyOnly( true );
 				$title = Title::makeTitleSafe( SMW_NS_PROPERTY, $property_name );
 				$full_text = self::createPropertyText( $property_type, $default_form, $allowed_values );
-				$text = SFUtils::printRedirectForm( $title, $full_text, "", $save_page, $preview_page, false, false, false, null, null );
-				$wgOut->addHTML( $text );
+				$edit_summary = wfMessage( 'sf_createproperty_editsummary', $property_type)->inContentLanguage()->text();
+				$text = SFUtils::printRedirectForm( $title, $full_text, $edit_summary, $save_page, $preview_page, false, false, false, null, null );
+				$out->addHTML( $text );
 				return;
 			}
 		}
 
-		$datatype_labels = $smwgContLang->getDatatypeLabels();
-
-		$javascript_text = <<<END
-function toggleDefaultForm(property_type) {
-	var default_form_div = document.getElementById("default_form_div");
-	if (property_type == '{$datatype_labels['_wpg']}') {
-		default_form_div.style.display = "";
-	} else {
-		default_form_div.style.display = "none";
-	}
-}
-
-function toggleAllowedValues(property_type) {
-	var allowed_values_div = document.getElementById("allowed_values");
-	// Page, String, Number, Email - is that a reasonable set of types
-	// for which enumerations should be allowed?
-	if (property_type == '{$datatype_labels['_wpg']}' ||
-		property_type == '{$datatype_labels['_str']}' ||
-		property_type == '{$datatype_labels['_num']}' ||
-		property_type == '{$datatype_labels['_ema']}') {
-		allowed_values_div.style.display = "";
-	} else {
-		allowed_values_div.style.display = "none";
-	}
-}
-
-END;
+		$datatypeLabels = $smwgContLang->getDatatypeLabels();
+		$pageTypeLabel = $datatypeLabels['_wpg'];
+		if ( array_key_exists( '_str', $datatypeLabels ) ) {
+			$stringTypeLabel = $datatypeLabels['_str'];
+		} else {
+			$stringTypeLabel = $datatypeLabels['_txt'];
+		}
+		$numberTypeLabel = $datatypeLabels['_num'];
+		$emailTypeLabel = $datatypeLabels['_ema'];
 
 		global $wgContLang;
 		$mw_namespace_labels = $wgContLang->getNamespaces();
@@ -138,10 +131,10 @@ END;
 		}
 		$text .= "\n$type_label\n";
 		$select_body = "";
-		foreach ( $datatype_labels as $label ) {
+		foreach ( $datatypeLabels as $label ) {
 			$select_body .= "\t" . Html::element( 'option', null, $label ) . "\n";
 		}
-		$text .= Html::rawElement( 'select', array( 'id' => 'property_dropdown', 'name' => 'property_type', 'onChange' => 'toggleDefaultForm(this.value); toggleAllowedValues(this.value);' ), $select_body ) . "\n";
+		$text .= Html::rawElement( 'select', array( 'id' => 'property_dropdown', 'name' => 'property_type'  ), $select_body ) . "\n";
 
 		$default_form_input = wfMessage( 'sf_createproperty_linktoform' )->escaped();
 		$values_input = wfMessage( 'sf_createproperty_allowedvalsinput' )->escaped();
@@ -156,14 +149,24 @@ END;
 	</div>
 
 END;
+
+		$text .= "\t" . Html::hidden( 'csrf', $this->getUser()->getEditToken( 'CreateProperty' ) ) . "\n";
+
 		$edit_buttons = "\t" . Html::input( 'wpSave', $save_button_text, 'submit', array( 'id' => 'wpSave' ) );
 		$edit_buttons .= "\t" . Html::input( 'wpPreview', $preview_button_text, 'submit', array( 'id' => 'wpPreview' ) );
 		$text .= "\t" . Html::rawElement( 'div', array( 'class' => 'editButtons' ), $edit_buttons ) . "\n";
 		$text .= "\t</form>\n";
 
-		$wgOut->addExtensionStyle( $sfgScriptPath . "/skins/SemanticForms.css" );
-		$wgOut->addScript( '<script type="text/javascript">' . $javascript_text . '</script>' );
-		$wgOut->addHTML( $text );
+		$out->addJsConfigVars( 'wgPageTypeLabel', $pageTypeLabel );
+		$out->addJsConfigVars( 'wgStringTypeLabel', $stringTypeLabel );
+		$out->addJsConfigVars( 'wgNumberTypeLabel', $numberTypeLabel );
+		$out->addJsConfigVars( 'wgEmailTypeLabel', $emailTypeLabel );
+
+		$out->addModules( array( 'ext.semanticforms.SF_CreateProperty' ) );
+		$out->addHTML( $text );
 	}
 
+	protected function getGroupName() {
+		return 'sf_group';
+	}
 }

@@ -3,13 +3,12 @@
 namespace SMW\Tests;
 
 /**
- * Tests for the SMWDIBoolean class.
+ * @covers SMWDIBoolean
+ * @covers SMWDataItem
  *
  * @file
  * @since 1.8
  *
- * @ingroup SMW
- * @ingroup Test
  *
  * @group SMW
  * @group SMWExtension
@@ -40,11 +39,8 @@ class SMWDIBooleanTest extends DataItemTest {
 	 */
 	public function constructorProvider() {
 		return array(
-			array( true, false ),
-			array( true, true ),
-			array( false, 42 ),
-			array( false, array() ),
-			array( false, 'ohi there' ),
+			array( false ),
+			array( true ),
 		);
 	}
 

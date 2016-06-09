@@ -6,6 +6,7 @@
  * @ingroup Extensions
  * @ingroup SF
  */
+// @codingStandardsIgnoreFile
 
 $specialPageAliases = array();
 
@@ -39,24 +40,56 @@ $specialPageAliases['ar'] = array(
 	'UploadWindow' => array( 'نافذة_الرفع' ),
 );
 
-/** Egyptian Spoken Arabic (مصرى) */
+/** Aramaic (ܐܪܡܝܐ) */
+$specialPageAliases['arc'] = array(
+	'CreateCategory' => array( 'ܒܪܝ_ܣܕܪܐ' ),
+	'CreateProperty' => array( 'ܒܪܝ_ܕܝܠܝܘ̈ܬܐ' ),
+	'CreateTemplate' => array( 'ܒܪܝ_ܩܠܒܐ' ),
+	'Templates' => array( 'ܩܠܒ̈ܐ' ),
+);
+
+/** Egyptian Arabic (مصرى) */
 $specialPageAliases['arz'] = array(
 	'CreateCategory' => array( 'اعمل_تصنيف' ),
+	'CreateClass' => array( 'اعمل_رتبه' ),
 	'CreateForm' => array( 'اعمل_استماره' ),
 	'CreateProperty' => array( 'اعمل_ملكيه' ),
 	'CreateTemplate' => array( 'إاعمل_قالب' ),
 	'FormEdit' => array( 'تعديل_الداتا' ),
 	'FormStart' => array( 'زود_صفحه' ),
 	'Forms' => array( 'استمارات' ),
+	'RunQuery' => array( 'عمل_الكويرى' ),
 	'Templates' => array( 'قوالب' ),
 	'UploadWindow' => array( 'ويندو_الأپلود' ),
 );
 
-/** Assamese (অসমীয়া) */
+/** Assamese (অসমীয়া) */
 $specialPageAliases['as'] = array(
 	'CreateCategory' => array( 'শ্ৰেণী_সৃষ্টি_কৰক' ),
 	'Templates' => array( 'সাঁচসমূহ' ),
 	'UploadWindow' => array( 'আপল’ড_ৱিন্দ' ),
+);
+
+/** Avaric (авар) */
+$specialPageAliases['av'] = array(
+	'CreateCategory' => array( 'Создать_категорию' ),
+	'CreateTemplate' => array( 'Создать_шаблон' ),
+	'Templates' => array( 'Шаблоны' ),
+);
+
+/** Western Balochi (بلوچی رخشانی) */
+$specialPageAliases['bgn'] = array(
+	'CreateCategory' => array( 'تهر_ئی_جۆڑ_کورتین' ),
+	'CreateClass' => array( 'سینپ_ئی_جۆڑ_کورتین' ),
+	'CreateForm' => array( 'پورم_ئی_جۆڑ_کورتین' ),
+	'CreateProperty' => array( 'سی_پَت_ئی_جۆڑ_کورتین' ),
+	'CreateTemplate' => array( 'تراشوان_ئی_جۆڑ_کورتین' ),
+	'FormEdit' => array( 'مالومانی_بانکی_دستکاری' ),
+	'FormStart' => array( 'یک_دیم_ئی_جۆڑ_کورتین' ),
+	'Forms' => array( 'پورم_ئان' ),
+	'RunQuery' => array( 'درخواست_ئی_نیویشتین' ),
+	'Templates' => array( 'تراشوان_ئان' ),
+	'UploadWindow' => array( 'بُرز_کنه_گ_ئین_دَروُچگ' ),
 );
 
 /** Banjar (Bahasa Banjar) */
@@ -92,6 +125,18 @@ $specialPageAliases['bs'] = array(
 	'UploadWindow' => array( 'ProzorPostavljanja' ),
 );
 
+/** буряад (буряад) */
+$specialPageAliases['bxr'] = array(
+	'CreateCategory' => array( 'Категори_үүсхэхэ' ),
+);
+
+/** Chechen (нохчийн) */
+$specialPageAliases['ce'] = array(
+	'CreateCategory' => array( 'Кхолла_категори' ),
+	'CreateTemplate' => array( 'Кхолла_кеп' ),
+	'Templates' => array( 'Кепаш' ),
+);
+
 /** German (Deutsch) */
 $specialPageAliases['de'] = array(
 	'CreateCategory' => array( 'Kategorie_erstellen' ),
@@ -109,17 +154,32 @@ $specialPageAliases['de'] = array(
 
 /** Zazaki (Zazaki) */
 $specialPageAliases['diq'] = array(
-	'CreateCategory' => array( 'KategoriVıraze' ),
+	'CreateCategory' => array( 'KategoriyeVıraze' ),
 	'CreateClass' => array( 'SınıfeVıraze' ),
 	'CreateForm' => array( 'FormVıraze' ),
-	'CreateProperty' => array( 'XısusiyetiVıraze' ),
+	'CreateProperty' => array( 'XısusiyetVıraze' ),
 	'CreateTemplate' => array( 'ŞablonVıraze' ),
-	'FormEdit' => array( 'FormiBıvurne', 'MelumatDeke', 'MelumatiBıvurne' ),
-	'FormStart' => array( 'FormPêkerdış', 'PelaDeke' ),
+	'FormEdit' => array( 'FormiBıvurne', 'MelumatCıKe', 'MelumatiBıvurne' ),
+	'FormStart' => array( 'FormSerterin', 'PelaDeke' ),
 	'Forms' => array( 'Formi' ),
 	'RunQuery' => array( 'PersinBerdış' ),
 	'Templates' => array( 'Şabloni' ),
 	'UploadWindow' => array( 'TeqaBarkerdış' ),
+);
+
+/** Greek (Ελληνικά) */
+$specialPageAliases['el'] = array(
+	'CreateCategory' => array( 'ΔημιουργίαΚατηγορίας' ),
+	'CreateClass' => array( 'ΔημιουργίαΚλάσης' ),
+	'CreateForm' => array( 'ΔημιουργίαΦόρμας' ),
+	'CreateProperty' => array( 'ΔημιουργίαΙδιότητας' ),
+	'CreateTemplate' => array( 'ΔημιουργίαΠροτύπου' ),
+	'FormEdit' => array( 'ΕπεξεργασίαΦόρμας', 'ΠροσθήκηΔεδομένων', 'ΕπεξεργασίαΔεδομένων' ),
+	'FormStart' => array( 'ΕκκίνησηΦόρμας', 'ΠροσθήκηΣελίδας' ),
+	'Forms' => array( 'Φόρμες' ),
+	'RunQuery' => array( 'ΕκτέλεσηΕρωτήματος' ),
+	'Templates' => array( 'Πρότυπα' ),
+	'UploadWindow' => array( 'ΠαράθυροΑνεβάσματος' ),
 );
 
 /** Esperanto (Esperanto) */
@@ -127,12 +187,18 @@ $specialPageAliases['eo'] = array(
 	'CreateCategory' => array( 'Krei_kategorion' ),
 	'CreateClass' => array( 'Krei_klason' ),
 	'CreateForm' => array( 'Krei_formularon' ),
+	'CreateProperty' => array( 'Krei_econ' ),
+	'CreateTemplate' => array( 'Krei_ŝablonon' ),
 	'Forms' => array( 'Formularoj' ),
+	'Templates' => array( 'Ŝablonoj' ),
 );
 
 /** Spanish (español) */
 $specialPageAliases['es'] = array(
 	'CreateCategory' => array( 'CrearCategoría', 'Crear_categoría' ),
+	'CreateForm' => array( 'CrearFormulario' ),
+	'CreateProperty' => array( 'CrearPropiedad' ),
+	'CreateTemplate' => array( 'CrearPlantilla' ),
 	'Templates' => array( 'Plantillas' ),
 );
 
@@ -181,7 +247,7 @@ $specialPageAliases['fr'] = array(
 	'Templates' => array( 'Modèles' ),
 );
 
-/** Franco-Provençal (arpetan) */
+/** Arpitan (arpetan) */
 $specialPageAliases['frp'] = array(
 	'CreateCategory' => array( 'Fâre_una_catègorie', 'FâreUnaCatègorie' ),
 	'CreateForm' => array( 'Fâre_un_formulèro', 'FâreUnFormulèro' ),
@@ -202,8 +268,13 @@ $specialPageAliases['gag'] = array(
 
 /** Galician (galego) */
 $specialPageAliases['gl'] = array(
+	'CreateCategory' => array( 'Crear_categoría' ),
+	'CreateForm' => array( 'Crear_formulario' ),
+	'CreateProperty' => array( 'Crear_propiedade' ),
+	'CreateTemplate' => array( 'Crear_modelo' ),
 	'Forms' => array( 'Formularios' ),
 	'Templates' => array( 'Modelos' ),
+	'UploadWindow' => array( 'Ventá_de_subidas', 'Xanela_de_subidas' ),
 );
 
 /** Swiss German (Alemannisch) */
@@ -219,6 +290,21 @@ $specialPageAliases['gsw'] = array(
 	'RunQuery' => array( 'Abfroog_ussfüere' ),
 	'Templates' => array( 'Vorlage' ),
 	'UploadWindow' => array( 'Fänschter_zum_Uffelade' ),
+);
+
+/** Hebrew (עברית) */
+$specialPageAliases['he'] = array(
+	'CreateCategory' => array( 'יצירת_קטגוריה' ),
+	'CreateClass' => array( 'יצירת_מחלקה' ),
+	'CreateForm' => array( 'יצירת_טופס' ),
+	'CreateProperty' => array( 'יצירת_מאפיין' ),
+	'CreateTemplate' => array( 'יצירת_תבנית' ),
+	'FormEdit' => array( 'עריכת_טופס' ),
+	'FormStart' => array( 'תחילת_טופס' ),
+	'Forms' => array( 'טפסים' ),
+	'RunQuery' => array( 'הרצת_שאילתה' ),
+	'Templates' => array( 'תבניות' ),
+	'UploadWindow' => array( 'חלון_העלאה' ),
 );
 
 /** Upper Sorbian (hornjoserbsce) */
@@ -273,12 +359,14 @@ $specialPageAliases['ia'] = array(
 /** Indonesian (Bahasa Indonesia) */
 $specialPageAliases['id'] = array(
 	'CreateCategory' => array( 'Buat_kategori', 'BuatKategori' ),
+	'CreateClass' => array( 'Buat_kelas', 'BuatKelas' ),
 	'CreateForm' => array( 'Buat_formulir', 'BuatFormulir' ),
 	'CreateProperty' => array( 'Buat_properti', 'BuatProperti' ),
 	'CreateTemplate' => array( 'Buat_templat', 'BuatTemplat' ),
 	'FormEdit' => array( 'Sunting_data', 'SuntingData' ),
 	'FormStart' => array( 'Tambah_halaman', 'TambahHalaman' ),
 	'Forms' => array( 'Formulir_semantik', 'FormulirSemantik' ),
+	'RunQuery' => array( 'Jalankan_kueri', 'JalankanKueri' ),
 	'Templates' => array( 'Templat' ),
 	'UploadWindow' => array( 'Jendela_pengunggahan', 'JendelaPengunggahan' ),
 );
@@ -364,6 +452,8 @@ $specialPageAliases['ksh'] = array(
 /** Cornish (kernowek) */
 $specialPageAliases['kw'] = array(
 	'CreateCategory' => array( 'GwruthylKlass' ),
+	'CreateClass' => array( 'GwruthylKlassyans' ),
+	'CreateForm' => array( 'GwruthylFurvlen' ),
 	'CreateTemplate' => array( 'GwruthylSkantlyn' ),
 	'Templates' => array( 'Skantlyns' ),
 );
@@ -376,6 +466,7 @@ $specialPageAliases['lad'] = array(
 /** Luxembourgish (Lëtzebuergesch) */
 $specialPageAliases['lb'] = array(
 	'CreateCategory' => array( 'Kategorie_uleeën' ),
+	'CreateClass' => array( 'Klass_uleeën' ),
 	'CreateForm' => array( 'Formulaire_uleeën' ),
 	'CreateProperty' => array( 'Eegeschaften_uleeën' ),
 	'CreateTemplate' => array( 'Schabloun_uleeën' ),
@@ -391,12 +482,12 @@ $specialPageAliases['lb'] = array(
 $specialPageAliases['mk'] = array(
 	'CreateCategory' => array( 'СоздајКатегорија' ),
 	'CreateClass' => array( 'СоздајКласа' ),
-	'CreateForm' => array( 'СоздајФорум' ),
+	'CreateForm' => array( 'СоздајОбразец' ),
 	'CreateProperty' => array( 'СоздајСвојство' ),
 	'CreateTemplate' => array( 'СоздајШаблон' ),
 	'FormEdit' => array( 'УредиПодаток' ),
 	'FormStart' => array( 'ДодајСтраница' ),
-	'Forms' => array( 'Форми' ),
+	'Forms' => array( 'Обрасци' ),
 	'RunQuery' => array( 'ПуштиБарање' ),
 	'Templates' => array( 'Шаблони' ),
 	'UploadWindow' => array( 'ПрозорецЗаПодигање' ),
@@ -441,7 +532,7 @@ $specialPageAliases['myv'] = array(
 	'Templates' => array( 'ЛопаПарцунт' ),
 );
 
-/** Norwegian Bokmål (norsk (bokmål)‎) */
+/** Norwegian Bokmål (norsk bokmål) */
 $specialPageAliases['nb'] = array(
 	'CreateCategory' => array( 'Opprett_kategori' ),
 	'CreateClass' => array( 'Opprett_klasse' ),
@@ -456,7 +547,7 @@ $specialPageAliases['nb'] = array(
 	'UploadWindow' => array( 'Opplastingsvindu' ),
 );
 
-/** Nedersaksisch (Nedersaksisch) */
+/** Low Saxon (Netherlands) (Nedersaksies) */
 $specialPageAliases['nds-nl'] = array(
 	'CreateCategory' => array( 'Kategorie_anmaken' ),
 	'CreateClass' => array( 'Klasse_anmaken' ),
@@ -464,7 +555,7 @@ $specialPageAliases['nds-nl'] = array(
 	'CreateProperty' => array( 'Eigenschap_anmaken' ),
 	'CreateTemplate' => array( 'Mal_anmaken' ),
 	'FormEdit' => array( 'Gegevens_bewarken' ),
-	'FormStart' => array( 'Pagina_derbie_doon' ),
+	'FormStart' => array( 'Zied_derbie_doon' ),
 	'Forms' => array( 'Formulieren' ),
 	'RunQuery' => array( 'Zeukopdrachte_uutvoeren' ),
 	'Templates' => array( 'Mallen' ),
@@ -497,7 +588,7 @@ $specialPageAliases['oc'] = array(
 	'Templates' => array( 'Modèls' ),
 );
 
-/** Oriya (ଓଡ଼ିଆ) */
+/** Oriya (ଓଡ଼ିଆ) */
 $specialPageAliases['or'] = array(
 	'CreateCategory' => array( 'ଶ୍ରେଣୀ_ତିଆରି_କରନ୍ତୁ' ),
 	'CreateForm' => array( 'ଫରମ_ତିଆରି_କରନ୍ତୁ' ),
@@ -511,6 +602,9 @@ $specialPageAliases['or'] = array(
 
 /** Punjabi (ਪੰਜਾਬੀ) */
 $specialPageAliases['pa'] = array(
+	'CreateCategory' => array( 'ਸ਼੍ਰੇਣੀ_ਬਣਾਓ' ),
+	'CreateTemplate' => array( 'ਫਰਮਾ_ਬਣਾਓ' ),
+	'Forms' => array( 'ਫ਼ਾਰਮ' ),
 	'Templates' => array( 'ਫਰਮੇ' ),
 );
 
@@ -537,12 +631,14 @@ $specialPageAliases['ps'] = array(
 /** Portuguese (português) */
 $specialPageAliases['pt'] = array(
 	'CreateCategory' => array( 'Criar_categoria' ),
+	'CreateClass' => array( 'Criar_classe' ),
 	'CreateForm' => array( 'Criar_formulário' ),
 	'CreateProperty' => array( 'Criar_propriedade' ),
 	'CreateTemplate' => array( 'Criar_modelo' ),
 	'FormEdit' => array( 'Editar_dados' ),
 	'FormStart' => array( 'Adicionar_página' ),
 	'Forms' => array( 'Formulários' ),
+	'RunQuery' => array( 'Executar_consulta' ),
 	'Templates' => array( 'Modelos' ),
 	'UploadWindow' => array( 'Janela_de_carregamento' ),
 );
@@ -557,6 +653,28 @@ $specialPageAliases['pt-br'] = array(
 /** Romanian (română) */
 $specialPageAliases['ro'] = array(
 	'Templates' => array( 'Formate' ),
+);
+
+/** Russian (русский) */
+$specialPageAliases['ru'] = array(
+	'CreateCategory' => array( 'Создать_категорию' ),
+	'CreateTemplate' => array( 'Создать_шаблон' ),
+	'Templates' => array( 'Шаблоны' ),
+);
+
+/** Sicilian (sicilianu) */
+$specialPageAliases['scn'] = array(
+	'CreateCategory' => array( 'CreaCategoria' ),
+	'CreateClass' => array( 'CreaClasse' ),
+	'CreateForm' => array( 'CreaModulo' ),
+	'CreateProperty' => array( 'CreaProprietà' ),
+	'CreateTemplate' => array( 'CreaTemplate' ),
+	'FormEdit' => array( 'ModificaDati' ),
+	'FormStart' => array( 'AggiungiPagina' ),
+	'Forms' => array( 'Moduli' ),
+	'RunQuery' => array( 'EseguiRicerca' ),
+	'Templates' => array( 'Template' ),
+	'UploadWindow' => array( 'AggiornaFinestra' ),
 );
 
 /** Slovak (slovenčina) */
@@ -581,10 +699,10 @@ $specialPageAliases['sq'] = array(
 /** Serbian (Cyrillic script) (српски (ћирилица)‎) */
 $specialPageAliases['sr-ec'] = array(
 	'CreateCategory' => array( 'НаправиКатегорију' ),
-	'CreateClass' => array( 'Направи_класу' ),
-	'CreateForm' => array( 'Направи_образац' ),
-	'CreateProperty' => array( 'Направи_својство' ),
-	'CreateTemplate' => array( 'Направи_шаблон' ),
+	'CreateClass' => array( 'НаправиКласу', 'Направи_класу' ),
+	'CreateForm' => array( 'НаправиОбразац', 'Направи_образац' ),
+	'CreateProperty' => array( 'НаправиСвојство', 'Направи_својство' ),
+	'CreateTemplate' => array( 'НаправиШаблон', 'Направи_шаблон' ),
 	'FormEdit' => array( 'Уреди_образац' ),
 	'FormStart' => array( 'ДодајСтраницу', 'Додај_страницу' ),
 	'Forms' => array( 'Обрасци' ),
@@ -668,7 +786,12 @@ $specialPageAliases['uk'] = array(
 	'Templates' => array( 'Шаблони' ),
 );
 
-/** vèneto (vèneto) */
+/** Urdu (اردو) */
+$specialPageAliases['ur'] = array(
+	'Templates' => array( 'سانچہ_جات' ),
+);
+
+/** Venetian (vèneto) */
 $specialPageAliases['vec'] = array(
 	'CreateTemplate' => array( 'CreaModèl' ),
 	'FormEdit' => array( 'ZontaDati' ),
@@ -677,12 +800,46 @@ $specialPageAliases['vec'] = array(
 	'UploadWindow' => array( 'AjornaFenestra' ),
 );
 
+/** Vietnamese (Tiếng Việt) */
+$specialPageAliases['vi'] = array(
+	'CreateCategory' => array( 'Tạo_thể_loại' ),
+	'CreateClass' => array( 'Tạo_lớp' ),
+	'CreateForm' => array( 'Tạo_biểu_mẫu' ),
+	'CreateProperty' => array( 'Tạo_thuộc_tính' ),
+	'CreateTemplate' => array( 'Tạo_bản_mẫu' ),
+	'FormEdit' => array( 'Sửa_biểu_mẫu', 'Thêm_dữ_liệu', 'Sửa_dữ_liệu' ),
+	'Forms' => array( 'Biểu_mẫu' ),
+	'RunQuery' => array( 'Chạy_truy_vấn' ),
+	'Templates' => array( 'Bản_mẫu' ),
+	'UploadWindow' => array( 'Cửa_sổ_tải_lên' ),
+);
+
 /** Simplified Chinese (中文（简体）‎) */
 $specialPageAliases['zh-hans'] = array(
 	'CreateCategory' => array( '创建分类' ),
-	'CreateForm' => array( '创建表格' ),
+	'CreateClass' => array( '创建类' ),
+	'CreateForm' => array( '创建表单' ),
+	'CreateProperty' => array( '创建属性' ),
 	'CreateTemplate' => array( '创建模板' ),
-	'Forms' => array( '表格' ),
+	'FormEdit' => array( '编辑表格', '添加数据' ),
+	'FormStart' => array( '表格起始', '添加页面' ),
+	'Forms' => array( '表单' ),
 	'RunQuery' => array( '执行查询' ),
 	'Templates' => array( '模板' ),
+	'UploadWindow' => array( '上传窗口' ),
+);
+
+/** Traditional Chinese (中文（繁體）‎) */
+$specialPageAliases['zh-hant'] = array(
+	'CreateCategory' => array( '建立分類' ),
+	'CreateClass' => array( '建立組別' ),
+	'CreateForm' => array( '建立表單' ),
+	'CreateProperty' => array( '建立屬性' ),
+	'CreateTemplate' => array( '建立模板' ),
+	'FormEdit' => array( '表單編輯' ),
+	'FormStart' => array( '表單啟動' ),
+	'Forms' => array( '表單' ),
+	'RunQuery' => array( '運行查詢' ),
+	'Templates' => array( '模板' ),
+	'UploadWindow' => array( '上載視窗' ),
 );

@@ -17,12 +17,18 @@ class SFTextInput extends SFFormInput {
 	}
 
 	public static function getDefaultPropTypes() {
-		return array(
-			'_str' => array( 'field_type' => 'string' ),
+		$defaultPropTypes = array(
 			'_num' => array( 'field_type' => 'number' ),
 			'_uri' => array( 'field_type' => 'URL' ),
 			'_ema' => array( 'field_type' => 'email' )
 		);
+		if ( defined( 'SMWDataItem::TYPE_STRING' ) ) {
+			// SMW < 1.9
+			$defaultPropTypes['_str'] = array( 'field_type' => 'string' );
+		} else {
+			$defaultPropTypes['_txt'] = array( 'field_type' => 'text' );
+		}
+		return $defaultPropTypes;
 	}
 
 	public static function getOtherPropTypesHandled() {
@@ -30,16 +36,50 @@ class SFTextInput extends SFFormInput {
 	}
 
 	public static function getDefaultPropTypeLists() {
-		return array(
-			'_str' => array( 'field_type' => 'string', 'is_list' => 'true', 'size' => '100' ),
+		$defaultPropTypeLists = array(
 			'_num' => array( 'field_type' => 'number', 'is_list' => 'true', 'size' => '100' ),
 			'_uri' => array( 'field_type' => 'URL', 'is_list' => 'true' ),
 			'_ema' => array( 'field_type' => 'email', 'is_list' => 'true' )
 		);
+		if ( defined( 'SMWDataItem::TYPE_STRING' ) ) {
+			// SMW < 1.9
+			$defaultPropTypeLists['_str'] = array( 'field_type' => 'string', 'is_list' => 'true', 'size' => '100' );
+		} else {
+			$defaultPropTypeLists['_txt'] = array( 'field_type' => 'text', 'is_list' => 'true', 'size' => '100' );
+		}
+		return $defaultPropTypeLists;
 	}
 
 	public static function getOtherPropTypeListsHandled() {
 		return array( '_wpg' );
+	}
+
+	public static function getDefaultCargoTypes() {
+		return array(
+			'Integer' => array( 'field_type' => 'number' ),
+			'Float' => array( 'field_type' => 'number' ),
+			'URL' => array( 'field_type' => 'URL' ),
+			'Email' => array( 'field_type' => 'email' ),
+			'File' => array( 'field_type' => 'string', 'uploadable' => true ),
+			'String' => array( 'field_type' => 'string' )
+		);
+	}
+
+	public static function getOtherCargoTypesHandled() {
+		return array( 'Page', 'Coordinates' );
+	}
+
+	public static function getDefaultCargoTypeLists() {
+		return array(
+			'Number' => array( 'field_type' => 'number', 'is_list' => 'true', 'size' => '100' ),
+			'URL' => array( 'field_type' => 'URL', 'is_list' => 'true' ),
+			'Email' => array( 'field_type' => 'email', 'is_list' => 'true' ),
+			'String' => array( 'field_type' => 'text', 'is_list' => 'true', 'size' => '100' )
+		);
+	}
+
+	public static function getOtherCargoTypeListsHandled() {
+		return array( 'Page' );
 	}
 
 	/**
@@ -96,7 +136,7 @@ class SFTextInput extends SFFormInput {
 	}
 
 	public static function uploadableHTML( $input_id, $delimiter = null, $default_filename = null, $cur_value = '', $other_args = array() ) {
-		$upload_window_page = SFUtils::getSpecialPage( 'UploadWindow' );
+		$upload_window_page = SpecialPageFactory::getPage( 'UploadWindow' );
 		$query_string = "sfInputID=$input_id";
 		if ( $delimiter != null ) {
 			$query_string .= "&sfDelimiter=$delimiter";
@@ -145,18 +185,15 @@ class SFTextInput extends SFFormInput {
 	public static function getHTML( $cur_value, $input_name, $is_mandatory, $is_disabled, $other_args ) {
 		global $sfgTabIndex, $sfgFieldNum;
 
-		// For backward compatibility with pre-SF-2.1 forms
-		if ( array_key_exists( 'autocomplete field type', $other_args ) &&
-			! array_key_exists( 'no autocomplete', $other_args ) ) {
-			return SFTextWithAutocompleteInput::getHTML( $cur_value, $input_name, $is_mandatory, $is_disabled, $other_args );
-		}
-
 		$className = 'createboxInput';
 		if ( $is_mandatory ) {
 			$className .= ' mandatoryField';
 		}
 		if ( array_key_exists( 'class', $other_args ) ) {
 			$className .= ' ' . $other_args['class'];
+		}
+		if ( array_key_exists( 'unique', $other_args ) ) {
+			$className .= ' uniqueField';
 		}
 		$input_id = "input_$sfgFieldNum";
 		// Set size based on pre-set size, or field type - if field
@@ -224,6 +261,9 @@ class SFTextInput extends SFFormInput {
 		}
 		if ( $is_mandatory ) {
 			$spanClass .= ' mandatoryFieldSpan';
+		}
+		if ( array_key_exists( 'unique', $other_args ) ) {
+			$spanClass .= ' uniqueFieldSpan';
 		}
 		$text = Html::rawElement( 'span', array( 'class' => $spanClass ), $text );
 		return $text;

@@ -3,13 +3,12 @@
 namespace SMW\Tests;
 
 /**
- * Tests for the SMWDIBlob class.
+ * @covers SMWDIBlob
+ * @covers SMWDataItem
  *
  * @file
  * @since 1.8
  *
- * @ingroup SMW
- * @ingroup Test
  *
  * @group SMW
  * @group SMWExtension
@@ -40,8 +39,8 @@ class DIBlobTest extends DataItemTest {
 	 */
 	public function constructorProvider() {
 		return array(
-			array( true, 'I love Semantic MediaWiki' ),
-			array( true, 'It is open source' ),
+			array( 'I love Semantic MediaWiki' ),
+			array( 'It is open source' ),
 		);
 	}
 

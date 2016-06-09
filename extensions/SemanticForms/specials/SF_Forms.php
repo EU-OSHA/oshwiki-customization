@@ -21,14 +21,13 @@ class SFForms extends SpecialPage {
 
 	function execute( $query ) {
 		$this->setHeaders();
-		list( $limit, $offset ) = wfCheckLimits();
+		list( $limit, $offset ) = $this->getRequest()->getLimitOffset();
 		$rep = new FormsPage();
-		// execute() method added in 1.18
-		if ( method_exists( $rep, 'execute' ) ) {
-			return $rep->execute( $query );
-		} else {
-			return $rep->doQuery( $offset, $limit );
-		}
+		return $rep->execute( $query );
+	}
+
+	protected function getGroupName() {
+		return 'pages';
 	}
 }
 
@@ -37,10 +36,7 @@ class SFForms extends SpecialPage {
  */
 class FormsPage extends QueryPage {
 	public function __construct( $name = 'Forms' ) {
-		// For MW 1.17
-		if ( $this instanceof SpecialPage ) {
-			parent::__construct( $name );
-		}
+		parent::__construct( $name );
 	}
 	
 	function getName() {
@@ -52,28 +48,13 @@ class FormsPage extends QueryPage {
 	function isSyndicated() { return false; }
 
 	function getPageHeader() {
-		$header = '<p>' . wfMessage( 'sf_forms_docu' )->text() . "</p><br />\n";
+		$header = Html::element( 'p', null, wfMessage( 'sf_forms_docu' )->text() );
 		return $header;
 	}
 
 	function getPageFooter() {
 	}
 
-	function getSQL() {
-		$NSform = SF_NS_FORM;
-		$dbr = wfGetDB( DB_SLAVE );
-		$page = $dbr->tableName( 'page' );
-		// QueryPage uses the value from this SQL in an ORDER clause,
-		// so return page_title as title.
-		return "SELECT 'Form' AS type,
-			page_title AS title,
-			page_title AS value
-			FROM $page
-			WHERE page_namespace = {$NSform}
-			AND page_is_redirect = 0";
-	}
-	
-	// For MW 1.18+
 	function getQueryInfo() {
 		return array(
 			'tables' => array( 'page' ),
@@ -88,6 +69,6 @@ class FormsPage extends QueryPage {
 
 	function formatResult( $skin, $result ) {
 		$title = Title::makeTitle( SF_NS_FORM, $result->value );
-		return SFUtils::getLinker()->makeLinkObj( $title, htmlspecialchars( $title->getText() ) );
+		return Linker::link( $title, htmlspecialchars( $title->getText() ) );
 	}
 }

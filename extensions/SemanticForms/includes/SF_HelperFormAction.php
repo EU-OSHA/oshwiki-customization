@@ -8,11 +8,6 @@
  * @ingroup SF
  */
 
-// TODO: Action class did not exist until MW 1.18
-if ( ! class_exists( 'Action') ) {
-	class Action{}
-}
-
 class SFHelperFormAction extends Action 
 {
 	/**
@@ -53,8 +48,12 @@ class SFHelperFormAction extends Action
 		}
 		// Make sure that this page is in one of the relevant
 		// namespaces, and that it doesn't exist yet.
+		$namespacesWithHelperForms = array( NS_TEMPLATE, SF_NS_FORM, NS_CATEGORY );
+		if ( defined( 'SMW_NS_PROPERTY' ) ) {
+			$namespacesWithHelperForms[] = SMW_NS_PROPERTY;
+		}
 		if ( !isset( $title ) ||
-			( !in_array( $title->getNamespace(), array( SMW_NS_PROPERTY, NS_TEMPLATE, SF_NS_FORM, NS_CATEGORY ) ) ) ) {
+			( !in_array( $title->getNamespace(), $namespacesWithHelperForms ) ) ) {
 			return true;
 		}
 		if ( $title->exists() ) {
@@ -105,7 +104,7 @@ class SFHelperFormAction extends Action
 		if ( $edit_tab_location == null ) {
 			$edit_tab_location = - 1;
 		}
-		array_splice( $tab_keys, $edit_tab_location, 0, 'form_edit' );
+		array_splice( $tab_keys, $edit_tab_location, 0, 'formedit' );
 		array_splice( $tab_values, $edit_tab_location, 0, array( $form_create_tab ) );
 		$content_actions = array();
 		for ( $i = 0; $i < count( $tab_keys ); $i++ ) {
@@ -134,20 +133,9 @@ class SFHelperFormAction extends Action
 
 	/**
 	 * The function called if we're in index.php (as opposed to one of the
-	 * special pages)
+	 * special pages).
 	 */
 	static function displayForm( $action, $article ) {
-		// TODO: This function will be called as a hook handler and $action will
-		//  be a string before MW 1.18. From 1.18 onwards this function will#
-		//  only be called for formcreate actions, i.e. the if statement can be
-		//  removed then.
-
-		// return "true" if the call failed (meaning, pass on handling
-		// of the hook to others), and "false" otherwise
-		if ( is_string( $action ) && $action !== 'formcreate' ) {
-			return true;
-		}
-
 		$title = $article->getTitle();
 		if ( $title->getNamespace() == SMW_NS_PROPERTY ) {
 			$createPropertyPage = new SFCreateProperty();
@@ -164,12 +152,5 @@ class SFHelperFormAction extends Action
 		}
 
 		return false;
-	}
-
-	/**
-	 * A dummy method - this is needed for MediaWiki 1.18, where
-	 * Action::getRestriction() is abstract and needs to be implemented.
-	 */
-	public function getRestriction() {
 	}
 }

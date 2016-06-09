@@ -2,14 +2,12 @@
 
 namespace SMW\Tests;
 
+use SMW\Tests\MwDBaseUnitTestCase;
+
+use SMWDataItem;
+
 /**
  * Base class for SMW\DataItem tests.
- *
- * @file
- * @since 1.8
- *
- * @ingroup SMW
- * @ingroup Test
  *
  * @group SMW
  * @group SMWExtension
@@ -18,7 +16,7 @@ namespace SMW\Tests;
  * @licence GNU GPL v2+
  * @author Jeroen De Dauw < jeroendedauw@gmail.com >
  */
-abstract class DataItemTest extends \MediaWikiTestCase {
+abstract class DataItemTest extends MwDBaseUnitTestCase {
 
 	/**
 	 * Returns the name of the \SMW\DataItem deriving class this test tests.
@@ -30,9 +28,6 @@ abstract class DataItemTest extends \MediaWikiTestCase {
 	public abstract function getClass();
 
 	/**
-	 * First element can be a boolean indication if the successive values are valid,
-	 * or a string indicating the type of exception that should be thrown (ie not valid either).
-	 *
 	 * @since 1.8
 	 *
 	 * @return array
@@ -44,7 +39,7 @@ abstract class DataItemTest extends \MediaWikiTestCase {
 	 *
 	 * @since 1.8
 	 *
-	 * @return \SMWDataItem
+	 * @return SMWDataItem
 	 */
 	public function newInstance() {
 		$reflector = new \ReflectionClass( $this->getClass() );
@@ -61,19 +56,12 @@ abstract class DataItemTest extends \MediaWikiTestCase {
 	public function instanceProvider() {
 		$phpFails = array( $this, 'newInstance' );
 
-		return array_filter( array_map(
+		return array_map(
 			function( array $args ) use ( $phpFails ) {
-				$isValid = array_shift( $args ) === true;
-
-				if ( $isValid ) {
-					return array( call_user_func_array( $phpFails, $args ) );
-				}
-				else {
-					return false;
-				}
+				return array( call_user_func_array( $phpFails, $args ) );
 			},
 			$this->constructorProvider()
-		), 'is_array' );
+		);
 	}
 
 	/**
@@ -82,27 +70,13 @@ abstract class DataItemTest extends \MediaWikiTestCase {
 	 * @since 1.8
 	 */
 	public function testConstructor() {
-		$args = func_get_args();
+		$dataItem = call_user_func_array(
+			array( $this, 'newInstance' ),
+			func_get_args()
+		);
 
-		$valid = array_shift( $args );
-		$pokemons = null;
-
-		try {
-			$dataItem = call_user_func_array( array( $this, 'newInstance' ), $args );
-			$this->assertInstanceOf( '\SMWDataItem', $dataItem );
-		}
-		catch ( \Exception $pokemons ) {
-			if ( $valid === true ) {
-				throw $pokemons;
-			}
-
-			if ( is_string( $valid ) ) {
-				$this->assertEquals( $valid, get_class( $pokemons ) );
-			}
-			else {
-				$this->assertTrue( true );
-			}
-		}
+		$this->assertInstanceOf( '\SMWDataItem', $dataItem );
+		$this->assertInstanceOf( $this->getClass(), $dataItem );
 	}
 
 	/**
@@ -119,6 +93,20 @@ abstract class DataItemTest extends \MediaWikiTestCase {
 			$dataItem,
 			$class::doUnserialize( $dataItem->getSerialization() )
 		);
+	}
+
+	/**
+	 * @dataProvider instanceProvider
+	 */
+	public function testInstanceEqualsItself( SMWDataItem $di ) {
+		$this->assertTrue( $di->equals( $di ) );
+	}
+
+	/**
+	 * @dataProvider instanceProvider
+	 */
+	public function testInstanceDoesNotEqualNyanData( SMWDataItem $di ) {
+		$this->assertFalse( $di->equals( new \SMWDIBlob( '~=[,,_,,]:3' ) ) );
 	}
 
 }

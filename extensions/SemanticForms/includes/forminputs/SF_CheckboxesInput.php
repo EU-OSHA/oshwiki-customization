@@ -27,6 +27,16 @@ class SFCheckboxesInput extends SFMultiEnumInput {
 		return array();
 	}
 
+	public static function getDefaultCargoTypeLists() {
+		return array(
+			'Enumeration' => array()
+		);
+	}
+
+	public static function getOtherCargoTypeListsHandled() {
+		return array();
+	}
+
 	public static function getHTML( $cur_value, $input_name, $is_mandatory, $is_disabled, $other_args ) {
 		global $sfgTabIndex, $sfgFieldNum, $sfgShowOnSelect;
 
@@ -42,7 +52,7 @@ class SFCheckboxesInput extends SFMultiEnumInput {
 		} else {
 			$delimiter = ',';
 		}
-		$cur_values = SFUtils::getValuesArray( $cur_value, $delimiter );
+		$cur_values = SFValuesUtils::getValuesArray( $cur_value, $delimiter );
 
 		if ( ( $possible_values = $other_args['possible_values'] ) == null ) {
 			$possible_values = array();
@@ -78,7 +88,7 @@ class SFCheckboxesInput extends SFMultiEnumInput {
 			// purposes as well as to clarify this element.
 			$text .= "\t" . Html::rawElement( 'label',
 				array( 'class' => $labelClass ),
-				$checkbox_input . ' ' . $label
+				$checkbox_input . '&nbsp;' . $label
 			) . "\n";
 			$sfgTabIndex++;
 			$sfgFieldNum++;
@@ -88,6 +98,23 @@ class SFCheckboxesInput extends SFMultiEnumInput {
 		$outerSpanClass = 'checkboxesSpan';
 		if ( $is_mandatory ) {
 			$outerSpanClass .= ' mandatoryFieldSpan';
+		}
+
+		// @HACK! The current "select all/none" JS code doesn't work
+		// when this input is part of a multiple-instance template, so
+		// if that happens, just don't display those links.
+		// Unfortunately, there's no easy way to know if we're in a
+		// multiple-instance template, so look at the input name - if
+		// it contains "[num][", we can assume that we are.
+		// @TODO - get the JS working in multiple-instance templates -
+		// this will probably require rewriting the checkboxes JS
+		// to some extent, so the relevant part can be called each
+		// time an instance is added.
+		if ( strpos( $input_name, '[num][' ) !== false ) {
+			// Multiple-instance template; do nothing.
+		} elseif ( array_key_exists( 'show select all', $other_args ) ||
+			( count( $possible_values ) >= $GLOBALS[ 'sfgCheckboxesSelectAllMinimum' ] && !array_key_exists( 'hide select all', $other_args ) ) ) {
+			$outerSpanClass .= ' select-all';
 		}
 
 		if ( array_key_exists( 'show on select', $other_args ) ) {

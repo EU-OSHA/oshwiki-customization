@@ -53,7 +53,7 @@ class SFRadioButtonInput extends SFEnumInput {
 			} elseif ( count( $possible_values ) == 0 ) {
 				$cur_value = '';
 			} else {
-				$cur_value = $possible_values[0];
+				$cur_value = reset($possible_values);
 			}
 		}
 
@@ -73,6 +73,9 @@ class SFRadioButtonInput extends SFEnumInput {
 				'id' => $input_id,
 				'tabindex' => $sfgTabIndex,
 			);
+			if ( array_key_exists( 'origName', $other_args ) ) {
+				$radiobutton_attrs['origname'] = $other_args['origName'];
+			}
 			$isChecked = false;
 			if ( $cur_value == $possible_value ) {
 				$isChecked = true;

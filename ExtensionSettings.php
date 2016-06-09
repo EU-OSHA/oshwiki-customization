@@ -99,11 +99,8 @@ $wgAddThisSidebar = false;
 # http://www.mediawiki.org/wiki/Extension:Variables
 require_once("$IP/extensions/Variables/Variables.php");
 
-include_once("$IP/extensions/Validator/Validator.php");
-
 include_once("$IP/extensions/SemanticMediaWiki/SemanticMediaWiki.php");
 enableSemantics('oshwiki.eu');
-## in localsetting: now: $smwgDefaultStore = 'SMWSQLStore2';
 
 # Does not work with the RefToolbar/Cite editor extension and is
 # unmaintained and unused anyway (there are no uses of #tree or
@@ -200,10 +197,6 @@ require_once "$IP/extensions/wiki-seo-1.2.1/WikiSEO.php";
 /* error_reporting(E_ALL); */
 
 $wgShowExceptionDetails = false; 
-
-# http://semantic-mediawiki.org/wiki/Help:Installation#Upgrading_SMW_1.6.x_and_SMW_1.7.x
-# The migration to SMWSQLStore3 has been performed, but an error is displayed when viewing any page when it is enabled
-$smwgDefaultStore = 'SMWSQLStore2';
 
 $wgSpecialVersionShowHooks = true;
 

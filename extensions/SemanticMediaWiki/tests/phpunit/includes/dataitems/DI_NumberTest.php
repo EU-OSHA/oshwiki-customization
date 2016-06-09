@@ -3,13 +3,8 @@
 namespace SMW\Tests;
 
 /**
- * Tests for the SMWDINumber class.
- *
- * @file
- * @since 1.8
- *
- * @ingroup SMW
- * @ingroup Test
+ * @covers SMWDINumber
+ * @covers SMWDataItem
  *
  * @group SMW
  * @group SMWExtension
@@ -41,11 +36,8 @@ class SMWDINumberTest extends DataItemTest {
 	 */
 	public function constructorProvider() {
 		return array(
-			array( true, 0 ),
-			array( true, 243.35353 ),
-			array( false, 'ohi there' ),
-			array( false, array() ),
-			array( false, true ),
+			array( 0 ),
+			array( 243.35353 ),
 		);
 	}
 
