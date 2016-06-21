@@ -1,0 +1,30 @@
+{
+    "name": "Osha",
+	"type": "skin",
+	"ValidSkinNames": {
+		"osha": "Osha"
+	},
+    "ResourceModules": {
+		"skins.osha.styles": {
+			"position": "top",
+			"styles": {
+				"main.css": {
+					"media": "screen"
+				},
+                "osha.css": {
+					"media": "screen"
+				}
+
+			}
+		}
+	},
+	"ResourceFileModulePaths": {
+		"localBasePath": "",
+		"remoteSkinPath": "Osha"
+	},
+	"AutoloadClasses": {
+		"SkinOsha": "SkinOsha.php",
+		"OshaTemplate": "OshaTemplate.php"
+	},
+	"manifest_version": 1
+}

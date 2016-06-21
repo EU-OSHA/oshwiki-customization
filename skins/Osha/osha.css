@@ -1,0 +1,13 @@
+#column-content {
+  background:transparent url(eu.jpg) no-repeat scroll right 82px;
+  background-position: right 2px top 82px;
+}
+
+#p-cactions li {
+  position:relative;
+  top:142px;
+}
+
+body {
+  background:transparent url(Wormx.jpg) no-repeat scroll left top;
+}
