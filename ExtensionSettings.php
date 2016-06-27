@@ -29,18 +29,15 @@ $wgFileExtensions[] = 'pdf';
 #require_once("$IP/extensions/MediawikiPlayer/MediawikiPlayer.php");
 
 # To list a category of pages
-# include("$IP/extensions/intersection/DynamicPageList.php");
-#include("$IP/extensions/DynamicPageList/DynamicPageList2.php");
-$wgRawHtml=true;
+# https://www.mediawiki.org/wiki/Extension:DynamicPageList3
+wfLoadExtension("DynamicPageList");
 
 # http://www.mediawiki.org/wiki/Extension:AuthorInfo
 #require_once("$IP/extensions/AuthorInfo/AuthorInfo.php");
 
 # Enable CategoryTree: http://www.mediawiki.org/wiki/Extension:CategoryTree
 $wgUseAjax = true;
-/* require_once("{$IP}/extensions/CategoryTree/CategoryTree.php"); */
-/* wfLoadExtension( 'CategoryTree' ); */
-
+require_once("{$IP}/extensions/CategoryTree/CategoryTree.php");
 
 # http://www.mediawiki.org/wiki/Extension:Cite/Cite.php
 wfLoadExtension( 'Cite' );
