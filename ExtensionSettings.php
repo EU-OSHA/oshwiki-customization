@@ -159,7 +159,7 @@ foreach ( $codeMatchesDataTypes as $dataType ) {
 # FIXME
 # Jos WikiWorks
 # Display properties just below the category box
-/* $wgHooks['SkinAfterContent'][] = 'PropSubCat'; */
+$wgHooks['SkinAfterContent'][] = 'PropSubCat';
 
 
 function PropSubCat (&$data, $skin) {
