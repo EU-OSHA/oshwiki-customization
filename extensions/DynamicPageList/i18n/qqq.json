@@ -4,6 +4,5 @@
             "Purodha"
         ]
     },
-    "intersection-desc": "{{desc}}",
-    "dpl-nviews": "This message is used to say how many times a page has been viewed."
+    "intersection-desc": "{{desc}}"
 }
