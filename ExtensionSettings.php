@@ -49,31 +49,27 @@ wfLoadExtension( 'Cite' );
 
 # LdapAuthentication
 # http://www.mediawiki.org/wiki/Extension:LDAP_Authentication/Configuration
-#  require_once( "$IP/extensions/LdapAuthentication/LdapAuthentication.php" );
-#  $wgAuth = new LdapAuthenticationPlugin();
-#  $wgLDAPDomainNames = array( "osha" );
-#  $wgLDAPServerNames = array( "osha" => "localhost" );
-#  $wgLDAPEncryptionType = array("osha" => "clear" );
-#  $wgLDAPBaseDNs = array( "osha" => "ou=staff,o=3G,dc=osha,dc=europa,dc=eu" );
-#  $wgLDAPSearchAttributes = array( "osha" =>"mail" );
-#  $wgLDAPLowerCaseUsername = array( "osha" => true );
-#  $wgLDAPProxyAgent = array( "osha"=>"cn=reader,dc=osha,dc=europa,dc=eu");
-#  # Restrict to the OSHWIKIEditors group
-#  $wgLDAPGroupUseFullDN = array( "osha"=>true );
-#  $wgLDAPGroupObjectclass = array( "osha"=>"groupOfUniqueNames" );
-#  $wgLDAPGroupAttribute = array( "osha"=>"uniquemember" );
-#  $wgLDAPGroupSearchNestedGroups = array( "osha"=>false );
-#  $wgLDAPGroupNameAttribute = array( "osha"=>"cn" );
-#  $wgLDAPRequiredGroups = array( "osha"=>array("cn=oshwikieditors,ou=europe,ou=staff,o=3G,dc=osha,dc=europa,dc=eu"));
-#  $wgLDAPPreferences = array( "osha"=>array( "email"=>"mail","realname"=>"cn","nickname"=>"cn") );
-#  require_once("/srv/httpd/oshawiki.batou/work/mediawiki/secrets.php");
-#  $wgLDAPPort = array('osha' => 1389,);
-#  $wgLDAPDebug = 0;
-#  $wgDebugLogGroups['ldap'] = '/tmp/debug.log';
-#  
-#  $wgGroupPermissions['*']['createaccount'] = false;
-#  $wgGroupPermissions['*']['edit'] = false;
+require_once( "$IP/extensions/LdapAuthentication/LdapAuthentication.php" );
+$wgAuth = new LdapAuthenticationPlugin();
+$wgLDAPDomainNames = array( "osha" );
+$wgLDAPServerNames = array( "osha" => "ldap.osha.europa.eu" );
+$wgLDAPEncryptionType = array("osha" => "ssl" );
+$wgLDAPBaseDNs = array( "osha" => "ou=staff,o=3G,dc=osha,dc=europa,dc=eu" );
+$wgLDAPSearchAttributes = array( "osha" =>"mail" );
+$wgLDAPLowerCaseUsername = array( "osha" => true );
+$wgLDAPProxyAgent = array( "osha"=>"cn=reader,dc=osha,dc=europa,dc=eu");
+# Restrict to the OSHWIKIEditors group
+$wgLDAPGroupUseFullDN = array( "osha"=>true );
+$wgLDAPGroupObjectclass = array( "osha"=>"groupOfUniqueNames" );
+$wgLDAPGroupAttribute = array( "osha"=>"uniquemember" );
+$wgLDAPGroupSearchNestedGroups = array( "osha"=>false );
+$wgLDAPGroupNameAttribute = array( "osha"=>"cn" );
+$wgLDAPRequiredGroups = array( "osha"=>array("cn=oshwikieditors,ou=europe,ou=staff,o=3G,dc=osha,dc=europa,dc=eu"));
+$wgLDAPPreferences = array( "osha"=>array( "email"=>"mail","realname"=>"cn","nickname"=>"cn") );
+require_once("$IP/secrets.php");
 
+$wgGroupPermissions['*']['createaccount'] = false;
+$wgGroupPermissions['*']['edit'] = false;
   
 # http://www.mediawiki.org/wiki/Extension:ContributionCredits
 require_once("$IP/extensions/ContributionCredits/ContributionCredits.php");
