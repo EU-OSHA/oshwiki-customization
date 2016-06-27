@@ -144,7 +144,7 @@ $sfgAutocompleteOnAllChars = true;
 # The NACE properties currently have the largest amount of values (just under 3300) 
 ##
 $sfgMaxAutocompleteValues = 3300;
-$codeMatchesURL = "/mediawiki/property-lists/code-matches.php";
+$codeMatchesURL = "/property-lists/code-matches.php";
 
 $codeMatchesDataTypes = array( 'osha', 'isco', 'nace' );
 $codeMatchesLanguages = array( 'en', 'bg', 'cs', 'da', 'el', 'es', 'et', 'fi', 'fr', 'hu', 'it', 'lt', 'lv', 'mt', 'nl', 'pl', 'pt', 'ro', 'sh', 'sk', 'sl', 'sv', 'tr');
