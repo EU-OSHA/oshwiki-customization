@@ -213,6 +213,8 @@ $wgDefaultUserOptions['visualeditor-enable'] = 1;
 // Don't allow users to disable it
 $wgHiddenPrefs[] = 'visualeditor-enable';
 
+$wgVisualEditorSupportedSkins = array( 'osha' );
+
 $wgVirtualRestConfig['modules']['parsoid'] = array(
   // URL to the Parsoid instance
   // Use port 8142 if you use the Debian package
