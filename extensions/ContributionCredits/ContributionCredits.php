@@ -52,7 +52,7 @@
                 $action = $wgRequest->getVal('action');
  
                 if (($NS==0 or $NS==1) and ($action != 'edit')) {
-                        $dbr =& wfGetDB( DB_SLAVE );
+                        $dbr = wfGetDB( DB_SLAVE );
                         $page_id = $wgTitle->getArticleID(); $list= '';
  
                         $res = $dbr->select(
