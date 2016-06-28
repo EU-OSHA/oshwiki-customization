@@ -41,7 +41,7 @@ require_once("{$IP}/extensions/CategoryTree/CategoryTree.php");
 
 # http://www.mediawiki.org/wiki/Extension:Cite/Cite.php
 wfLoadExtension( 'Cite' );
-/* require_once("$IP/extensions/Cite/SpecialCite.php"); */
+wfLoadExtension( 'CiteThisPage' );
 
 
 # LdapAuthentication
