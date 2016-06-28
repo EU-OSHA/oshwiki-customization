@@ -46,7 +46,7 @@
 						$user_id = explode("FormEdit/User/User:", $wgTitle)[1];
 					};
 
-					$dbr =& wfGetDB( DB_SLAVE );
+					$dbr = wfGetDB( DB_SLAVE );
 					$user_res = $dbr->select(array( 'user' ),
 										array( 'user_real_name' ),
 										array( 'user_id' => $user_id),
