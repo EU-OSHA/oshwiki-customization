@@ -19,9 +19,6 @@ $wgStrictFileExtensions = false;
 $wgAllowExternalImages = true;
 $wgFileExtensions[] = 'pdf';
 
-# For MediawikiPlayer
-#require_once("$IP/extensions/MediawikiPlayer/MediawikiPlayer.php");
-
 # To list a category of pages
 # https://www.mediawiki.org/wiki/Extension:DynamicPageList3
 wfLoadExtension("DynamicPageList");
