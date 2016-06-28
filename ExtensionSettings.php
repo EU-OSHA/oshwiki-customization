@@ -67,10 +67,6 @@ $wgContributionCreditsHeader = "= Contributors =\n ";
 
 require_once("$IP/extensions/UserContributions/UserContributions.php");
 
-/* require_once("$IP/extensions/SocialProfile/SocialProfile.php"); */
-/* $wgExtraNamespaces[NS_USER_PROFILE] = 'User_profile'; */
-/* $wgExtraNamespaces[NS_USER_WIKI] = 'UserWiki'; */
-
 # Enable subcategories
 $wgNamespacesWithSubpages[NS_CATEGORY] = true;
 
@@ -85,12 +81,6 @@ require_once("$IP/extensions/Variables/Variables.php");
 
 include_once("$IP/extensions/SemanticMediaWiki/SemanticMediaWiki.php");
 enableSemantics('oshwiki.eu');
-
-# Does not work with the RefToolbar/Cite editor extension and is
-# unmaintained and unused anyway (there are no uses of #tree or
-# #generateTree in the content)
-# http://wiki.ontoprise.com/smwforum/index.php/Help:TreeView_extension
-#include_once("$IP/extensions/Treeview/Treeview.php");
 
 #http://www.mediawiki.org/wiki/Extension:Semantic_Forms
 include_once("$IP/extensions/SemanticForms/SemanticForms.php");
