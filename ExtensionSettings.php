@@ -19,12 +19,6 @@ $wgStrictFileExtensions = false;
 $wgAllowExternalImages = true;
 $wgFileExtensions[] = 'pdf';
 
-# For js-kit-ratings
-/* require_once( "$IP/extensions/StubManager/StubManager.php" ); */
-/* require_once( "$IP/extensions/JSKitRating/JSKitRating.php" ); */
-/* wfLoadExtension( 'JSKitRating' ); */
-
-
 # For MediawikiPlayer
 #require_once("$IP/extensions/MediawikiPlayer/MediawikiPlayer.php");
 
