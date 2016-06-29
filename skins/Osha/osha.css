@@ -1,3 +1,24 @@
+body {
+  background:transparent url(Wormx.jpg) no-repeat scroll left top;
+  padding:0;
+}
+
+body[class*='page-User_'] h1#firstHeading,
+body[class*='page-Special_FormEdit_User_User_'] h1#firstHeading { display:none; }
+
+#content {
+  margin:176px 0 0 12.2em;
+}
+#p-cactions li {
+    top:142px;
+}
+#column-content {
+background-position: right 2px top 82px;
+}
+#bodyContent {
+    margin-right: 1em;
+}
+
 #column-content {
   background:transparent url(eu.jpg) no-repeat scroll right 82px;
   background-position: right 2px top 82px;
@@ -8,6 +29,9 @@
   top:142px;
 }
 
-body {
-  background:transparent url(Wormx.jpg) no-repeat scroll left top;
+table div#votebox { display: none; }
+table div.vote-action { display: none; }
+
+div#votebox.vote-box {
+    display: block;
 }

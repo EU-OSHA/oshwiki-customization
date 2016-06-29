@@ -203,7 +203,7 @@ $wgMessagesDirs['AddThis'] = __DIR__ . '/i18n';
 $wgExtensionMessagesFiles['AddThis'] = $dir . 'AddThis.i18n.php';
 
 $wgResourceModules['ext.addThis'] = array(
-	'position' => 'bottom',
+	'position' => 'top',
 	'styles' => 'addThis.css',
 	'localBasePath' => dirname( __FILE__ ),
 	'remoteExtPath' => 'AddThis',
