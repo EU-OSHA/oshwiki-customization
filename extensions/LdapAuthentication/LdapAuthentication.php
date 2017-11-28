@@ -641,6 +641,8 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 	 */
 	public function authenticate( $username, $password = '' ) {
 		$this->printDebug( "Entering authenticate for username $username", NONSENSITIVE );
+                /* hack to fix mediawiki replacing undercores with spaces */
+                $username = str_replace(' ','_',$username);
 
 		// We don't handle local authentication
 		if ( 'local' == $this->getDomain() ) {
@@ -1220,6 +1222,7 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 			if ( is_string( $this->realname ) ) {
 				$this->printDebug( "Setting realname.", NONSENSITIVE );
 				$user->setRealName( $this->realname );
+#				$user->setRealName( '' );
 			}
 			if ( is_string( $this->email ) ) {
 				$this->printDebug( "Setting email.", NONSENSITIVE );
@@ -1368,6 +1371,8 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 	 */
 	function getSearchString( $username ) {
 		$this->printDebug( "Entering getSearchString", NONSENSITIVE );
+                /* hack to fix mediawiki replacing undercores with spaces */
+                $username = str_replace(' ','_',$username);
 		$ss = $this->getConf( 'SearchString' );
 		if ( $ss ) {
 			// This is a straight bind
