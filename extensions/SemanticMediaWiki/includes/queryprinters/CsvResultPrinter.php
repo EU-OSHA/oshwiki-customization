@@ -126,7 +126,7 @@ class CsvResultPrinter extends FileExportPrinter {
 
 		$definitions['searchlabel']->setDefault( $this->msg( 'smw_csv_link' )->inContentLanguage()->text() );
 
-		$definitions['limit']->setDefault( 100 );
+		$definitions['limit']->setDefault( 1000 );
 
 		$params[] = array(
 			'name' => 'sep',
