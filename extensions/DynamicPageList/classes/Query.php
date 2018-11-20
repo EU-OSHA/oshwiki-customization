@@ -1614,7 +1614,7 @@ class Query {
 					break;
 				case 'firstedit':
 					$this->addOrderBy('rev.rev_timestamp');
-					$this->setOrderDir('ASC');
+					$this->setOrderDir('DESC');
 					$this->addTable('revision', 'rev');
 					$this->addSelect(
 						[
@@ -1625,7 +1625,7 @@ class Query {
 						$this->addWhere(
 							[
 								"{$this->tableNames['page']}.page_id = rev.rev_page",
-								"rev.rev_timestamp = (SELECT MAX(rev_aux.rev_timestamp) FROM {$this->tableNames['revision']} AS rev_aux WHERE rev_aux.rev_page=rev.rev_page)"
+								"rev.rev_timestamp = (SELECT MIN(rev_aux.rev_timestamp) FROM {$this->tableNames['revision']} AS rev_aux WHERE rev_aux.rev_page=rev.rev_page)"
 							]
 						);
 					}
