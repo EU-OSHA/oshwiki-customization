@@ -39,25 +39,40 @@ wfLoadExtension( 'CiteThisPage' );
 # http://www.mediawiki.org/wiki/Extension:LDAP_Authentication/Configuration
 require_once( "$IP/extensions/LdapAuthentication/LdapAuthentication.php" );
 $wgAuth = new LdapAuthenticationPlugin();
-$wgLDAPDomainNames = array( "osha" );
-$wgLDAPServerNames = array( "osha" => "ldap.osha.europa.eu" );
-$wgLDAPEncryptionType = array("osha" => "ssl" );
-$wgLDAPBaseDNs = array( "osha" => "ou=staff,o=3G,dc=osha,dc=europa,dc=eu" );
+$wgLDAPDomainNames = array( "osha", "editors" );
+#$wgLDAPServerNames = array( "osha" => "ldap.osha.europa.eu" );
+$wgLDAPServerNames = array( "osha" => "194.30.35.128" );
+#$wgLDAPEncryptionType = array("osha" => "ssl" );
+$wgLDAPEncryptionType = array("osha" => "clear" );
+$wgLDAPBaseDNs = array( "osha" => "ou=people,dc=osha,dc=europa,dc=eu");
 $wgLDAPSearchAttributes = array( "osha" =>"mail" );
 $wgLDAPLowerCaseUsername = array( "osha" => true );
-$wgLDAPProxyAgent = array( "osha"=>"cn=reader,dc=osha,dc=europa,dc=eu");
-# Restrict to the OSHWIKIEditors group
-$wgLDAPGroupUseFullDN = array( "osha"=>true );
-$wgLDAPGroupObjectclass = array( "osha"=>"groupOfUniqueNames" );
-$wgLDAPGroupAttribute = array( "osha"=>"uniquemember" );
-$wgLDAPGroupSearchNestedGroups = array( "osha"=>false );
-$wgLDAPGroupNameAttribute = array( "osha"=>"cn" );
-$wgLDAPRequiredGroups = array( "osha"=>array("cn=oshwikieditors,ou=europe,ou=staff,o=3G,dc=osha,dc=europa,dc=eu"));
+$wgLDAPProxyAgent = array( "osha"=>"cn=Reader,dc=osha,dc=europa,dc=eu");
 $wgLDAPPreferences = array( "osha"=>array( "email"=>"mail","realname"=>"cn","nickname"=>"cn") );
+
+# Restrict to the OSHWIKIEditors group
+$wgLDAPGroupNameAttribute = array( "osha"=>"uid" );
+# NOTE: We have patch 
+$wgLDAPGroupUseFullDN = array( "osha"=>true);
+$wgLDAPGroupUseRetrievedUsername = array("osha" => true);
+$wgLDAPGroupBaseDNs = array("osha"=>"ou=OSHWiki,ou=Sites,dc=osha,dc=europa,dc=eu");
+$wgLDAPGroupObjectclass = array( "osha"=>"posixGroup" );
+$wgLDAPGroupAttribute = array( "osha"=>"memberUid" );
+$wgLDAPRequiredGroups = array( "osha"=>array("cn=Editors,ou=OSHWiki,ou=Sites,dc=osha,dc=europa,dc=eu"));
+
+# Password reset
+$wgLDAPMailPassword = array('osha' => true);
+$wgLDAPUpdateLDAP = array('osha' => true);
+$wgLDAPWriterDN = array('osha' => 'uid=oshwikiwriter,dc=osha,dc=europa,dc=eu');
+$wgLDAPPasswordHash = array('osha' => 'crypt');
+
 require_once("$IP/secrets.php");
 
 $wgGroupPermissions['*']['createaccount'] = false;
 $wgGroupPermissions['*']['edit'] = false;
+
+$wgLDAPDebug = 0;
+$wgDebugLogGroups['ldap'] = '/tmp/wiki-debug.log';
   
 # http://www.mediawiki.org/wiki/Extension:ContributionCredits
 require_once("$IP/extensions/ContributionCredits/ContributionCredits.php");
@@ -118,10 +133,10 @@ $sfgAutocompleteOnAllChars = true;
 # The NACE properties currently have the largest amount of values (just under 3300) 
 ##
 $sfgMaxAutocompleteValues = 3300;
-$codeMatchesURL = "/property-lists/code-matches.php";
+$codeMatchesURL = "https://oshwiki.eu/property-lists/code-matches.php";
 
 $codeMatchesDataTypes = array( 'osha', 'isco', 'nace' );
-$codeMatchesLanguages = array( 'en', 'bg', 'cs', 'da', 'el', 'es', 'et', 'fi', 'fr', 'hu', 'it', 'lt', 'lv', 'mt', 'nl', 'pl', 'pt', 'ro', 'sh', 'sk', 'sl', 'sv', 'tr');
+$codeMatchesLanguages = array( 'en', 'bg', 'bs',  'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'ga', 'he', 'hr', 'hu', 'is', 'it', 'ko', 'lt', 'lv', 'mk', 'mt', 'nl', 'no', 'pl', 'pt', 'ro', 'sh', 'sk', 'sl', 'sq', 'sr', 'sv', 'tr');
  
 foreach ( $codeMatchesDataTypes as $dataType ) {
 	foreach ( $codeMatchesLanguages as $language ) {
@@ -188,3 +203,12 @@ $wgDefaultUserOptions['visualeditor-enable'] = 1;
 $wgHiddenPrefs[] = 'visualeditor-enable';
 
 $wgVisualEditorSupportedSkins = array( 'osha' );
+
+require_once "$IP/extensions/mediawiki-extensions-ExternalData-1.8.3/ExternalData.php";
+$edgStringReplacements['PIWIK_AUTH'] = 'bd16bd5296c7d89708e65149d5125302';
+$edgCacheTable = 'ed_url_cache';
+$edgCacheExpireTime = 24 * 60 * 60;
+$wgHTTPTimeout = 60;
+
+#$mwgQMaxInlineLimit = 2000;
+
