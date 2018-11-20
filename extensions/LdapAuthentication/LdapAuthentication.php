@@ -1773,7 +1773,8 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 			}
 		}
 
-		$filter = "(&($attribute=$value)(objectclass=$objectclass))";
+		$uid = explode('=', explode(',', $value)[0])[1];
+		$filter = "(&($attribute=$uid)(objectclass=$objectclass))";
 		$this->printDebug( "Search string: $filter", SENSITIVE );
 		$info = LdapAuthenticationPlugin::ldap_search( $this->ldapconn, $base, $filter );
 		if ( !$info ) {
