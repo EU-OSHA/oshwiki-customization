@@ -14,7 +14,7 @@
 class SkinOsha extends SkinTemplate {
 	/** Using monobook. */
 	public $skinname = 'osha';
-	public $stylename = 'osha';
+	public $stylename = 'Osha';
 	public $template = 'OshaTemplate';
 
 	/**
