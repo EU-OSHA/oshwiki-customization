@@ -4,7 +4,9 @@
 			"Amire80",
 			"Inkbug",
 			"Rotemliss",
-			"YaronSh"
+			"YaronSh",
+			"IKhitron",
+			"Guycn2"
 		]
 	},
 	"validator-desc": "ספריית עיבוד פרמטרים הצהרתי",
@@ -18,12 +20,13 @@
 	"validator-error-problem": "הייתה בעיה עם הפרמטר $1.",
 	"validator_error_unknown_argument": "$1 אינו פרמטר תקני.",
 	"validator_error_required_missing": "הפרמטר הדרוש $1 לא צוין.",
-	"validator-error-override-argument": "ניסיתי לעקוף את הפרמטר $1 (ערך: $2) ולהציב את הערך \"$3\"",
+	"validator-error-override-argument": "ניסיון לעקוף את הפרמטר $1 (ערך: $2) ולהציב את הערך \"$3\"",
 	"validator-type-string": "טקסט",
 	"validator-type-integer": "מספר שלם",
 	"validator-type-float": "מספר",
 	"validator-type-boolean": "כן או לא",
 	"validator-type-char": "תו",
+	"validator-type-dimension": "מספר ויחידה ממדית",
 	"validator-type-title": "כותרת",
 	"validator-type-string-list": "רשימת טקסטים",
 	"validator-type-integer-list": "רשימת מספרים שלמים",

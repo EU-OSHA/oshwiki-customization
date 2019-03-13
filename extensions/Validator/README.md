@@ -8,6 +8,11 @@ parameters and provide the processed values.
 The functionality provided by this extension largely comes from the [ParamProcessor library]
 (https://github.com/JeroenDeDauw/ParamProcessor).
 
+[![Build Status](https://travis-ci.org/JeroenDeDauw/Validator.svg?branch=master)](https://travis-ci.org/JeroenDeDauw/Validator)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/JeroenDeDauw/Validator/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/JeroenDeDauw/Validator/?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/JeroenDeDauw/Validator/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/JeroenDeDauw/Validator/?branch=master)
+[![Dependency Status](https://www.versioneye.com/php/mediawiki:validator/badge.png)](https://www.versioneye.com/php/mediawiki:validator)
+
 On [Packagist](https://packagist.org/packages/mediawiki/validator):
 [![Latest Stable Version](https://poser.pugx.org/mediawiki/validator/version.png)](https://packagist.org/packages/mediawiki/validator)
 [![Download count](https://poser.pugx.org/mediawiki/validator/d/total.png)](https://packagist.org/packages/mediawiki/validator)
@@ -23,11 +28,11 @@ the git repository and take care of loading yourself.
 To add this package as a local, per-project dependency to your project, simply add a
 dependency on `mediawiki/validator` to your project's `composer.json` file.
 Here is a minimal example of a `composer.json` file that just defines a dependency on
-Validator 2.0:
+Validator 2.2:
 
     {
         "require": {
-            "mediawiki/validator": "2.0.*"
+            "mediawiki/validator": "2.2.*"
         }
     }
 
@@ -40,16 +45,46 @@ Validator.php.
 
 Simply include the entry point in your LocalSettings.php file:
 
-	require_once( "$IP/extensions/Validator/Validator.php" );
+```php
+require_once( "$IP/extensions/Validator/Validator.php" );
+```
 
 ## Authors
 
 Validator has been written by
 [Jeroen De Dauw](https://www.mediawiki.org/wiki/User:Jeroen_De_Dauw)
 to support [Maps](https://github.com/JeroenDeDauw/Maps)
-and [Semantic MediaWiki](https://semantic-mediawiki.org/).
+and [Semantic MediaWiki](https://www.semantic-mediawiki.org/).
 
 ## Release notes
+
+### Version 2.2.1 (2016-10-10)
+
+* Moved i18n registration out of wgExtensionFunctions
+
+### Version 2.2.0 (2016-10-09)
+
+* Improved initialization code so that the entry point can be included when MediaWiki is not loaded
+
+### Version 2.1.0 (2016-10-09)
+
+* Dropped support for MediaWiki older than 1.23
+* Dropped support for PHP older than 5.5
+
+### Version 2.0.6 (2016-07-01)
+
+* Added missing system message
+* Translation updates
+* Fixed failing test (only the test itself had an issue)
+
+### Version 2.0.5 (2016-04-04)
+
+* Translation updates
+* Compatibility with PHP 7 has now been tested
+
+### Version 2.0.4 (2014-06-25)
+
+* Updated used ParamProcessor version from ~1.0.0 to ~1.1
 
 ### Version 2.0.3 (2014-06-16)
 
@@ -246,7 +281,7 @@ Basically everything got rewritten...
 * Added ParameterCriterion and ListParameterCriterion classes for better handling of parameter criteria.
 * Added ParameterManipulation and ListParameterManipulation classes for more structured formatting of parameters.
 * Added ValidationError class to better describe errors.
-* Replaced the error level enum by ValidationError::SEVERITY_ and ValidationError::ACTION_, which are linked in $egErrorActions. 
+* Replaced the error level enum by ValidationError::SEVERITY_ and ValidationError::ACTION_, which are linked in $egErrorActions.
 
 ### Version 0.3.6 (2010-08-26)
 
