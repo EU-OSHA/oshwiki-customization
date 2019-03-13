@@ -29,7 +29,7 @@ class SIOSubobjectAlias {
 			$mainPageName = $mainPageNamespace . ':' . $mainPageName;
 		}
 		if ( $origArgs[1] == '' ) {
-			die( "Error: first argument to #set_internal cannot be blank." );
+			throw new MWException( __METHOD__ . ': Error, first argument to #set_internal cannot be blank.' );
 		}
 		$subobjectArgs[2] = $origArgs[1] . '=' . $mainPageName;
 

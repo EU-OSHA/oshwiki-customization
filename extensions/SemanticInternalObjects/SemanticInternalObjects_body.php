@@ -397,7 +397,7 @@ class SIOHandler {
 			$allAtts2Inserts = array_merge( $allAtts2Inserts, $upAtts2 );
 			$allText2Inserts = array_merge( $allText2Inserts, $upText2 );
 			$allCoordsInserts = array_merge( $allCoordsInserts, $upCoords );
-			wfRunHooks( 'SIOHandler::updateData', array( $internalObject ) );
+			Hooks::run( 'SIOHandler::updateData', array( $internalObject ) );
 		}
 
 		// Now save everything to the database, in a single transaction.
