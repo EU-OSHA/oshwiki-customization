@@ -1,8 +1,11 @@
 <?php
 
+use SMW\Query\Excerpts;
 use SMW\Query\PrintRequest;
+use SMW\Query\QueryLinker;
+use SMW\Query\Result\ResolverJournal;
+use SMW\Query\ScoreSet;
 use SMW\SerializerFactory;
-use SMW\HashBuilder;
 
 /**
  * Objects of this class encapsulate the result of a query in SMW. They
@@ -23,6 +26,7 @@ use SMW\HashBuilder;
  * @author Jeroen De Dauw < jeroendedauw@gmail.com >
  */
 class SMWQueryResult {
+
 	/**
 	 * Array of SMWDIWikiPage objects that are the basis for this result
 	 * @var SMWDIWikiPage[]
@@ -32,7 +36,7 @@ class SMWQueryResult {
 	/**
 	 * Array of SMWPrintRequest objects, indexed by their natural hash keys
 	 *
-*@var PrintRequest[]
+	 * @var PrintRequest[]
 	 */
 	protected $mPrintRequests;
 
@@ -62,6 +66,33 @@ class SMWQueryResult {
 	private $countValue;
 
 	/**
+	 * Indicates whether results have been retrieved from cache or not
+	 *
+	 * @var boolean
+	 */
+	private $isFromCache = false;
+
+	/**
+	 * @var ResolverJournal
+	 */
+	private $resolverJournal;
+
+	/**
+	 * @var integer
+	 */
+	private $serializer_version = 2;
+
+	/**
+	 * @var ScoreSet
+	 */
+	private $scoreSet;
+
+	/**
+	 * @var Excerpts
+	 */
+	private $excerpts;
+
+	/**
 	 * Initialise the object with an array of SMWPrintRequest objects, which
 	 * define the structure of the result "table" (one for each column).
 	 *
@@ -80,6 +111,83 @@ class SMWQueryResult {
 		$this->mFurtherResults = $furtherRes;
 		$this->mQuery = $query;
 		$this->mStore = $store;
+		$this->resolverJournal = new ResolverJournal();
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @param ResolverJournal $resolverJournal
+	 */
+	public function setResolverJournal( ResolverJournal $ResolverJournal ) {
+		$this->resolverJournal = $ResolverJournal;
+	}
+
+	/**
+	 * @since  2.4
+	 *
+	 * @return ResolverJournal
+	 */
+	public function getResolverJournal() {
+		return $this->resolverJournal;
+	}
+
+	/**
+	 * @since  2.4
+	 *
+	 * @param boolean $isFromCache
+	 */
+	public function setFromCache( $isFromCache ) {
+		$this->isFromCache = (bool)$isFromCache;
+	}
+
+	/**
+	 * Only available by some stores that support the computation of scores.
+	 *
+	 * @since 3.0
+	 *
+	 * @param ScoreSet $scoreSet
+	 */
+	public function setScoreSet( ScoreSet $scoreSet ) {
+		$this->scoreSet = $scoreSet;
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @return ScoreSet|null
+	 */
+	public function getScoreSet() {
+		return $this->scoreSet;
+	}
+
+	/**
+	 * Only available by some stores that support the retrieval of excerpts.
+	 *
+	 * @since 3.0
+	 *
+	 * @param Excerpts $excerpts
+	 */
+	public function setExcerpts( Excerpts $excerpts ) {
+		$this->excerpts = $excerpts;
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @return Excerpts|null
+	 */
+	public function getExcerpts() {
+		return $this->excerpts;
+	}
+
+	/**
+	 * @since  2.4
+	 *
+	 * @return boolean
+	 */
+	public function isFromCache() {
+		return $this->isFromCache;
 	}
 
 	/**
@@ -105,10 +213,13 @@ class SMWQueryResult {
 			return false;
 		}
 
-		$row = array();
+		$row = [];
 
 		foreach ( $this->mPrintRequests as $p ) {
-			$row[] = new SMWResultArray( $page, $p, $this->mStore );
+			$resultArray = new SMWResultArray( $page, $p, $this->mStore );
+			$resultArray->setResolverJournal( $this->resolverJournal );
+			$resultArray->setQueryToken( $this->mQuery->getQueryToken() );
+			$row[] = $resultArray;
 		}
 
 		return $row;
@@ -234,66 +345,23 @@ class SMWQueryResult {
 	 * can also be changed afterwards with SMWInfolink::setCaption()). If empty, the
 	 * message 'smw_iq_moreresults' is used as a caption.
 	 *
-	 * @deprecated since SMW 1.8
-	 *
 	 * @param string|false $caption
 	 *
 	 * @return SMWInfolink
 	 */
 	public function getQueryLink( $caption = false ) {
-		$link = $this->getLink();
 
-		if ( $caption === false ) {
-			// The space is right here, not in the QPs!
-			$caption = ' ' . wfMessage( 'smw_iq_moreresults' )->inContentLanguage()->text();
-		}
+		$link = QueryLinker::get( $this->mQuery );
 
 		$link->setCaption( $caption );
-
-		$params = array( trim( $this->mQuery->getQueryString() ) );
-
-		foreach ( $this->mQuery->getExtraPrintouts() as /* PrintRequest */ $printout ) {
-			$serialization = $printout->getSerialisation();
-
-			// TODO: this is a hack to get rid of the mainlabel param in case it was automatically added
-			// by SMWQueryProcessor::addThisPrintout. Should be done nicer when this link creation gets redone.
-			if ( $serialization !== '?#' ) {
-				$params[] = $serialization;
-			}
-		}
-
-		if ( $this->mQuery->getMainLabel() !== false ) {
-			$params['mainlabel'] = $this->mQuery->getMainLabel();
-		}
-
-		$params['offset'] = $this->mQuery->getOffset() + count( $this->mResults );
-
-		if ( $params['offset'] === 0 ) {
-			unset( $params['offset'] );
-		}
-
-		if ( $this->mQuery->getLimit() > 0 ) {
-			$params['limit'] = $this->mQuery->getLimit();
-		}
-
-		if ( count( $this->mQuery->sortkeys ) > 0 ) {
-			$order = implode( ',', $this->mQuery->sortkeys );
-			$sort = implode( ',', array_keys( $this->mQuery->sortkeys ) );
-
-			if ( $sort !== '' || $order != 'ASC' ) {
-				$params['order'] = $order;
-				$params['sort'] = $sort;
-			}
-		}
-
-		foreach ( $params as $key => $param ) {
-			$link->setParameter( $param, is_string( $key ) ? $key : false );
-		}
+		$link->setParameter( $this->mQuery->getOffset() + count( $this->mResults ), 'offset' );
 
 		return $link;
 	}
 
 	/**
+	 * @deprecated since 2.5, use QueryResult::getQueryLink
+	 *
 	 * Returns an SMWInfolink object with the QueryResults print requests as parameters.
 	 *
 	 * @since 1.8
@@ -301,20 +369,16 @@ class SMWQueryResult {
 	 * @return SMWInfolink
 	 */
 	public function getLink() {
-		$params = array( trim( $this->mQuery->getQueryString() ) );
+		return $this->getQueryLink();
+	}
 
-		foreach ( $this->mQuery->getExtraPrintouts() as $printout ) {
-			$serialization = $printout->getSerialisation();
-
-			// TODO: this is a hack to get rid of the mainlabel param in case it was automatically added
-			// by SMWQueryProcessor::addThisPrintout. Should be done nicer when this link creation gets redone.
-			if ( $serialization !== '?#' ) {
-				$params[] = $serialization;
-			}
-		}
-
-		// Note: the initial : prevents SMW from reparsing :: in the query string.
-		return SMWInfolink::newInternalLink( '', ':Special:Ask', false, $params );
+	/**
+	 * @private
+	 *
+	 * @since 3.0
+	 */
+	public function setSerializerVersion( $version ) {
+		$this->serializer_version = $version;
 	}
 
 	/**
@@ -325,9 +389,12 @@ class SMWQueryResult {
 	public function serializeToArray() {
 
 		$serializerFactory = new SerializerFactory();
-		$serialized = $serializerFactory->newQueryResultSerializer()->serialize( $this );
+		$serializer = $serializerFactory->newQueryResultSerializer();
+		$serializer->version( $this->serializer_version );
 
+		$serialized = $serializer->serialize( $this );
 		reset( $this->mResults );
+
 		return $serialized;
 	}
 
@@ -346,19 +413,23 @@ class SMWQueryResult {
 	 */
 	public function toArray() {
 
+		$time = microtime( true );
+
 		// @note micro optimization: We call getSerializedQueryResult()
 		// only once and create the hash here instead of calling getHash()
 		// to avoid getSerializedQueryResult() being called again
 		// @note count + offset equals total therefore we deploy both values
 		$serializeArray = $this->serializeToArray();
 
-		return array_merge( $serializeArray, array(
-			'meta'=> array(
-				'hash'   => md5( FormatJson::encode( $serializeArray ) ),
+		return array_merge( $serializeArray, [
+			'meta'=> [
+				'hash'   => md5( json_encode( $serializeArray ) ),
 				'count'  => $this->getCount(),
-				'offset' => $this->mQuery->getOffset()
-				)
-			)
+				'offset' => $this->mQuery->getOffset(),
+				'source' => $this->mQuery->getQuerySource(),
+				'time'   => number_format( ( microtime( true ) - $time ), 6, '.', '' )
+				]
+			]
 		);
 	}
 
@@ -369,8 +440,23 @@ class SMWQueryResult {
 	 *
 	 * @return string
 	 */
-	public function getHash() {
-		return HashBuilder::createHashIdForContent( $this->serializeToArray() );
+	public function getHash( $type = null ) {
+
+		// Just iterate over available subjects to create a "quick" hash given
+		// that resolving the entire object tree is costly due to recursive
+		// processing of all data items including its printouts
+		if ( $type === 'quick' ) {
+			$hash = [];
+
+			foreach ( $this->mResults as $dataItem ) {
+				$hash[] = $dataItem->getHash();
+			}
+
+			reset( $this->mResults );
+			return 'q:' . md5( json_encode( $hash ) );
+		}
+
+		return md5( json_encode( $this->serializeToArray() ) );
 	}
 
 }

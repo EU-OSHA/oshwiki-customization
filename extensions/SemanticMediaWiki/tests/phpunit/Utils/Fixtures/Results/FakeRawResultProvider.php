@@ -25,7 +25,7 @@ class FakeRawResultProvider {
 	}
 
 	/**
-	 * @see @see http://www.w3.org/2009/sparql/xml-results/output2.srx
+	 * @see http://www.w3.org/2009/sparql/xml-results/output2.srx
 	 */
 	public function getBooleanSparqlResultXml() {
 		return $this->getFixtureContentsFor( 'boolean-sparql-result.xml' );
@@ -53,6 +53,10 @@ class FakeRawResultProvider {
 
 	public function getInvalidSparqlResultXml() {
 		return $this->getFixtureContentsFor( 'invalid-sparql-result.xml' );
+	}
+
+	public function getMixedRowsSparqlResultUtf8Xml() {
+		return $this->getFixtureContentsFor( 'mixed-rows-sparql-result-utf8.xml' );
 	}
 
 	private function getFixtureContentsFor( $fixture ) {

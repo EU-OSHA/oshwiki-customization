@@ -2,13 +2,11 @@
 
 namespace SMW;
 
-use SMWQueryResult;
-use SMWQuery;
-use SMWQueryProcessor;
 use SMW\Query\PrintRequest;
 use SMWExporter;
-use SMWTurtleSerializer;
+use SMWQueryResult;
 use SMWRDFXMLSerializer;
+use SMWTurtleSerializer;
 
 /**
  * Printer class for generating RDF output
@@ -64,10 +62,6 @@ class RdfResultPrinter extends FileExportPrinter {
 		return $this->syntax == 'turtle' ? 'result.ttl' : 'result.rdf';
 	}
 
-	public function getQueryMode( $context ) {
-		return ( $context == SMWQueryProcessor::SPECIAL_PAGE ) ? SMWQuery::MODE_INSTANCES : SMWQuery::MODE_NONE;
-	}
-
 	public function getName() {
 		return wfMessage( 'smw_printername_rdf' )->text();
 	}
@@ -91,7 +85,7 @@ class RdfResultPrinter extends FileExportPrinter {
 							$property = $printreq->getData()->getDataItem();
 						break;
 						case PrintRequest::PRINT_CATS:
-							$property = new SMWDIProperty( '_TYPE' );
+							$property = new DIProperty( '_TYPE' );
 						break;
 						case PrintRequest::PRINT_CCAT:
 							// not serialised right now
@@ -134,12 +128,12 @@ class RdfResultPrinter extends FileExportPrinter {
 
 		$definitions['searchlabel']->setDefault( wfMessage( 'smw_rdf_link' )->inContentLanguage()->text() );
 
-		$definitions[] = array(
+		$definitions[] = [
 			'name' => 'syntax',
 			'message' => 'smw-paramdesc-rdfsyntax',
-			'values' => array( 'rdfxml', 'turtle' ),
+			'values' => [ 'rdfxml', 'turtle' ],
 			'default' => 'rdfxml',
-		);
+		];
 
 		return $definitions;
 	}

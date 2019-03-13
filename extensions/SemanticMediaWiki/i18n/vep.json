@@ -13,10 +13,10 @@
 	"smw_printername_broadtable": "Leved tablut",
 	"smw_exportrdf_submit": "Eksport",
 	"properties": "Ičendad",
-	"semanticstatistics": "Semantine statistik",
+
 	"ask": "Semantine ecind",
 	"smw_ask_submit": "Löuta rezul'tatad",
-	"smw_ask_editquery": "[Redaktiruida küzund]",
+	"smw_ask_editquery": "Redaktiruida küzund",
 	"smw_browse_go": "Mäne",
 	"smw_pp_from": "Lehtpolelpäi",
 	"smw_pp_type": "Ičend",

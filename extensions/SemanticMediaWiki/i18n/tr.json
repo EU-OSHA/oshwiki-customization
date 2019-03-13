@@ -5,7 +5,10 @@
 			"Erdemaslancan",
 			"Karduelis",
 			"Vito Genovese",
-			"Incelemeelemani"
+			"Incelemeelemani",
+			"HakanIST",
+			"Sayginer",
+			"Hbseren"
 		]
 	},
 	"smw_viewasrdf": "RDF beslemesi",
@@ -62,19 +65,20 @@
 	"smw_wantedproperty_template": "$1 ($2 {{PLURAL:$2|kullanım|kullanım}})",
 	"smw_purge": "Yenile",
 	"types": "Türler",
-	"semanticstatistics": "Anlamsal istatistikler",
+
 	"smw-statistics": "Semantik istatistikleri",
 	"smw-statistics-query-size": "Sorgu boyutu",
 	"smw-statistics-concept-count-legacy": "{{PLURAL:$1|Kavram|Kavram}}",
 	"smw-statistics-concept-count": "[[Special:Concepts|{{PLURAL:$1|Kavram|Kavram}}]]",
 	"smw-statistics-subobject-count": "{{PLURAL:$1|Altnesne|Altnesne}}",
 	"smw-statistics-datatype-count": "[[Special:Types|{{PLURAL:$1|Veritürü|Veritürü}}]]",
+	"smw-statistics-delete-count": "Zamanı geçmiş {{PLURAL:$1|entity|entities}} (kaldırılmak üzere işaretli)",
 	"ask": "Anlamsal arama",
 	"smw_ask_sortby": "Sütuna göre sırala (isteğe bağlı)",
 	"smw_ask_ascorder": "Artan",
 	"smw_ask_descorder": "Azalan",
 	"smw_ask_submit": "Sonuçları bul",
-	"smw_ask_editquery": "[Sorguyu değiştir]",
+	"smw_ask_editquery": "Sorguyu değiştir",
 	"smw_add_sortcondition": "[Sıralama koşulu ekle]",
 	"smw_ask_hidequery": "Sorguyu gizle",
 	"smw_ask_help": "Sorgulama yardımı",
@@ -88,6 +92,7 @@
 	"smw_ask_hide_embed": "Yerleştirme kodunu gizle",
 	"smw-ask-delete": "[Sil]",
 	"smw-ask-sorting": "Sıralama",
+	"smw-ask-search": "Ara",
 	"searchbyproperty": "Özelliğe göre ara",
 	"smw_sbv_docu": "Belirtilen özellik ve değere sahip tüm sayfaları ara.",
 	"smw_sbv_novalue": "Özellik için geçerli bir değer girin ya da \"$1\" için tüm özellik değerlerini görün.",
@@ -140,9 +145,12 @@
 	"smw-sp-properties-header-label": "Özellikler listesi",
 	"smw-sp-admin-settings-title": "Yapılandırma ayarları",
 	"smw-sp-admin-settings-button": "Ayarlar listesi oluşturma",
-	"smw-sp-admin-idlookup-title": "NesneKimliği araştırma",
-	"smw-sp-admin-idlookup-objectid": "Nesne kimliği:",
+	"smw-sp-admin-idlookup-title": "Nesne ID araştırma",
+	"smw-sp-admin-objectid": "Nesne kimliği:",
 	"smw-livepreview-loading": "Yükleniyor...",
 	"smw-sp-searchbyproperty-resultlist-header": "Sonuç listesi",
-	"log-name-smw": "Semantik MediaWiki günlüğü"
+	"log-name-smw": "Semantik MediaWiki günlüğü",
+	"smw-pa-property-predefined_pvuc": "\"$1\" önceden tanımlanmış, bir özelliğe yapılan atamaların eşsiz olmasının beklendiğini belirten bir özelliktir ve [https://www.semantic-mediawiki.org/wiki/Help:Special_properties Semantik MediaWiki] tarafından sunulur.",
+	"smw-pa-property-predefined-long_pvuc": "Benzersizlik iki değerin değişmez temsilinin eşit olmaması halinde belirlenir ve bu kısıtlamanın herhangi bir ihlali hata olarak kategorize edilir.",
+	"smw-datavalue-uniqueness-constraint-error": "\"$1\" özelliği sadece benzersiz değer atamalarını kabul eder ve ''$2'' halihazırda \"$3\" konusu için atanmış durumda."
 }

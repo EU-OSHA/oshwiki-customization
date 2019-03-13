@@ -2,10 +2,10 @@
 
 namespace SMW;
 
-use Onoi\Cache\CacheFactory as OnoiCacheFactory;
-use SMW\ApplicationFactory;
 use ObjectCache;
+use Onoi\Cache\CacheFactory as OnoiCacheFactory;
 use RuntimeException;
+use Title;
 
 /**
  * @license GNU GPL v2+
@@ -23,10 +23,14 @@ class CacheFactory {
 	/**
 	 * @since 2.2
 	 *
-	 * @param string|integer $mainCacheType
+	 * @param string|integer|null $mainCacheType
 	 */
-	public function __construct( $mainCacheType ) {
+	public function __construct( $mainCacheType = null ) {
 		$this->mainCacheType = $mainCacheType;
+
+		if ( $this->mainCacheType === null ) {
+			$this->mainCacheType = $GLOBALS['smwgMainCacheType'];
+		}
 	}
 
 	/**
@@ -43,30 +47,24 @@ class CacheFactory {
 	 *
 	 * @return string
 	 */
-	public function getCachePrefix() {
+	public static function getCachePrefix() {
 		return $GLOBALS['wgCachePrefix'] === false ? wfWikiID() : $GLOBALS['wgCachePrefix'];
 	}
 
 	/**
 	 * @since 2.2
 	 *
-	 * @param string $key
+	 * @param Title|integer|string $key
 	 *
 	 * @return string
 	 */
-	public function getFactboxCacheKey( $key ) {
-		return $this->getCachePrefix() . ':smw:fc:' . md5( $key );
-	}
+	public static function getPurgeCacheKey( $key ) {
 
-	/**
-	 * @since 2.2
-	 *
-	 * @param string $key
-	 *
-	 * @return string
-	 */
-	public function getPurgeCacheKey( $key ) {
-		return $this->getCachePrefix() . ':smw:arc:' . md5( $key );
+		if ( $key instanceof Title ) {
+			$key = $key->getArticleID();
+		}
+
+		return self::getCachePrefix() . ':smw:arc:' . md5( $key );
 	}
 
 	/**
@@ -115,16 +113,57 @@ class CacheFactory {
 	 */
 	public function newMediaWikiCompositeCache( $mediaWikiCacheType = null ) {
 
+		$compositeCache = OnoiCacheFactory::getInstance()->newCompositeCache( [
+			$this->newFixedInMemoryCache( 500 ),
+			$this->newMediaWikiCache( $mediaWikiCacheType )
+		] );
+
+		return $compositeCache;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer|string $mediaWikiCacheType
+	 *
+	 * @return Cache
+	 */
+	public function newMediaWikiCache( $mediaWikiCacheType = null ) {
+
 		$mediaWikiCache = ObjectCache::getInstance(
 			( $mediaWikiCacheType === null ? $this->getMainCacheType() : $mediaWikiCacheType )
 		);
 
-		$compositeCache = OnoiCacheFactory::getInstance()->newCompositeCache( array(
-			$this->newFixedInMemoryCache( 500 ),
-			OnoiCacheFactory::getInstance()->newMediaWikiCache( $mediaWikiCache )
-		) );
+		return OnoiCacheFactory::getInstance()->newMediaWikiCache( $mediaWikiCache );
+	}
 
-		return $compositeCache;
+	/**
+	 * @since 2.5
+	 *
+	 * @param integer|null $cacheType
+	 *
+	 * @return Cache
+	 */
+	public function newCacheByType( $cacheType = null ) {
+
+		if ( $cacheType === CACHE_NONE || $cacheType === null ) {
+			return $this->newNullCache();
+		}
+
+		return $this->newMediaWikiCache( $cacheType );
+	}
+
+	/**
+	 * @since 2.4
+	 *
+	 * @param string $namespace
+	 * @param string|integer|null $cacheType
+	 * @param integer $cacheLifetime
+	 *
+	 * @return BlobStore
+	 */
+	public function newBlobStore( $namespace, $cacheType = null, $cacheLifetime = 0 ) {
+		return ApplicationFactory::getInstance()->create( 'BlobStore', $namespace, $cacheType, $cacheLifetime );
 	}
 
 }

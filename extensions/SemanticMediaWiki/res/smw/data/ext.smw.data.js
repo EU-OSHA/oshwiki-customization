@@ -97,7 +97,7 @@
 
 				$.each( value, function( subjectName, subject ) {
 					if( subject.hasOwnProperty( 'fulltext' ) ){
-						var nSubject = new smw.dataItem.wikiPage( subject.fulltext, subject.fullurl, subject.namespace, subject.exists );
+						var nSubject = new smw.dataItem.wikiPage( subject.fulltext, subject.fullurl, subject.namespace, subject.exists, subject.displaytitle );
 						nSubject.printouts = subject.printouts;
 						nResults[subjectName] = nSubject;
 					} else {
@@ -120,7 +120,7 @@
 					switch ( typeid ) {
 						case '_wpg':
 							$.map( value, function( w ) {
-								factoredValue.push( new smw.dataItem.wikiPage( w.fulltext, w.fullurl, w.namespace, w.exists ) );
+								factoredValue.push( new smw.dataItem.wikiPage( w.fulltext, w.fullurl, w.namespace, w.exists, w.displaytitle ) );
 							} );
 							break;
 						case '_uri':
@@ -130,7 +130,14 @@
 							break;
 						case '_dat':
 							$.map( value, function( t ) {
-								factoredValue.push( new smw.dataItem.time( t ) );
+								// API 2.4+
+								if ( t.hasOwnProperty( 'raw' ) ) {
+									var time = new smw.dataItem.time( t.timestamp, t.raw );
+								} else {
+									var time = new smw.dataItem.time( t, undefined );
+								}
+
+								factoredValue.push( time );
 							} );
 							break;
 						case '_num':
@@ -147,6 +154,11 @@
 						case '_txt':
 							$.map( value, function( s ) {
 								factoredValue.push( new smw.dataItem.text( s, typeid ) );
+							} );
+							break;
+						case '_geo':
+							$.map( value, function( g ) {
+								factoredValue.push( new smw.dataItem.geo( g, typeid ) );
 							} );
 							break;
 						default:

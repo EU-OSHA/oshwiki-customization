@@ -2,9 +2,8 @@
 
 namespace SMW\Maintenance;
 
-use SMW\SQLStore\PropertyStatisticsTable;
-use Onoi\MessageReporter\MessageReporterFactory;
 use SMW\ApplicationFactory;
+use SMW\Setup;
 
 $basePath = getenv( 'MW_INSTALL_PATH' ) !== false ? getenv( 'MW_INSTALL_PATH' ) : __DIR__ . '/../../..';
 
@@ -22,8 +21,18 @@ class RebuildPropertyStatistics extends \Maintenance {
 
 	public function __construct() {
 		$this->mDescription = 'Rebuild the property usage statistics (only works with SQLStore3 for now)';
+		$this->addOption( 'with-maintenance-log', 'Add log entry to `Special:Log` about the maintenance run.', false );
 
 		parent::__construct();
+	}
+
+	/**
+	 * @see Maintenance::addDefaultParams
+	 *
+	 * @since 1.9
+	 */
+	protected function addDefaultParams() {
+		parent::addDefaultParams();
 	}
 
 	/**
@@ -31,33 +40,33 @@ class RebuildPropertyStatistics extends \Maintenance {
 	 */
 	public function execute() {
 
-		if ( !defined( 'SMW_VERSION' ) ) {
+		if ( !Setup::isEnabled() ) {
 			$this->output( "You need to have SMW enabled in order to use this maintenance script!\n\n" );
+			exit;
+		}
+
+		if ( !Setup::isValid( true ) ) {
+			$this->reportMessage( "\nYou need to run `update.php` or `setupStore.php` first before continuing\nwith any maintenance tasks!\n" );
 			exit;
 		}
 
 		$applicationFactory = ApplicationFactory::getInstance();
 		$maintenanceFactory = $applicationFactory->newMaintenanceFactory();
 
-		$store = $applicationFactory->getStore();
-
-		$statsTable = new PropertyStatisticsTable(
-			$store->getConnection( 'mw.db' ),
-			\SMWSQLStore3::PROPERTY_STATISTICS_TABLE
-		);
-
-		// Need to instantiate an extra object here since we cannot make this class itself
-		// into a MessageReporter since the maintenance script does not load the interface in time.
-		$reporter = MessageReporterFactory::getInstance()->newObservableMessageReporter();
-		$reporter->registerReporterCallback( array( $this, 'reportMessage' ) );
+		$maintenanceHelper = $maintenanceFactory->newMaintenanceHelper();
+		$maintenanceHelper->initRuntimeValues();
 
 		$statisticsRebuilder = $maintenanceFactory->newPropertyStatisticsRebuilder(
-			$store,
-			$statsTable
+			$applicationFactory->getStore( 'SMW\SQLStore\SQLStore' ),
+			[ $this, 'reportMessage' ]
 		);
 
-		$statisticsRebuilder->setMessageReporter( $reporter );
 		$statisticsRebuilder->rebuild();
+
+		if ( $this->hasOption( 'with-maintenance-log' ) ) {
+			$maintenanceLogger = $maintenanceFactory->newMaintenanceLogger( 'RebuildPropertyStatisticsLogger' );
+			$maintenanceLogger->log( $maintenanceHelper->getFormattedRuntimeValues() );
+		}
 	}
 
 	/**

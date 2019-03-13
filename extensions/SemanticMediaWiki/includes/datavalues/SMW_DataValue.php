@@ -7,14 +7,21 @@
  * @defgroup SMWDataValues SMWDataValues
  * @ingroup SMW
  */
-use SMW\DataValueFactory;
+
+use SMW\DataValues\InfoLinksProvider;
+use SMW\Deserializers\DVDescriptionDeserializerRegistry;
+use SMW\DIProperty;
+use SMW\Localizer;
+use SMW\Message;
+use SMW\Options;
 use SMW\Query\QueryComparator;
-use SMW\Deserializers\DVDescriptionDeserializerFactory;
+use SMW\Services\DataValueServiceFactory;
+use SMW\Utils\CharArmor;
 
 /**
  * Objects of this type represent all that is known about a certain user-provided
  * data value, especially its various representations as strings, tooltips,
- * numbers, etc.  Objects can be created as "emtpy" containers of a certain type,
+ * numbers, etc.  Objects can be created as "empty" containers of a certain type,
  * but are then usually filled with data to present one particular data value.
  *
  * Data values have two chief representation forms: the user-facing syntax and the
@@ -42,6 +49,44 @@ use SMW\Deserializers\DVDescriptionDeserializerFactory;
 abstract class SMWDataValue {
 
 	/**
+	 * Contains the user language a user operates in.
+	 */
+	const OPT_USER_LANGUAGE = 'user.language';
+
+	/**
+	 * Contains either the global "site" content language or a specified page
+	 * content language invoked by the context page.
+	 */
+	const OPT_CONTENT_LANGUAGE = 'content.language';
+
+	/**
+	 * Describes a state where a DataValue is part of a query condition and may
+	 * (or not) require a different treatment.
+	 */
+	const OPT_QUERY_CONTEXT = 'query.context';
+
+	/**
+	 * Describes a state where a DataValue is part of a query condition and
+	 * contains a comparator.
+	 */
+	const OPT_QUERY_COMP_CONTEXT = 'query.comparator.context';
+
+	/**
+	 * Option to disable related infolinks
+	 */
+	const OPT_DISABLE_INFOLINKS = 'disable.infolinks';
+
+	/**
+	 * Option to disable service links
+	 */
+	const OPT_DISABLE_SERVICELINKS = 'disable.servicelinks';
+
+	/**
+	 * Option to use compact infolinks
+	 */
+	const OPT_COMPACT_INFOLINKS = 'compact.infolinks';
+
+	/**
 	 * Associated data item. This is the reference to the immutable object
 	 * that represents the current data content. All other data stored here
 	 * is only about presentation and parsing, but is not relevant to the
@@ -58,7 +103,7 @@ abstract class SMWDataValue {
 	 * given. Property pages are used to make settings that affect parsing
 	 * and display, hence it is sometimes needed to know them.
 	 *
-	 * @var SMWDIProperty
+	 * @var DIProperty
 	 */
 	protected $m_property = null;
 
@@ -85,12 +130,6 @@ abstract class SMWDataValue {
 	protected $m_typeid;
 
 	/**
-	 * Array of SMWInfolink objects.
-	 * @var array
-	 */
-	protected $m_infolinks = array();
-
-	/**
 	 * Output formatting string, false when not set.
 	 * @see setOutputFormat()
 	 * @var mixed
@@ -98,23 +137,11 @@ abstract class SMWDataValue {
 	protected $m_outformat = false;
 
 	/**
-	 * Used to control the addition of the standard search link.
-	 * @var boolean
-	 */
-	private $mHasSearchLink;
-
-	/**
-	 * Used to control service link creation.
-	 * @var boolean
-	 */
-	private $mHasServiceLinks;
-
-	/**
 	 * Array of error text messages. Private to allow us to track error insertion
 	 * (PHP's count() is too slow when called often) by using $mHasErrors.
 	 * @var array
 	 */
-	private $mErrors = array();
+	private $mErrors = [];
 
 	/**
 	 * Boolean indicating if there where any errors.
@@ -124,24 +151,29 @@ abstract class SMWDataValue {
 	private $mHasErrors = false;
 
 	/**
-	 * @var boolean
+	 * @var false|array
 	 */
-	private $serviceLinksRenderState = true;
+	protected $restrictionError = false;
 
 	/**
-	 * Extraneous services and object container
-	 *
-	 * @var array
+	 * @var Options
 	 */
-	private $extraneousFunctions = array();
+	private $options;
 
 	/**
-	 * Indicates whether a value is being used by a query condition or not which
-	 * can lead to a modified validation of a value.
-	 *
-	 * @var boolean
+	 * @var InfoLinksProvider
 	 */
-	protected $isUsedByQueryCondition = false;
+	private $infoLinksProvider = null;
+
+	/**
+	 * @var string
+	 */
+	private $userValue = '';
+
+	/**
+	 * @var DataValueServiceFactory
+	 */
+	protected $dataValueServiceFactory;
 
 	/**
 	 * Constructor.
@@ -152,45 +184,54 @@ abstract class SMWDataValue {
 		$this->m_typeid = $typeid;
 	}
 
-///// Set methods /////
+	/**
+	 * Return a short string that unambiguously specify the type of this
+	 * value. This value will globally be used to identify the type of a
+	 * value (in spite of the class it actually belongs to, which can still
+	 * implement various types).
+	 */
+	public function getTypeID() {
+		return $this->m_typeid;
+	}
 
 	/**
 	 * Set the user value (and compute other representations if possible).
 	 * The given value is a string as supplied by some user. An alternative
 	 * label for printout might also be specified.
 	 *
-	 * The third argument was added in SMW 1.9 and should not be used from outside SMW.
-	 *
 	 * @param string $value
 	 * @param mixed $caption
-	 * @param boolean $ignoreAllowedValues
 	 */
-	public function setUserValue( $value, $caption = false, $ignoreAllowedValues = false ) {
+	public function setUserValue( $value, $caption = false ) {
 
 		$this->m_dataitem = null;
-		$this->mErrors = array(); // clear errors
+		$this->mErrors = []; // clear errors
 		$this->mHasErrors = false;
-		$this->m_infolinks = array(); // clear links
-		$this->mHasSearchLink = false;
-		$this->mHasServiceLinks = false;
 		$this->m_caption = is_string( $caption ) ? trim( $caption ) : false;
+		$this->userValue = $value;
 
+		// #2435
+		$value = CharArmor::removeControlChars(
+			CharArmor::removeSpecialChars( $value )
+		);
 
-		$this->parseUserValue( $value ); // may set caption if not set yet, depending on datavalue
+		// Process may set a caption if not set yet, depending on datavalue
+		$this->parseUserValue( $value );
 
-		// The following checks for markers generated by MediaWiki to handle special content,
-		// e.g. math. In general, we are not prepared to handle such content properly, and we
-		// also have no means of obtaining the user input at this point. Hence the assignement
+		// The following checks for Strip markers generated by MediaWiki to handle special content,
+		// from parser and extension tags e.g. <pre>,<nowiki>,<math>,<source>.
+		// See https://en.wikipedia.org/wiki/Help:Strip_markers
+		// In general, we are not prepared to handle such content properly, and we
+		// also have no means of obtaining the user input at this point. Hence the assignment
 		// just fails, even if parseUserValue() above might not have noticed this issue.
-		// Note: \x07 was used in MediaWiki 1.11.0, \x7f is used now (backwards compatiblity, b/c)
-		if ( ( strpos( $value, "\x7f" ) !== false ) || ( strpos( $value, "\x07" ) !== false ) ) {
-			$this->addError( wfMessage( 'smw_parseerror' )->inContentLanguage()->text() );
+		// Note: \x07 was used in MediaWiki 1.11.0, \x7f is used now (backwards compatibility, b/c)
+		if ( is_string( $value ) && ( ( strpos( $value, "\x7f" ) !== false ) || ( strpos( $value, "\x07" ) !== false ) ) ) {
+			$this->addErrorMsg( [ 'smw-datavalue-stripmarker-parse-error', $value ] );
 		}
 
-		if ( $this->isValid() && !$ignoreAllowedValues ) {
+		if ( $this->isValid() && !$this->getOption( self::OPT_QUERY_CONTEXT ) ) {
 			$this->checkAllowedValues();
 		}
-
 	}
 
 	/**
@@ -209,18 +250,18 @@ abstract class SMWDataValue {
 	 */
 	public function setDataItem( SMWDataItem $dataItem ) {
 		$this->m_dataitem = null;
-		$this->mErrors = $this->m_infolinks = array();
-		$this->mHasErrors = $this->mHasSearchLink = $this->mHasServiceLinks = $this->m_caption = false;
+		$this->mErrors = [];
+		$this->mHasErrors = $this->m_caption = false;
 		return $this->loadDataItem( $dataItem );
 	}
 
 	/**
-	 * @since 2.3
+	 * @since 2.5
 	 *
-	 * @param boolean $usedByQueryCondition
+	 * @param DataValueServiceFactory $dataValueServiceFactory
 	 */
-	public function setQueryConditionUsage( $usedByQueryCondition ) {
-		$this->isUsedByQueryCondition = (bool)$usedByQueryCondition;
+	public function setDataValueServiceFactory( DataValueServiceFactory $dataValueServiceFactory ) {
+		$this->dataValueServiceFactory = $dataValueServiceFactory;
 	}
 
 	/**
@@ -230,9 +271,9 @@ abstract class SMWDataValue {
 	 *
 	 * @since 1.6
 	 *
-	 * @param SMWDIProperty $property
+	 * @param DIProperty $property
 	 */
-	public function setProperty( SMWDIProperty $property ) {
+	public function setProperty( DIProperty $property ) {
 		$this->m_property = $property;
 	}
 
@@ -241,7 +282,7 @@ abstract class SMWDataValue {
 	 *
 	 * @since 1.8
 	 *
-	 * @return SMWDIProperty|null
+	 * @return DIProperty|null
 	 */
 	public function getProperty() {
 		return $this->m_property;
@@ -254,10 +295,24 @@ abstract class SMWDataValue {
 	 *
 	 * @since 1.7
 	 *
-	 * @param SMWDIWikiPage $contextPage
+	 * @param SMWDIWikiPage|null $contextPage
 	 */
-	public function setContextPage( SMWDIWikiPage $contextPage ) {
+	public function setContextPage( SMWDIWikiPage $contextPage = null ) {
 		$this->m_contextPage = $contextPage;
+
+		$this->setOption(
+			self::OPT_CONTENT_LANGUAGE,
+			Localizer::getInstance()->getPreferredContentLanguage( $contextPage )->getCode()
+		);
+	}
+
+	/**
+	 * @since 2.4
+	 *
+	 * @return DIWikiPage|null
+	 */
+	public function getContextPage() {
+		return $this->m_contextPage;
 	}
 
 	/**
@@ -271,63 +326,25 @@ abstract class SMWDataValue {
 	}
 
 	/**
-	 * Adds a single SMWInfolink object to the m_infolinks array.
+	 * @since 2.4
 	 *
-	 * @param SMWInfolink $link
+	 * @param string $caption
 	 */
-	public function addInfolink( SMWInfolink $link ) {
-		$this->m_infolinks[] = $link;
+	public function getCaption() {
+		return $this->m_caption;
 	}
 
 	/**
-	 * Servicelinks are special kinds of infolinks that are created from
-	 * current parameters and in-wiki specification of URL templates. This
-	 * method adds the current property's servicelinks found in the
-	 * messages. The number and content of the parameters is depending on
-	 * the datatype, and the service link message is usually crafted with a
-	 * particular datatype in mind.
+	 * Returns a preferred caption and may deviate from the standard caption as
+	 * a subclass is permitted to override this method and provide a more
+	 * contextualized display representation (language or value context etc.).
+	 *
+	 * @since 2.4
+	 *
+	 * @return string
 	 */
-	public function addServiceLinks() {
-		if ( $this->mHasServiceLinks ) {
-			return;
-		}
-
-		if ( !is_null( $this->m_property ) ) {
-			$propertyDiWikiPage = $this->m_property->getDiWikiPage();
-		}
-
-		if ( is_null( $this->m_property ) || is_null( $propertyDiWikiPage ) ) {
-			return; // no property known, or not associated with a page
-		}
-
-		$args = $this->getServiceLinkParams();
-
-		if ( $args === false ) {
-			return; // no services supported
-		}
-
-		array_unshift( $args, '' ); // add a 0 element as placeholder
-		$servicelinks = \SMW\StoreFactory::getStore()->getPropertyValues( $propertyDiWikiPage, new SMWDIProperty( '_SERV' ) );
-
-		foreach ( $servicelinks as $dataItem ) {
-			if ( !( $dataItem instanceof SMWDIBlob ) ) {
-				continue;
-			}
-
-			$args[0] = 'smw_service_' . str_replace( ' ', '_', $dataItem->getString() ); // messages distinguish ' ' from '_'
-			// @todo FIXME: Use wfMessage/Message class here.
-			$text = call_user_func_array( 'wfMsgForContent', $args );
-			$links = preg_split( "/[\n][\s]?/u", $text );
-
-			foreach ( $links as $link ) {
-				$linkdat = explode( '|', $link, 2 );
-
-				if ( count( $linkdat ) == 2 ) {
-					$this->addInfolink( SMWInfolink::newExternalLink( $linkdat[0], trim( $linkdat[1] ) ) );
-				}
-			}
-		}
-		$this->mHasServiceLinks = true;
+	public function getPreferredCaption() {
+		return $this->m_caption;
 	}
 
 	/**
@@ -338,7 +355,7 @@ abstract class SMWDataValue {
 	 * and subject to internationalisation (which the datavalue has to implement).
 	 * In any case, an empty string resets the output format to the default.
 	 *
-	 * There is one predeeind output format that all datavalues should respect: the
+	 * There is one predefined output format that all datavalues should respect: the
 	 * format '-' indicates "plain" output that is most useful for further processing
 	 * the value in a template. It should not use any wiki markup or beautification,
 	 * and it should also avoid localization to the current language. When users
@@ -350,6 +367,15 @@ abstract class SMWDataValue {
 	 */
 	public function setOutputFormat( $formatString ) {
 		$this->m_outformat = $formatString; // just store it, subclasses may or may not use this
+	}
+
+	/**
+	 * @since 2.4
+	 *
+	 * @return string
+	 */
+	public function getOutputFormat() {
+		return $this->m_outformat;
 	}
 
 	/**
@@ -371,51 +397,64 @@ abstract class SMWDataValue {
 	}
 
 	/**
-	 * Clear error messages. This function is provided temporarily to allow
-	 * n-ary to do this.
-	 * properly so that this function will vanish again.
-	 * @note Do not use this function in external code.
-	 * @todo Check if we can remove this function again.
+	 * Messages are not resolved until the output and instead will be kept with the
+	 * message and argument keys (e.g. `[2,"smw_baduri","~*0123*"]`). This allows to
+	 * switch the a representation without requiring language context by the object
+	 * that reports an error.
+	 *
+	 * @since 2.4
+	 *
+	 * @param $parameters
+	 * @param integer|null $type
+	 * @param integer|null $language
 	 */
-	protected function clearErrors() {
-		$this->mErrors = array();
-		$this->mHasErrors = false;
+	public function addErrorMsg( $parameters, $type = null ) {
+		$this->mErrors[Message::getHash( $parameters, $type )] = Message::encode( $parameters, $type );
+		$this->mHasErrors = true;
 	}
 
-///// Abstract processing methods /////
+	/**
+	 * Return a string that displays all error messages as a tooltip, or
+	 * an empty string if no errors happened.
+	 *
+	 * @return string
+	 */
+	public function getErrorText() {
+		return smwfEncodeMessages( $this->mErrors );
+	}
 
 	/**
-	 * Initialise the datavalue from the given value string.
-	 * The format of this strings might be any acceptable user input
-	 * and especially includes the output of getWikiValue().
+	 * Return an array of error messages, or an empty array
+	 * if no errors occurred.
 	 *
-	 * @param string $value
+	 * @return array
 	 */
-	abstract protected function parseUserValue( $value );
+	public function getErrors() {
+		return $this->mErrors;
+	}
 
 	/**
-	 * Set the actual data contained in this object. The method returns
-	 * true if this was successful (requiring the type of the dataitem
-	 * to match the data value). If false is returned, the data value is
-	 * left unchanged (the data item was rejected).
+	 * @since 3.0
 	 *
-	 * @note Even if this function returns true, the data value object
-	 * might become invalid if the content of the data item caused errors
-	 * in spite of it being of the right basic type. False is only returned
-	 * if the data item is fundamentally incompatible with the data value.
-	 *
-	 * @since 1.6
-	 *
-	 * @param SMWDataItem $dataItem
-	 *
-	 * @return boolean
+	 * @return array|false
 	 */
-	abstract protected function loadDataItem( SMWDataItem $dataItem );
+	public function getRestrictionError() {
+		return $this->restrictionError;
+	}
 
+	/**
+	 * @since 2.4
+	 */
+	public function clearErrors() {
+		$this->mErrors = [];
+		$this->mHasErrors = false;
+	}
 
 ///// Query support /////
 
 	/**
+	 * FIXME 3.0, allow NULL as value
+	 *
 	 * @see DataValueDescriptionDeserializer::deserialize
 	 *
 	 * @note Descriptions of values need to know their property to be able to
@@ -429,10 +468,10 @@ abstract class SMWDataValue {
 	 */
 	public function getQueryDescription( $value ) {
 
-		$dvDescriptionDeserializerFactory = DVDescriptionDeserializerFactory::getInstance()->getDescriptionDeserializerFor( $this );
-		$description = $dvDescriptionDeserializerFactory->deserialize( $value );
+		$descriptionDeserializer = DVDescriptionDeserializerRegistry::getInstance()->getDescriptionDeserializerBy( $this );
+		$description = $descriptionDeserializer->deserialize( $value );
 
-		foreach ( $dvDescriptionDeserializerFactory->getErrors() as $error ) {
+		foreach ( $descriptionDeserializer->getErrors() as $error ) {
 			$this->addError( $error );
 		}
 
@@ -440,25 +479,16 @@ abstract class SMWDataValue {
 	}
 
 	/**
-	 * @deprecated 2.3
+	 * @deprecated since 2.3
+	 *
 	 * @see DescriptionDeserializer::prepareValue
 	 *
-	 * This method is no longer to be used for direct public access, instead a
+	 * This method should no longer be used for direct public access, instead a
 	 * DataValue is expected to register a DescriptionDeserializer with
-	 * DVDescriptionDeserializerFactory.
-	 *
-	 * FIXME as of 2.3, SMGeoCoordsValue still uses this method and requires
-	 * migration before 3.0
+	 * DVDescriptionDeserializerRegistry.
 	 */
 	static public function prepareValue( &$value, &$comparator ) {
-		// Loop over the comparators to determine which one is used and what the actual value is.
-		foreach ( QueryComparator::getInstance()->getComparatorStrings() as $string ) {
-			if ( strpos( $value, $string ) === 0 ) {
-				$comparator = QueryComparator::getInstance()->getComparatorFromString( substr( $value, 0, strlen( $string ) ) );
-				$value = substr( $value, strlen( $string ) );
-				break;
-			}
-		}
+		$comparator = QueryComparator::getInstance()->extractComparatorFromString( $value );
 	}
 
 ///// Get methods /////
@@ -481,7 +511,7 @@ abstract class SMWDataValue {
 			return $this->m_dataitem;
 		}
 
-		return new SMWDIError( $this->mErrors );
+		return new SMWDIError( $this->mErrors, $this->userValue );
 	}
 
 	/**
@@ -538,6 +568,14 @@ abstract class SMWDataValue {
 	abstract public function getLongHTMLText( $linker = null );
 
 	/**
+	 * Return the plain wiki version of the value, or
+	 * FALSE if no such version is available. The returned
+	 * string suffices to reobtain the same DataValue
+	 * when passing it as an input string to setUserValue().
+	 */
+	abstract public function getWikiValue();
+
+	/**
 	 * Returns a short textual representation for this data value. If the value
 	 * was initialised from a user supplied string, then this original string
 	 * should be reflected in this short version (i.e. no normalisation should
@@ -587,66 +625,24 @@ abstract class SMWDataValue {
 	 * @return string
 	 */
 	public function getInfolinkText( $outputformat, $linker = null ) {
-		$result = '';
-		$first = true;
-		$extralinks = array();
 
-		switch ( $outputformat ) {
-			case SMW_OUTPUT_WIKI:
-				foreach ( $this->getInfolinks() as $link ) {
-					if ( $first ) {
-						$result .= '<!-- -->  ' . $link->getWikiText();
-							// the comment is needed to prevent MediaWiki from linking URL-strings together with the nbsps!
-						$first = false;
-					} else {
-						$extralinks[] = $link->getWikiText();
-					}
-				}
-				break;
-
-			case SMW_OUTPUT_HTML: case SMW_OUTPUT_FILE: default:
-				foreach ( $this->getInfolinks() as $link ) {
-					if ( $first ) {
-						$result .= '&#160;&#160;' . $link->getHTML( $linker );
-						$first = false;
-					} else {
-						$extralinks[] = $link->getHTML( $linker );
-					}
-				}
-				break;
+		if ( $this->getOption( self::OPT_DISABLE_INFOLINKS ) === true ) {
+			return '';
 		}
 
-		if ( count( $extralinks ) > 0 ) {
-			$result .= smwfEncodeMessages( $extralinks, 'service', '', false );
+		if ( $this->infoLinksProvider === null ) {
+			$this->infoLinksProvider = $this->dataValueServiceFactory->newInfoLinksProvider( $this );
 		}
 
-		return $result;
-	}
+		if ( $this->getOption( self::OPT_DISABLE_SERVICELINKS ) === true ) {
+			$this->infoLinksProvider->disableServiceLinks();
+		}
 
-	/**
-	 * Return the plain wiki version of the value, or
-	 * FALSE if no such version is available. The returned
-	 * string suffices to reobtain the same DataValue
-	 * when passing it as an input string to setUserValue().
-	 */
-	abstract public function getWikiValue();
+		$this->infoLinksProvider->setCompactLink(
+			$this->getOption( self::OPT_COMPACT_INFOLINKS, false )
+		);
 
-	/**
-	 * Return a short string that unambiguously specify the type of this
-	 * value. This value will globally be used to identify the type of a
-	 * value (in spite of the class it actually belongs to, which can still
-	 * implement various types).
-	 */
-	public function getTypeID() {
-		return $this->m_typeid;
-	}
-
-	/**
-	 * @since 2.1
-	 * @param boolean $renderState
-	 */
-	public function setServiceLinksRenderState( $renderState = true ) {
-		$this->serviceLinksRenderState = $renderState;
+		return $this->infoLinksProvider->getInfolinkText( $outputformat, $linker );
 	}
 
 	/**
@@ -656,28 +652,16 @@ abstract class SMWDataValue {
 	 * but is always an array.
 	 */
 	public function getInfolinks() {
-		if ( $this->isValid() && !is_null( $this->m_property ) ) {
-			if ( !$this->mHasSearchLink ) { // add default search link
-				$this->mHasSearchLink = true;
-				$this->m_infolinks[] = SMWInfolink::newPropertySearchLink( '+',
-					$this->m_property->getLabel(), $this->getWikiValue() );
-			}
 
-			if ( !$this->mHasServiceLinks && $this->serviceLinksRenderState ) { // add further service links
-				$this->addServiceLinks();
-			}
+		if ( $this->infoLinksProvider === null ) {
+			$this->infoLinksProvider = $this->dataValueServiceFactory->newInfoLinksProvider( $this );
 		}
 
-		return $this->m_infolinks;
-	}
+		$this->infoLinksProvider->setServiceLinkParameters(
+			$this->getServiceLinkParams()
+		);
 
-	/**
-	 * Overwritten by callers to supply an array of parameters that can be used for
-	 * creating servicelinks. The number and content of values in the parameter array
-	 * may vary, depending on the concrete datatype.
-	 */
-	protected function getServiceLinkParams() {
-		return false;
+		return $this->infoLinksProvider->createInfoLinks();
 	}
 
 	/**
@@ -724,7 +708,7 @@ abstract class SMWDataValue {
 	 * while usability is determined by its accessibility to a context
 	 * (permission, convention etc.)
 	 *
-	 * @since  2.2
+	 * @since 2.2
 	 *
 	 * @return boolean
 	 */
@@ -733,14 +717,12 @@ abstract class SMWDataValue {
 	}
 
 	/**
-	 * @note Normally set by the DataValueFactory, or during tests
+	 * @since 3.0
 	 *
-	 * @since 2.3
-	 *
-	 * @param array
+	 * @return boolean
 	 */
-	public function setExtraneousFunctions( array $extraneousFunctions ) {
-		$this->extraneousFunctions = $extraneousFunctions;
+	public function isRestricted() {
+		return false;
 	}
 
 	/**
@@ -752,33 +734,151 @@ abstract class SMWDataValue {
 	 * @return mixed
 	 * @throws RuntimeException
 	 */
-	public function getExtraneousFunctionFor( $name, array $parameters = array() ) {
+	public function getExtraneousFunctionFor( $name, array $parameters = [] ) {
+		return $this->dataValueServiceFactory->newExtraneousFunctionByName( $name, $parameters );
+	}
 
-		if ( isset( $this->extraneousFunctions[$name] ) && is_callable( $this->extraneousFunctions[$name] ) ) {
-			return call_user_func_array( $this->extraneousFunctions[$name], $parameters );
+	/**
+	 * @since 3.0
+	 *
+	 * @param string $key
+	 * @param mixed $data
+	 */
+	public function setExtensionData( $key, $data ) {
+		$this->extenstionData[$key] = $data;
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @param string $key
+	 *
+	 * @return mixed
+	 */
+	public function getExtensionData( $key ) {
+
+		if ( isset( $this->extenstionData[$key] ) ) {
+			return $this->extenstionData[$key];
 		}
 
-		throw new RuntimeException( "$name is not registered as extraneous function." );
+		return null;
 	}
 
 	/**
-	 * Return a string that displays all error messages as a tooltip, or
-	 * an empty string if no errors happened.
+	 * @since 2.4
 	 *
-	 * @return string
+	 * @return Options|null $options
 	 */
-	public function getErrorText() {
-		return smwfEncodeMessages( $this->mErrors );
+	public function copyOptions( Options $options = null ) {
+
+		if ( $options === null ) {
+			return;
+		}
+
+		foreach ( $options->getOptions() as $key => $value ) {
+			$this->setOption( $key, $value );
+		}
 	}
 
 	/**
-	 * Return an array of error messages, or an empty array
-	 * if no errors occurred.
+	 * @since 2.4
 	 *
-	 * @return array
+	 * @return string $key
+	 * @param mxied $value
 	 */
-	public function getErrors() {
-		return $this->mErrors;
+	public function setOption( $key, $value ) {
+
+		if ( $this->options === null ) {
+			$this->options = new Options();
+		}
+
+		$this->options->set( $key, $value );
+	}
+
+	/**
+	 * @since 2.4
+	 *
+	 * @param string $key
+	 *
+	 * @return mixed|false
+	 */
+	public function getOption( $key, $default = false ) {
+
+		if ( $this->options !== null && $this->options->has( $key ) ) {
+			return $this->options->get( $key );
+		}
+
+		return $default;
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @param integer $feature
+	 *
+	 * @return boolean
+	 */
+	public function hasFeature( $feature ) {
+
+		if ( $this->options !== null ) {
+			return $this->options->isFlagSet( 'smwgDVFeatures', (int)$feature );
+		}
+
+		return false;
+	}
+
+	/**
+	 * @deprecated since 3.0, use DataValue::hasFeature
+	 * @since 2.4
+	 */
+	public function isEnabledFeature( $feature ) {
+		return $this->hasFeature( $feature );
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @return Options
+	 */
+	protected function getOptions() {
+		return $this->options;
+	}
+
+	/**
+	 * Initialise the datavalue from the given value string.
+	 * The format of this strings might be any acceptable user input
+	 * and especially includes the output of getWikiValue().
+	 *
+	 * @param string $value
+	 */
+	abstract protected function parseUserValue( $value );
+
+	/**
+	 * Set the actual data contained in this object. The method returns
+	 * true if this was successful (requiring the type of the dataitem
+	 * to match the data value). If false is returned, the data value is
+	 * left unchanged (the data item was rejected).
+	 *
+	 * @note Even if this function returns true, the data value object
+	 * might become invalid if the content of the data item caused errors
+	 * in spite of it being of the right basic type. False is only returned
+	 * if the data item is fundamentally incompatible with the data value.
+	 *
+	 * @since 1.6
+	 *
+	 * @param SMWDataItem $dataItem
+	 *
+	 * @return boolean
+	 */
+	abstract protected function loadDataItem( SMWDataItem $dataItem );
+
+	/**
+	 * Overwritten by callers to supply an array of parameters that can be used for
+	 * creating servicelinks. The number and content of values in the parameter array
+	 * may vary, depending on the concrete datatype.
+	 */
+	protected function getServiceLinkParams() {
+		return false;
 	}
 
 	/**
@@ -786,52 +886,12 @@ abstract class SMWDataValue {
 	 * Creates an error if the value is illegal.
 	 */
 	protected function checkAllowedValues() {
-		if ( !is_null( $this->m_property ) ) {
-			$propertyDiWikiPage = $this->m_property->getDiWikiPage();
-		}
 
-		if ( is_null( $this->m_property ) || is_null( $propertyDiWikiPage ) ||
-			!isset( $this->m_dataitem ) ) {
-			return; // no property known, or no data to check
-		}
-
-		$allowedvalues = \SMW\StoreFactory::getStore()->getPropertyValues(
-			$propertyDiWikiPage,
-			new SMWDIProperty( '_PVAL' )
-		);
-
-		if ( count( $allowedvalues ) == 0 ) {
+		if ( $this->dataValueServiceFactory === null ) {
 			return;
 		}
 
-		$hash = $this->m_dataitem->getHash();
-		$testdv = DataValueFactory::getInstance()->newTypeIDValue( $this->getTypeID() );
-		$accept = false;
-		$valuestring = '';
-
-		foreach ( $allowedvalues as $di ) {
-			if ( $di instanceof SMWDIBlob ) {
-				$testdv->setUserValue( $di->getString() );
-
-				if ( $hash === $testdv->getDataItem()->getHash() ) {
-					$accept = true;
-					break;
-				} else {
-					if ( $valuestring !== '' ) {
-						$valuestring .= ', ';
-					}
-					$valuestring .= $di->getString();
-				}
-			}
-		}
-
-		if ( !$accept ) {
-			$this->addError( wfMessage(
-					'smw_notinenum',
-					$this->getWikiValue(), $valuestring
-				)->inContentLanguage()->text()
-			);
-		}
+		$this->dataValueServiceFactory->getConstraintValueValidator()->validate( $this );
 	}
 
 }

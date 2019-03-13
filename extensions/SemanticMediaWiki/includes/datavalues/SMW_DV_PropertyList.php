@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @ingroup SMWDataValues
  */
@@ -22,7 +23,7 @@ class SMWPropertyListValue extends SMWDataValue {
 	protected function parseUserValue( $value ) {
 		global $wgContLang;
 
-		$this->m_diProperties = array();
+		$this->m_diProperties = [];
 		$stringValue = '';
 		$valueList = preg_split( '/[\s]*;[\s]*/u', trim( $value ) );
 		foreach ( $valueList as $propertyName ) {
@@ -32,17 +33,17 @@ class SMWPropertyListValue extends SMWDataValue {
 				$propertyName = $propertyNameParts[1];
 				$propertyNamespace = $wgContLang->getNsText( SMW_NS_PROPERTY );
 				if ( $namespace != $propertyNamespace ) {
-					$this->addError( wfMessage( 'smw_wrong_namespace', $propertyNamespace )->inContentLanguage()->text() );
+					$this->addErrorMsg( [ 'smw_wrong_namespace', $propertyNamespace ] );
 				}
 			}
 
 			$propertyName = smwfNormalTitleText( $propertyName );
 
 			try {
-				$diProperty = SMWDIProperty::newFromUserLabel( $propertyName );
+				$diProperty = SMW\DIProperty::newFromUserLabel( $propertyName );
 			} catch ( SMWDataItemException $e ) {
-				$diProperty = new SMWDIProperty( 'Error' );
-				$this->addError( wfMessage( 'smw_noproperty', $propertyName )->inContentLanguage()->text() );
+				$diProperty = new SMW\DIProperty( 'Error' );
+				$this->addErrorMsg( [ 'smw_noproperty', $propertyName ] );
 			}
 
 			$this->m_diProperties[] = $diProperty;
@@ -60,25 +61,33 @@ class SMWPropertyListValue extends SMWDataValue {
 	 * @return boolean
 	 */
 	protected function loadDataItem( SMWDataItem $dataItem ) {
-		if ( $dataItem instanceof SMWDIBlob ) {
-			$this->m_dataitem = $dataItem;
-			$this->m_diProperties = array();
 
-			foreach ( explode( ';', $dataItem->getString() ) as $propertyKey ) {
-				try {
-					$this->m_diProperties[] = new SMWDIProperty( $propertyKey );
-				} catch ( SMWDataItemException $e ) {
-					$this->m_diProperties[] = new SMWDIProperty( 'Error' );
-					$this->addError( wfMessage( 'smw_parseerror' )->inContentLanguage()->text() );
-				}
-			}
-
-			$this->m_caption = false;
-
-			return true;
-		} else {
+		if ( !$dataItem instanceof SMWDIBlob ) {
 			return false;
 		}
+
+		$this->m_dataitem = $dataItem;
+		$this->m_diProperties = [];
+
+		foreach ( explode( ';', $dataItem->getString() ) as $propertyKey ) {
+			$property = null;
+
+			try {
+				$property = new SMW\DIProperty( $propertyKey );
+			} catch ( SMWDataItemException $e ) {
+				$property = new SMW\DIProperty( 'Error' );
+				$this->addErrorMsg( [ 'smw-datavalue-propertylist-invalid-property-key', $dataItem->getString(), $propertyKey ] );
+			}
+
+			if ( $property instanceof SMWDIProperty ) {
+				 // Find a possible redirect
+				$this->m_diProperties[] = $property->getRedirectTarget();
+			}
+		}
+
+		$this->m_caption = false;
+
+		return true;
 	}
 
 	public function getShortWikiText( $linked = null ) {
@@ -117,7 +126,7 @@ class SMWPropertyListValue extends SMWDataValue {
 			if ( $result !== '' ) {
 				$result .= $sep;
 			}
-			$propertyValue = \SMW\DataValueFactory::getInstance()->newDataItemValue( $diProperty, null );
+			$propertyValue = \SMW\DataValueFactory::getInstance()->newDataValueByItem( $diProperty, null );
 			$result .= $this->makeValueOutputText( $type, $propertyValue, $linker );
 		}
 		return $result;

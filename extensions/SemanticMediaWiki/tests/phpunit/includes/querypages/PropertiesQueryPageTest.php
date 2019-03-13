@@ -2,327 +2,187 @@
 
 namespace SMW\Test;
 
-use SMW\PropertiesQueryPage;
-use SMW\MessageFormatter;
 use SMW\ArrayAccessor;
-
-use SMWDataItem;
+use SMW\DataItemFactory;
+use SMW\PropertiesQueryPage;
+use SMW\Settings;
+use SMW\Tests\PHPUnitCompat;
 
 /**
  * @covers \SMW\PropertiesQueryPage
- * @covers \SMW\QueryPage
+ * @group semantic-mediawiki
  *
- *
- * @group SMW
- * @group SMWExtension
- * @group medium
- *
- * @licence GNU GPL v2+
+ * @license GNU GPL v2+
  * @since 1.9
  *
  * @author mwjames
  */
-class PropertiesQueryPageTest extends SemanticMediaWikiTestCase {
+class PropertiesQueryPageTest extends \PHPUnit_Framework_TestCase {
 
-	/**
-	 * @return string|false
-	 */
-	public function getClass() {
-		return '\SMW\PropertiesQueryPage';
-	}
+	use PHPUnitCompat;
 
-	/**
-	 * @since 1.9
-	 *
-	 * @return DIWikiPage
-	 */
-	private function getMockDIWikiPage( $exists = true ) {
+	private $store;
+	private $skin;
+	private $settings;
+	private $dataItemFactory;
 
-		$text  = $this->newRandomString();
+	protected function setUp() {
+		parent::setUp();
 
-		$title = $this->newMockBuilder()->newObject( 'Title', array(
-			'exists'  => $exists,
-			'getText' => $text,
-			'getNamespace'    => NS_MAIN,
-			'getPrefixedText' => $text
-		) );
+		$this->store = $this->getMockBuilder( '\SMW\Store' )
+			->disableOriginalConstructor()
+			->getMockForAbstractClass();
 
-		$diWikiPage = $this->newMockBuilder()->newObject( 'DIWikiPage', array(
-			'getTitle'  => $title,
-		) );
-
-		return $diWikiPage;
-	}
-
-	/**
-	 * @since 1.9
-	 *
-	 * @return PropertiesQueryPage
-	 */
-	private function newInstance( $result = null, $values = array(), $settings = array() ) {
-
-		$listLookup = $this->getMockBuilder( '\SMW\SQLStore\Lookup\ListLookup' )
+		$this->skin = $this->getMockBuilder( '\Skin' )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$listLookup->expects( $this->any() )
-			->method( 'fetchList' )
-			->will( $this->returnValue( $result ) );
+		$this->settings = Settings::newFromArray( [
+			'smwgPDefaultType'              => '_wpg',
+			'smwgPropertyLowUsageThreshold' => 5,
+			'smwgPropertyZeroCountDisplay'  => true
+		] );
 
-		$mockStore = $this->newMockBuilder()->newObject( 'Store', array(
-			'getPropertyValues'    => $values,
-			'getPropertiesSpecial' => $listLookup
-		) );
-
-		if ( $settings === array() ) {
-			$settings = array(
-				'smwgPDefaultType'              => '_wpg',
-				'smwgPropertyLowUsageThreshold' => 5,
-				'smwgPropertyZeroCountDisplay'  => true
-			);
-		}
-
-		$instance = new PropertiesQueryPage( $mockStore, $this->newSettings( $settings ) );
-		$instance->setContext( $this->newContext() );
-
-		return $instance;
+		$this->dataItemFactory = new DataItemFactory();
 	}
 
-	/**
-	 * @since 1.9
-	 */
-	public function testConstructor() {
-		$this->assertInstanceOf( $this->getClass(), $this->newInstance() );
+	public function testCanConstruct() {
+
+		$this->assertInstanceOf(
+			'\SMW\PropertiesQueryPage',
+			new PropertiesQueryPage( $this->store, $this->settings )
+		);
 	}
 
-	/**
-	 * @since 1.9
-	 */
 	public function testFormatResultDIError() {
 
-		$skin = $this->getMock( 'Skin' );
+		$error = $this->dataItemFactory->newDIError( 'Foo');
 
-		$instance = $this->newInstance();
-		$error    = $this->newRandomString();
-		$diError  = $this->newMockBuilder()->newObject( 'DIError', array(
-			'getErrors' => $error
-		) );
-
-		$result   = $instance->formatResult(
-			$skin,
-			array( $diError, null )
+		$instance = new PropertiesQueryPage(
+			$this->store,
+			$this->settings
 		);
 
-		$this->assertInternalType( 'string', $result );
-		$this->assertContains( $error, $result );
+		$result = $instance->formatResult(
+			$this->skin,
+			[ $error, null ]
+		);
 
+		$this->assertInternalType(
+			'string',
+			$result
+		);
+
+		$this->assertContains(
+			'Foo',
+			$result
+		);
 	}
 
-	/**
-	 * @since 1.9
-	 */
-	public function testInvalidResultException() {
+	public function testInvalidResultThrowsException() {
 
-		$this->setExpectedException( '\SMW\InvalidResultException' );
+		$instance = new PropertiesQueryPage(
+			$this->store,
+			$this->settings
+		);
 
-		$instance = $this->newInstance();
-		$skin = $this->getMock( 'Skin' );
-
-		$this->assertInternalType( 'string', $instance->formatResult( $skin, null ) );
-
+		$this->setExpectedException( '\SMW\Exception\PropertyNotFoundException' );
+		$instance->formatResult( $this->skin, null );
 	}
 
-	/**
-	 * @dataProvider getUserDefinedDataProvider
-	 *
-	 * @note Title, wikiPage, and property label are randomized therefore
-	 * the expected comparison value is determined after the property object
-	 * has been mocked
-	 *
-	 * @since 1.9
-	 */
-	public function testFormatPropertyItemUserDefined( $isUserDefined ) {
+	public function testFormatPropertyItemOnUserDefinedProperty() {
 
-		$skin = $this->getMock( 'Skin' );
+		$property = $this->dataItemFactory->newDIProperty( 'Foo' );
 
-		// Title exists
-		$count    = rand();
-		$instance = $this->newInstance();
-		$property = $this->newMockBuilder()->newObject( 'DIProperty', array(
-			'isUserDefined' => $isUserDefined,
-			'getDiWikiPage' => $this->getMockDIWikiPage( true ),
-			'getLabel'      => $this->newRandomString(),
-		) );
+		$instance = new PropertiesQueryPage(
+			$this->store,
+			$this->settings
+		);
 
-		$expected = $property->getDiWikiPage()->getTitle()->getText();
-		$result   = $instance->formatResult( $skin, array( $property, $count ) );
+		$result = $instance->formatResult(
+			$this->skin,
+			[ $property, 42 ]
+		);
 
-		$this->assertInternalType( 'string', $result );
-		$this->assertContains( $expected, $result );
-
-		// Title does not exists
-		$count    = rand();
-		$instance = $this->newInstance();
-
-		$property = $this->newMockBuilder()->newObject( 'DIProperty', array(
-			'isUserDefined' => $isUserDefined,
-			'getDiWikiPage' => $this->getMockDIWikiPage( false ),
-			'getLabel'      => $this->newRandomString(),
-		) );
-
-		$expected = $property->getDiWikiPage()->getTitle()->getText();
-		$result   = $instance->formatResult( $skin, array( $property, $count ) );
-
-		$this->assertInternalType( 'string', $result );
-		$this->assertContains( $expected, $result );
-
-		// Multiple entries
-		$count    = rand();
-		$multiple = array( $this->getMockDIWikiPage(), $this->getMockDIWikiPage() );
-
-		$property = $this->newMockBuilder()->newObject( 'DIProperty', array(
-			'isUserDefined' => $isUserDefined,
-			'getDiWikiPage' => $this->getMockDIWikiPage( true ),
-			'getLabel'      => $this->newRandomString(),
-		) );
-
-		$expected = $property->getDiWikiPage()->getTitle()->getText();
-		$instance = $this->newInstance( null, $multiple );
-
-		$result   = $instance->formatResult( $skin, array( $property, $count ) );
-
-		$this->assertInternalType( 'string', $result );
-		$this->assertContains( $expected, $result );
-
+		$this->assertContains(
+			'Foo',
+			$result
+		);
 	}
 
-	/**
-	 * @since 1.9
-	 */
+	public function testFormatPropertyItemOnPredefinedProperty() {
+
+		$property = $this->dataItemFactory->newDIProperty( '_MDAT' );
+
+		$instance = new PropertiesQueryPage(
+			$this->store,
+			$this->settings
+		);
+
+		$result = $instance->formatResult(
+			$this->skin,
+			[ $property, 42 ]
+		);
+
+		$this->assertContains(
+			'42',
+			$result
+		);
+	}
+
 	public function testFormatPropertyItemZeroDisplay() {
 
-		$skin = $this->getMock( 'Skin' );
+		$property = $this->dataItemFactory->newDIProperty( 'Foo' );
 
-		$count    = 0;
-		$instance = $this->newInstance( null, array(), array(
-			'smwgPropertyZeroCountDisplay' => false
-		) );
-
-		$property = $this->newMockBuilder()->newObject( 'DIProperty', array(
-			'isUserDefined' => true,
-			'getDiWikiPage' => $this->getMockDIWikiPage( true ),
-			'getLabel'      => $this->newRandomString(),
-		) );
-
-		$result = $instance->formatResult( $skin, array( $property, $count ) );
-
-		$this->assertInternalType( 'string', $result );
-		$this->assertEmpty( $result );
-	}
-
-	/**
-	 * @since 1.9
-	 */
-	public function testFormatPropertyItemTitleNull() {
-
-		$skin = $this->getMock( 'Skin' );
-
-		$count    = rand();
-		$instance = $this->newInstance();
-
-		$property = $this->newMockBuilder()->newObject( 'DIProperty', array(
-			'isUserDefined' => true,
-			'getLabel'      => $this->newRandomString(),
-		) );
-
-		$expected = $property->getLabel();
-		$result   = $instance->formatResult( $skin, array( $property, $count ) );
-
-		$this->assertInternalType( 'string', $result );
-		$this->assertContains( $expected, $result );
-	}
-
-	/**
-	 * @since 1.9
-	 */
-	public function testFormatPropertyItemLowUsageThreshold() {
-
-		$skin = $this->getMock( 'Skin' );
-
-		$count    = rand();
-		$instance = $this->newInstance( null, array(), array(
-			'smwgPropertyLowUsageThreshold' => $count + 1,
-			'smwgPDefaultType' => '_wpg'
-		) );
-
-		$property = $this->newMockBuilder()->newObject( 'DIProperty', array(
-			'isUserDefined' => true,
-			'getDiWikiPage' => $this->getMockDIWikiPage( true ),
-			'getLabel'      => $this->newRandomString(),
-		) );
-
-		$expected = $property->getLabel();
-		$result   = $instance->formatResult( $skin, array( $property, $count ) );
-
-		$this->assertInternalType( 'string', $result );
-		$this->assertContains( $expected, $result );
-	}
-
-	/**
-	 * @return array
-	 */
-	public function getUserDefinedDataProvider() {
-		return array( array( true ), array( false ) );
-	}
-
-	/**
-	 * @since 1.9
-	 */
-	public function testGetResults() {
-
-		$expected = 'Lala';
-
-		$instance = $this->newInstance( $expected );
-		$this->assertEquals( $expected, $instance->getResults( null ) );
-
-	}
-
-	/**
-	 * @since 1.9
-	 */
-	public function testGetPageHeader() {
-
-		$propertySearch = $this->newRandomString();
-
-		$context = $this->newContext( array( 'property' => $propertySearch ) );
-		$context->setTitle( $this->newTitle() );
-
-		$instance = $this->newInstance();
-		$instance->setContext( $context );
-		$instance->getResults( null );
-
-		$reflector = $this->newReflector();
-		$selectOptions = $reflector->getProperty( 'selectOptions' );
-		$selectOptions->setAccessible( true );
-		$selectOptions->setValue( $instance, array(
-			'offset' => 1,
-			'limit'  => 2,
-			'end'    => 5,
-			'count'  => 4
-		) );
-
-		$matcher = array(
-			'tag' => 'p',
-			'attributes' => array( 'class' => 'smw-sp-properties-docu' ),
-			'tag' => 'input',
-			'attributes' => array( 'name' => 'property', 'value' => $propertySearch ),
-			'tag' => 'input',
-			'attributes' => array( 'type' => 'submit' )
+		$this->settings->set(
+			'smwgPropertyZeroCountDisplay',
+			false
 		);
 
-		// https://github.com/sebastianbergmann/phpunit/issues/1380
-		// $this->assertTag( $matcher, $instance->getPageHeader() );
-		$this->assertContains( $propertySearch, $instance->getPageHeader() );
+		$instance = new PropertiesQueryPage(
+			$this->store,
+			$this->settings
+		);
+
+		$result = $instance->formatResult(
+			$this->skin,
+			[ $property, 0 ]
+		);
+
+		$this->assertEmpty(
+			$result
+		);
+	}
+
+	public function testFormatPropertyItemLowUsageThreshold() {
+
+		$property = $this->dataItemFactory->newDIProperty( 'Foo' );
+		$count  = 42;
+
+		$this->settings->set(
+			'smwgPropertyLowUsageThreshold',
+			$count + 1
+		);
+
+		$this->settings->set(
+			'smwgPDefaultType',
+			'_wpg'
+		);
+
+		$instance = new PropertiesQueryPage(
+			$this->store,
+			$this->settings
+		);
+
+		$result = $instance->formatResult(
+			$this->skin,
+			[ $property, $count ]
+		);
+
+		$this->assertContains(
+			'42',
+			$result
+		);
 	}
 
 }

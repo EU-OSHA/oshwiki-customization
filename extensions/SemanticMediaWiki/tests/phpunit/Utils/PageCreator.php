@@ -2,20 +2,23 @@
 
 namespace SMW\Tests\Utils;
 
+use Revision;
+use SMW\Tests\TestEnvironment;
+use SMW\Tests\Utils\Mock\MockSuperUser;
 use Title;
 use UnexpectedValueException;
 
 /**
- *
- * @group SMW
- * @group SMWExtension
- *
- * @licence GNU GPL v2+
+ * @license GNU GPL v2+
  * @since 1.9.1
+ *
+ * @author mwjames
  */
 class PageCreator {
 
-	/** @var WikiPage */
+	/**
+	 * @var null
+	 */
 	protected $page = null;
 
 	/**
@@ -36,27 +39,53 @@ class PageCreator {
 	/**
 	 * @since 1.9.1
 	 *
+	 * @param Title $title
+	 * @param string $editContent
+	 * @param string $pageContentLanguage
+	 *
 	 * @return PageCreator
 	 */
-	public function createPage( Title $title, $editContent = '' ) {
+	public function createPage( Title $title, $editContent = '', $pageContentLanguage = '' ) {
+
+		if ( $pageContentLanguage !== '' ) {
+			\Hooks::register( 'PageContentLanguage', function( $titleByHook, &$pageLang ) use( $title, $pageContentLanguage ) {
+
+				// Only change the pageContentLanguage for the selected page
+				if ( $title->getPrefixedDBKey() === $titleByHook->getPrefixedDBKey() ) {
+					$pageLang = $pageContentLanguage;
+				}
+
+				// MW 1.19
+				return true;
+			} );
+		}
 
 		$this->page = new \WikiPage( $title );
 
-		$pageContent = 'Content of ' . $title->getFullText() . ' ' . $editContent;
+		if ( $editContent === '' ) {
+			$editContent = 'Content of ' . $title->getFullText();
+		}
+
 		$editMessage = 'SMW system test: create page';
 
-		return $this->doEdit( $pageContent, $editMessage );
+		return $this->doEdit( $editContent, $editMessage );
 	}
 
 	/**
 	 * @since 1.9.1
 	 *
+	 * @param string $pageContent
+	 * @param string $editMessage
+	 *
 	 * @return PageCreator
 	 */
 	public function doEdit( $pageContent = '', $editMessage = '' ) {
 
-		if ( class_exists( 'WikitextContent' ) ) {
-			$content = new \WikitextContent( $pageContent );
+		if ( class_exists( 'ContentHandler' ) ) {
+			$content = \ContentHandler::makeContent(
+				$pageContent,
+				$this->getPage()->getTitle()
+			);
 
 			$this->getPage()->doEditContent(
 				$content,
@@ -67,34 +96,49 @@ class PageCreator {
 			$this->getPage()->doEdit( $pageContent, $editMessage );
 		}
 
+		TestEnvironment::executePendingDeferredUpdates();
+
 		return $this;
 	}
 
 	/**
 	 * @since 2.3
 	 *
+	 * @param Title $target
+	 * @param boolean $isRedirect
+	 *
 	 * @return PageCreator
 	 */
 	public function doMoveTo( Title $target, $isRedirect = true ) {
 
-		$this->getPage()->getTitle()->moveTo(
-			$target,
-			false,
-			"integration test",
-			$isRedirect
-		);
+		$reason = "integration test";
+		$source = $this->getPage()->getTitle();
+
+		if ( class_exists( '\MovePage' ) ) {
+			$mp = new \MovePage( $source, $target );
+			$status = $mp->move( new MockSuperUser(), $reason, $isRedirect );
+		} else {
+			// deprecated since 1.25, use the MovePage class instead
+			$status = $source->moveTo( $target, false, $reason, $isRedirect );
+		}
+
+		TestEnvironment::executePendingDeferredUpdates();
 
 		return $this;
 	}
 
 	/**
 	 * @since 2.0
+	 *
+	 * @return EditInfo
 	 */
 	public function getEditInfo() {
 
-		if ( class_exists( 'WikitextContent' ) ) {
+		$revision = $this->getPage()->getRevision();
 
-			$content = $this->getPage()->getRevision()->getContent();
+		if ( class_exists( 'ContentHandler' ) ) {
+
+			$content = $revision->getContent();
 			$format  = $content->getContentHandler()->getDefaultFormat();
 
 			return $this->getPage()->prepareContentForEdit(
@@ -105,14 +149,13 @@ class PageCreator {
 			);
 		}
 
+		$text = method_exists( $revision, 'getContent' ) ? $revision->getContent( Revision::RAW ) : $revision->getRawText();
+
 		return $this->getPage()->prepareTextForEdit(
-			$this->getPage()->getRevision()->getRawText(),
+			$text,
 			null,
 			null
 		);
 	}
 
 }
-
-// FIXME SemanticGlossary usage
-class_alias( 'SMW\Tests\Utils\PageCreator', 'SMW\Tests\Util\PageCreator' );

@@ -3,13 +3,14 @@
 namespace SMW\SPARQLStore\QueryEngine;
 
 use RuntimeException;
+use SMW\Exporter\Element;
+use SMW\Query\DebugFormatter;
 use SMW\Query\Language\ThingDescription;
-use SMW\SPARQLStore\RepositoryConnection;
-use SMW\Query\DebugOutputFormatter;
-use SMW\CircularReferenceGuard;
+use SMW\QueryEngine as QueryEngineInterface;
 use SMW\SPARQLStore\QueryEngine\Condition\Condition;
 use SMW\SPARQLStore\QueryEngine\Condition\FalseCondition;
 use SMW\SPARQLStore\QueryEngine\Condition\SingletonCondition;
+use SMW\SPARQLStore\RepositoryConnection;
 use SMWQuery as Query;
 use SMWQueryResult as QueryResult;
 
@@ -23,9 +24,11 @@ use SMWQueryResult as QueryResult;
  * @author Markus Krötzsch
  * @author mwjames
  */
-class QueryEngine {
+class QueryEngine implements QueryEngineInterface {
 
-	/// The name of the SPARQL variable that represents the query result.
+	/**
+	 * The name of the SPARQL variable that represents the query result.
+	 */
 	const RESULT_VARIABLE = 'result';
 
 	/**
@@ -34,9 +37,9 @@ class QueryEngine {
 	private $connection;
 
 	/**
-	 * @var CompoundConditionBuilder
+	 * @var ConditionBuilder
 	 */
-	private $compoundConditionBuilder;
+	private $conditionBuilder;
 
 	/**
 	 * @var QueryResultFactory
@@ -49,25 +52,23 @@ class QueryEngine {
 	private $engineOptions;
 
 	/**
-	 * Copy of the SMWQuery sortkeys array to be used while building the
-	 * SPARQL query conditions.
 	 * @var array
 	 */
-	private $sortkeys;
+	private $sortKeys = [];
 
 	/**
 	 * @since  2.0
 	 *
 	 * @param RepositoryConnection $connection
-	 * @param CompoundConditionBuilder $compoundConditionBuilder
+	 * @param ConditionBuilder $conditionBuilder
 	 * @param QueryResultFactory $queryResultFactory
 	 * @param EngineOptions|null $EngineOptions
 	 */
 	// @codingStandardsIgnoreStart phpcs, ignore --sniffs=Generic.Files.LineLength
-	public function __construct( RepositoryConnection $connection, CompoundConditionBuilder $compoundConditionBuilder, QueryResultFactory $queryResultFactory, EngineOptions $engineOptions = null ) {
+	public function __construct( RepositoryConnection $connection, ConditionBuilder $conditionBuilder, QueryResultFactory $queryResultFactory, EngineOptions $engineOptions = null ) {
 	// @codingStandardsIgnoreEnd
 		$this->connection = $connection;
-		$this->compoundConditionBuilder = $compoundConditionBuilder;
+		$this->conditionBuilder = $conditionBuilder;
 		$this->queryResultFactory = $queryResultFactory;
 		$this->engineOptions = $engineOptions;
 
@@ -75,7 +76,7 @@ class QueryEngine {
 			$this->engineOptions = new EngineOptions();
 		}
 
-		$this->compoundConditionBuilder->setResultVariable( self::RESULT_VARIABLE );
+		$this->conditionBuilder->setResultVariable( self::RESULT_VARIABLE );
 	}
 
 	/**
@@ -93,60 +94,51 @@ class QueryEngine {
 		}
 
 		// don't query, but return something to the printer
-		if ( $query->querymode == Query::MODE_NONE ) {
+		if ( $query->querymode == Query::MODE_NONE || $query->getLimit() < 1 ) {
 			return $this->queryResultFactory->newEmptyQueryResult( $query, true );
 		}
 
-		if ( $query->querymode == Query::MODE_DEBUG ) {
-			return $this->getDebugQueryResult( $query );
-		} elseif ( $query->querymode == Query::MODE_COUNT ) {
-			return $this->getCountQueryResult( $query );
-		}
+		$this->sortKeys = $query->sortkeys;
+		$this->conditionBuilder->setSortKeys( $this->sortKeys );
 
-		return $this->getInstanceQueryResult( $query );
-	}
-
-	/**
-	 * Get the output number for a query in counting mode.
-	 *
-	 * @note ignore sorting, just count
-	 *
-	 * @param Query $query
-	 *
-	 * @return integer
-	 */
-	public function getCountQueryResult( Query $query ) {
-
-		$this->sortkeys = array();
-
-		$this->compoundConditionBuilder->setSortKeys( $this->sortkeys );
-
-		$sparqlCondition = $this->compoundConditionBuilder->buildCondition(
+		$compoundCondition = $this->conditionBuilder->getConditionFrom(
 			$query->getDescription()
 		);
 
 		$query->addErrors(
-			$this->compoundConditionBuilder->getErrors()
+			$this->conditionBuilder->getErrors()
 		);
 
-		if ( $sparqlCondition instanceof SingletonCondition ) {
-			if ( $sparqlCondition->condition === '' ) { // all URIs exist, no querying
+		if ( $query->querymode == Query::MODE_DEBUG ) {
+			return $this->getDebugQueryResult( $query, $compoundCondition );
+		} elseif ( $query->querymode == Query::MODE_COUNT ) {
+			return $this->getCountQueryResult( $query, $compoundCondition );
+		}
+
+		return $this->getInstanceQueryResult( $query, $compoundCondition );
+	}
+
+	private function getCountQueryResult( Query $query, Condition $compoundCondition ) {
+
+		if ( $this->isSingletonConditionWithElementMatch( $compoundCondition ) ) {
+			if ( $compoundCondition->condition === '' ) { // all URIs exist, no querying
 				return 1;
 			} else {
-				$condition = $this->compoundConditionBuilder->convertConditionToString( $sparqlCondition );
-				$namespaces = $sparqlCondition->namespaces;
+				$condition = $this->conditionBuilder->convertConditionToString( $compoundCondition );
+				$namespaces = $compoundCondition->namespaces;
 				$askQueryResult = $this->connection->ask( $condition, $namespaces );
 
 				return $askQueryResult->isBooleanTrue() ? 1 : 0;
 			}
-		} elseif ( $sparqlCondition instanceof FalseCondition ) {
+		} elseif ( $compoundCondition instanceof FalseCondition ) {
 			return 0;
 		}
 
-		$condition = $this->compoundConditionBuilder->convertConditionToString( $sparqlCondition );
-		$namespaces = $sparqlCondition->namespaces;
+		$condition = $this->conditionBuilder->convertConditionToString( $compoundCondition );
+		$namespaces = $compoundCondition->namespaces;
+		$this->sortKeys = $this->conditionBuilder->getSortKeys();
 
-		$options = $this->getOptions( $query, $sparqlCondition );
+		$options = $this->getOptions( $query, $compoundCondition );
 		$options['DISTINCT'] = true;
 
 		$repositoryResult = $this->connection->selectCount(
@@ -159,48 +151,30 @@ class QueryEngine {
 		return $this->queryResultFactory->newQueryResult( $repositoryResult, $query );
 	}
 
-	/**
-	 * Get the results for a query in instance retrieval mode.
-	 *
-	 * @param Query $query
-	 *
-	 * @return QueryResult
-	 */
-	public function getInstanceQueryResult( Query $query ) {
+	private function getInstanceQueryResult( Query $query, Condition $compoundCondition ) {
 
-		$this->sortkeys = $query->sortkeys;
+		if ( $this->isSingletonConditionWithElementMatch( $compoundCondition ) ) {
+			$matchElement = $compoundCondition->matchElement;
 
-		$this->compoundConditionBuilder->setSortKeys( $this->sortkeys );
-
-		$sparqlCondition = $this->compoundConditionBuilder->buildCondition(
-			$query->getDescription()
-		);
-
-		$query->addErrors(
-			$this->compoundConditionBuilder->getErrors()
-		);
-
-		if ( $sparqlCondition instanceof SingletonCondition ) {
-			$matchElement = $sparqlCondition->matchElement;
-
-			if ( $sparqlCondition->condition === '' ) { // all URIs exist, no querying
-				$results = array( array ( $matchElement ) );
+			if ( $compoundCondition->condition === '' ) { // all URIs exist, no querying
+				$results = [  [ $matchElement ] ];
 			} else {
-				$condition = $this->compoundConditionBuilder->convertConditionToString( $sparqlCondition );
-				$namespaces = $sparqlCondition->namespaces;
+				$condition = $this->conditionBuilder->convertConditionToString( $compoundCondition );
+				$namespaces = $compoundCondition->namespaces;
 				$askQueryResult = $this->connection->ask( $condition, $namespaces );
-				$results = $askQueryResult->isBooleanTrue() ? array( array ( $matchElement ) ) : array();
+				$results = $askQueryResult->isBooleanTrue() ? [  [ $matchElement ] ] : [];
 			}
 
-			$repositoryResult = new RepositoryResult( array( self::RESULT_VARIABLE => 0 ), $results );
+			$repositoryResult = new RepositoryResult( [ self::RESULT_VARIABLE => 0 ], $results );
 
-		} elseif ( $sparqlCondition instanceof FalseCondition ) {
-			$repositoryResult = new RepositoryResult( array( self::RESULT_VARIABLE => 0 ), array() );
+		} elseif ( $compoundCondition instanceof FalseCondition ) {
+			$repositoryResult = new RepositoryResult( [ self::RESULT_VARIABLE => 0 ], [] );
 		} else {
-			$condition = $this->compoundConditionBuilder->convertConditionToString( $sparqlCondition );
-			$namespaces = $sparqlCondition->namespaces;
+			$condition = $this->conditionBuilder->convertConditionToString( $compoundCondition );
+			$namespaces = $compoundCondition->namespaces;
+			$this->sortKeys = $this->conditionBuilder->getSortKeys();
 
-			$options = $this->getOptions( $query, $sparqlCondition );
+			$options = $this->getOptions( $query, $compoundCondition );
 			$options['DISTINCT'] = true;
 
 			$repositoryResult = $this->connection->select(
@@ -214,44 +188,26 @@ class QueryEngine {
 		return $this->queryResultFactory->newQueryResult( $repositoryResult, $query );
 	}
 
-	/**
-	 * Get the output string for a query in debugging mode.
-	 *
-	 * @param Query $query
-	 *
-	 * @return string
-	 */
-	public function getDebugQueryResult( Query $query ) {
+	private function getDebugQueryResult( Query $query, Condition $compoundCondition ) {
 
-		$this->sortkeys = $query->sortkeys;
+		$entries = [];
 
-		$this->compoundConditionBuilder->setSortKeys( $this->sortkeys );
-
-		$sparqlCondition = $this->compoundConditionBuilder->buildCondition(
-			$query->getDescription()
-		);
-
-		$query->addErrors(
-			$this->compoundConditionBuilder->getErrors()
-		);
-
-		$entries = array();
-
-		if ( $sparqlCondition instanceof SingletonCondition ) {
-			if ( $sparqlCondition->condition === '' ) { // all URIs exist, no querying
+		if ( $this->isSingletonConditionWithElementMatch( $compoundCondition ) ) {
+			if ( $compoundCondition->condition === '' ) { // all URIs exist, no querying
 				$sparql = 'None (no conditions).';
 			} else {
-				$condition = $this->compoundConditionBuilder->convertConditionToString( $sparqlCondition );
-				$namespaces = $sparqlCondition->namespaces;
+				$condition = $this->conditionBuilder->convertConditionToString( $compoundCondition );
+				$namespaces = $compoundCondition->namespaces;
 				$sparql = $this->connection->getSparqlForAsk( $condition, $namespaces );
 			}
-		} elseif ( $sparqlCondition instanceof FalseCondition ) {
+		} elseif ( $compoundCondition instanceof FalseCondition ) {
 			$sparql = 'None (conditions can not be satisfied by anything).';
 		} else {
-			$condition = $this->compoundConditionBuilder->convertConditionToString( $sparqlCondition );
-			$namespaces = $sparqlCondition->namespaces;
+			$condition = $this->conditionBuilder->convertConditionToString( $compoundCondition );
+			$namespaces = $compoundCondition->namespaces;
+			$this->sortKeys = $this->conditionBuilder->getSortKeys();
 
-			$options = $this->getOptions( $query, $sparqlCondition );
+			$options = $this->getOptions( $query, $compoundCondition );
 			$options['DISTINCT'] = true;
 
 			$sparql = $this->connection->getSparqlForSelect(
@@ -262,48 +218,55 @@ class QueryEngine {
 			);
 		}
 
-		$sparql = str_replace( array( '[',':',' ' ), array( '&#x005B;', '&#x003A;', '&#x0020;' ), $sparql );
-		$entries['SPARQL Query'] = '<div class="smwpre">' . $sparql . '</div>';
+		$entries['SPARQL Query'] = DebugFormatter::prettifySparql( $sparql );
 
-		return DebugOutputFormatter::formatOutputFor( 'SPARQLStore', $entries, $query );
+		return DebugFormatter::getStringFrom( 'SPARQLStore', $entries, $query );
+	}
+
+	private function isSingletonConditionWithElementMatch( $condition ) {
+		return $condition instanceof SingletonCondition && $condition->matchElement instanceof Element;
 	}
 
 	/**
 	 * Get a SPARQL option array for the given query.
 	 *
 	 * @param Query $query
-	 * @param Condition $sparqlCondition (storing order by variable names)
+	 * @param Condition $compoundCondition (storing order by variable names)
 	 *
 	 * @return array
 	 */
-	protected function getOptions( Query $query, Condition $sparqlCondition ) {
+	protected function getOptions( Query $query, Condition $compoundCondition ) {
 
-		$result = array( 'LIMIT' => $query->getLimit() + 1, 'OFFSET' => $query->getOffset() );
+		$options = [
+			'LIMIT' => $query->getLimit() + 1,
+			'OFFSET' => $query->getOffset()
+		];
 
 		// Build ORDER BY options using discovered sorting fields.
-		if ( $this->engineOptions->get( 'smwgQSortingSupport' ) ) {
+		if ( !$this->engineOptions->isFlagSet( 'smwgQSortFeatures', SMW_QSORT ) || !is_array( $this->sortKeys ) ) {
+			return $options;
+		}
 
-			$orderByString = '';
+		$orderByString = '';
 
-			foreach ( $this->sortkeys as $propkey => $order ) {
+		foreach ( $this->sortKeys as $propkey => $order ) {
 
-				if ( !is_string( $propkey ) ) {
-					throw new RuntimeException( "Expected a string value as sortkey" );
-				}
-
-				if ( ( $order != 'RANDOM' ) && array_key_exists( $propkey, $sparqlCondition->orderVariables ) ) {
-					$orderByString .= "$order(?" . $sparqlCondition->orderVariables[$propkey] . ") ";
-				} elseif ( ( $order == 'RANDOM' ) && $this->engineOptions->get( 'smwgQRandSortingSupport' ) ) {
-					// not supported in SPARQL; might be possible via function calls in some stores
-				}
+			if ( !is_string( $propkey ) ) {
+				throw new RuntimeException( "Expected a string value as sortkey" );
 			}
 
-			if ( $orderByString !== '' ) {
-				$result['ORDER BY'] = $orderByString;
+			if ( ( $order != 'RANDOM' ) && array_key_exists( $propkey, $compoundCondition->orderVariables ) ) {
+				$orderByString .= "$order(?" . $compoundCondition->orderVariables[$propkey] . ") ";
+			} elseif ( ( $order == 'RANDOM' ) && $this->engineOptions->isFlagSet( 'smwgQSortFeatures', SMW_QSORT_RANDOM ) ) {
+				// not supported in SPARQL; might be possible via function calls in some stores
 			}
 		}
 
-		return $result;
+		if ( $orderByString !== '' ) {
+			$options['ORDER BY'] = $orderByString;
+		}
+
+		return $options;
 	}
 
 }

@@ -3,7 +3,6 @@
 namespace SMW\Tests\SPARQLStore\QueryEngine;
 
 use SMW\SPARQLStore\QueryEngine\RepositoryResult;
-
 use SMWExpLiteral as ExpLiteral;
 
 /**
@@ -33,8 +32,8 @@ class RepositoryResultTest extends \PHPUnit_Framework_TestCase {
 	public function testIsBooleanTrue() {
 
 		$instance = new RepositoryResult(
-			array(),
-			array( array( new ExpLiteral( 'true', 'http://www.w3.org/2001/XMLSchema#boolean' ) ) )
+			[],
+			[ [ new ExpLiteral( 'true', 'http://www.w3.org/2001/XMLSchema#boolean' ) ] ]
 		);
 
 		$this->assertEquals( 1, $instance->numRows() );
@@ -53,8 +52,8 @@ class RepositoryResultTest extends \PHPUnit_Framework_TestCase {
 	public function testGetNumericValue() {
 
 		$instance = new RepositoryResult(
-			array(),
-			array( array( new ExpLiteral( '2', 'http://www.w3.org/2001/XMLSchema#integer' ) ) )
+			[],
+			[ [ new ExpLiteral( '2', 'http://www.w3.org/2001/XMLSchema#integer' ) ] ]
 		);
 
 		$this->assertEquals( 1, $instance->numRows() );
@@ -92,19 +91,19 @@ class RepositoryResultTest extends \PHPUnit_Framework_TestCase {
 
 	public function testIteration() {
 
-		$rawList = array(
-			array(
+		$rawList = [
+			[
 				new ExpLiteral( '2', 'http://www.w3.org/2001/XMLSchema#integer' ),
 				new ExpLiteral( 'true', 'http://www.w3.org/2001/XMLSchema#boolean' )
-			),
-			array(
+			],
+			[
 				new ExpLiteral( '2', 'http://www.w3.org/2001/XMLSchema#integer' )
-			)
-		);
+			]
+		];
 
 		$instance = new RepositoryResult(
-			array(),
-			array( $rawList[0], $rawList[1] )
+			[],
+			[ $rawList[0], $rawList[1] ]
 		);
 
 		foreach ( $instance as $key => $listItem ) {
@@ -115,9 +114,9 @@ class RepositoryResultTest extends \PHPUnit_Framework_TestCase {
 	public function testGetComments() {
 
 		$instance = new RepositoryResult(
-			array(),
-			array(),
-			array( 'Foo' )
+			[],
+			[],
+			[ 'Foo' ]
 		);
 
 		$this->assertContains(

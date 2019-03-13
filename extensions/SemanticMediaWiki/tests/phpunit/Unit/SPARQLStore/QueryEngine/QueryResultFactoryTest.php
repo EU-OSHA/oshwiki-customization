@@ -2,10 +2,8 @@
 
 namespace SMW\Tests\SPARQLStore\QueryEngine;
 
-use SMW\Tests\Utils\Mock\IteratorMockBuilder;
-
 use SMW\SPARQLStore\QueryEngine\QueryResultFactory;
-
+use SMW\Tests\Utils\Mock\IteratorMockBuilder;
 use SMWQuery as Query;
 use SMWQueryResult as QueryResult;
 
@@ -142,7 +140,7 @@ class QueryResultFactoryTest extends \PHPUnit_Framework_TestCase {
 		$iteratorMockBuilder = new IteratorMockBuilder();
 
 		$repositoryResult = $iteratorMockBuilder->setClass( '\SMW\SPARQLStore\QueryEngine\RepositoryResult' )
-			->with( array( array( $expElement ) ) )
+			->with( [ [ $expElement ] ] )
 			->getMockForIterator();
 
 		$repositoryResult->expects( $this->atLeastOnce() )
@@ -191,11 +189,11 @@ class QueryResultFactoryTest extends \PHPUnit_Framework_TestCase {
 
 	public function errorCodeProvider() {
 
-		$provider = array(
-			array( 0 ),
-			array( 1 ),
-			array( 2 )
-		);
+		$provider = [
+			[ 0 ],
+			[ 1 ],
+			[ 2 ]
+		];
 
 		return $provider;
 	}

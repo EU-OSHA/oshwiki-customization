@@ -1,19 +1,16 @@
 <?php
 
-namespace SMW\Tests\Integration\MediaWiki\Hooks;
-
-use SMW\Tests\Utils\UtilityFactory;
-use SMW\Tests\MwDBaseUnitTestCase;
+namespace SMW\Tests\Integration;
 
 use SMW\DIWikiPage;
 use SMW\Localizer;
-use SMW\ApplicationFactory;
+use SMW\Tests\MwDBaseUnitTestCase;
 use SMWExportController as ExportController;
 use SMWRDFXMLSerializer as RDFXMLSerializer;
 use Title;
 
 /**
- * @group semantic-mediawiki-integration
+ * @group semantic-mediawiki
  * @group medium
  *
  * @license GNU GPL v2+
@@ -26,65 +23,55 @@ class RdfFileResourceTest extends MwDBaseUnitTestCase {
 	private $fixturesFileProvider;
 	private $stringValidator;
 
-	/**
-	 * MW GLOBALS to be restored after the test
-	 */
-	private $wgFileExtensions;
-	private $wgEnableUploads;
-	private $wgVerifyMimeType;
-
 	protected function setUp() {
 		parent::setUp();
 
-		$utilityFactory = UtilityFactory::getInstance();
+		$utilityFactory = $this->testEnvironment->getUtilityFactory();
 
 		$this->fixturesFileProvider = $utilityFactory->newFixturesFactory()->newFixturesFileProvider();
-		$this->stringValidator = UtilityFactory::getInstance()->newValidatorFactory()->newStringValidator();
+		$this->stringValidator = $utilityFactory->newValidatorFactory()->newStringValidator();
 
-		$this->applicationFactory = ApplicationFactory::getInstance();
-
-		$settings = array(
-			'smwgPageSpecialProperties' => array( '_MEDIA', '_MIME' ),
-			'smwgNamespacesWithSemanticLinks' => array( NS_MAIN => true, NS_FILE => true ),
-			'smwgCacheType' => 'hash',
+		$this->testEnvironment->withConfiguration( [
+			'smwgPageSpecialProperties' => [ '_MEDIA', '_MIME' ],
+			'smwgNamespacesWithSemanticLinks' => [ NS_MAIN => true, NS_FILE => true ],
+			'smwgMainCacheType' => 'hash',
 			'smwgExportBCAuxiliaryUse' => true
-		);
-
-		foreach ( $settings as $key => $value ) {
-			$this->applicationFactory->getSettings()->set( $key, $value );
-		}
+		] );
 
 		// Ensure that the DB creates the extra tables for MEDIA/MINE
 		$this->getStore()->clear();
 		$this->getStore()->setupStore( false );
 
-		$this->wgEnableUploads  = $GLOBALS['wgEnableUploads'];
-		$this->wgFileExtensions = $GLOBALS['wgFileExtensions'];
-		$this->wgVerifyMimeType = $GLOBALS['wgVerifyMimeType'];
-
-		$GLOBALS['wgEnableUploads'] = true;
-		$GLOBALS['wgFileExtensions'] = array( 'txt' );
-		$GLOBALS['wgVerifyMimeType'] = true;
+		// MW GLOBALS to be restored after the test
+		$this->testEnvironment->withConfiguration( [
+			'wgEnableUploads'  => true,
+			'wgFileExtensions' => [ 'txt' ],
+			'wgVerifyMimeType' => true
+		] );
 
 		\SMWExporter::clear();
 	}
 
 	protected function tearDown() {
-
-		$GLOBALS['wgEnableUploads'] = $this->wgEnableUploads;
-		$GLOBALS['wgFileExtensions'] = $this->wgFileExtensions;
-		$GLOBALS['wgVerifyMimeType'] = $this->wgVerifyMimeType;
-
+		$this->testEnvironment->tearDown();
 		parent::tearDown();
 	}
 
 	public function testFileUploadForDummyTextFile() {
+		Localizer::getInstance()->clear();
 
 		$subject = new DIWikiPage( 'RdfLinkedFile.txt', NS_FILE );
 		$fileNS = Localizer::getInstance()->getNamespaceTextById( NS_FILE );
 
-		$dummyTextFile = $this->fixturesFileProvider->newUploadForDummyTextFile( 'RdfLinkedFile.txt' );
-		$dummyTextFile->doUpload( '[[HasFile::File:RdfLinkedFile.txt]]' );
+		$dummyTextFile = $this->fixturesFileProvider->newUploadForDummyTextFile(
+			'RdfLinkedFile.txt'
+		);
+
+		$dummyTextFile->doUpload(
+			'[[HasFile::File:RdfLinkedFile.txt]]'
+		);
+
+		$this->testEnvironment->executePendingDeferredUpdates();
 
 		$exportController = new ExportController( new RDFXMLSerializer() );
 		$exportController->enableBacklinks( false );
@@ -92,23 +79,22 @@ class RdfFileResourceTest extends MwDBaseUnitTestCase {
 		ob_start();
 
 		$exportController->printPages(
-			array( $subject->getTitle()->getPrefixedDBKey() )
+			[ $subject->getTitle()->getPrefixedDBKey() ]
 		);
 
 		$output = ob_get_clean();
 
-		$expected = array(
+		$expected = [
 			"<rdfs:label>{$fileNS}:RdfLinkedFile.txt</rdfs:label>",
 			'<swivt:file rdf:resource="' . $dummyTextFile->getLocalFile()->getFullURL() . '"/>',
 			'<property:Media_type-23aux rdf:datatype="http://www.w3.org/2001/XMLSchema#string">TEXT</property:Media_type-23aux>',
 			'<property:MIME_type-23aux rdf:datatype="http://www.w3.org/2001/XMLSchema#string">text/plain</property:MIME_type-23aux>'
-		);
+		];
 
 		$this->stringValidator->assertThatStringContains(
 			$expected,
 			$output
 		);
 	}
-
 
 }

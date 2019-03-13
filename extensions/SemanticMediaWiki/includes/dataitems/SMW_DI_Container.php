@@ -3,104 +3,9 @@
  * @ingroup SMWDataItems
  */
 
-use SMW\DataItemException;
-
-/**
- * Subclass of SMWSemanticData that is used to store the data in SMWDIContainer
- * objects. It is special since the subject that the stored property-value pairs
- * refer may or may not be specified explicitly. This can be tested with
- * hasAnonymousSubject(). When trying to access the subject in anonymous state,
- * an Exception will be thrown. Anonymous container data items are used when no
- * page context is available, e.g. when specifying such a value in a search form
- * where the parent page is not known.
- *
- * Besides this change, the subclass mainly is needed to restroe the disabled
- * serialization of SMWSemanticData.
- *
- * See also the documentation of SMWDIContainer.
- *
- * @since 1.6
- *
- * @author Markus Krötzsch
- * @ingroup SMWDataItems
- */
-class SMWContainerSemanticData extends SMWSemanticData {
-
-	/**
-	 * Construct a data container that refers to an anonymous subject. See
-	 * the documentation of the class for details.
-	 *
-	 * @since 1.7
-	 *
-	 * @param boolean $noDuplicates stating if duplicate data should be avoided
-	 */
-	public static function makeAnonymousContainer( $noDuplicates = true ) {
-		$subject = new SMWDIWikiPage( 'SMWInternalObject', NS_SPECIAL, '' );
-		return new SMWContainerSemanticData( $subject, $noDuplicates );
-	}
-
-	/**
-	 * Restore complete serialization which is disabled in SMWSemanticData.
-	 */
-	public function __sleep() {
-		return array( 'mSubject', 'mProperties', 'mPropVals',
-			'mHasVisibleProps', 'mHasVisibleSpecs', 'mNoDuplicates' );
-	}
-
-	/**
-	 * Check if the subject of this container is an anonymous object.
-	 * See the documenation of the class for details.
-	 *
-	 * @return boolean
-	 */
-	public function hasAnonymousSubject() {
-		if ( $this->mSubject->getNamespace() == NS_SPECIAL &&
-		     $this->mSubject->getDBkey() == 'SMWInternalObject' &&
-		     $this->mSubject->getInterwiki() === '' ) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	/**
-	 * Return subject to which the stored semantic annotation refer to, or
-	 * throw an exception if the subject is anonymous (if the data has not
-	 * been contextualized with setMasterPage() yet).
-	 *
-	 * @return SMWDIWikiPage subject
-	 */
-	public function getSubject() {
-		if ( $this->hasAnonymousSubject() ) {
-			throw new DataItemException("Trying to get the subject of a container data item that has not been given any. This container can only be used as a search pattern.");
-		} else {
-			return $this->mSubject;
-		}
-	}
-
-	/**
-	 * Change the object to become an exact copy of the given
-	 * SMWSemanticData object. This is used to make other types of
-	 * SMWSemanticData into an SMWContainerSemanticData. To copy objects of
-	 * the same type, PHP clone() should be used.
-	 *
-	 * @since 1.7
-	 *
-	 * @param $semanticData SMWSemanticData object to copy from
-	 */
-	public function copyDataFrom( SMWSemanticData $semanticData ) {
-		$this->mSubject = $semanticData->getSubject();
-		$this->mProperties = $semanticData->getProperties();
-		$this->mPropVals = array();
-		foreach ( $this->mProperties as $property ) {
-			$this->mPropVals[$property->getKey()] = $semanticData->getPropertyValues( $property );
-		}
-		$this->mHasVisibleProps = $semanticData->hasVisibleProperties();
-		$this->mHasVisibleSpecs = $semanticData->hasVisibleSpecialProperties();
-		$this->mNoDuplicates = $semanticData->mNoDuplicates;
-	}
-
-}
+use SMW\DIProperty;
+use SMW\Exception\DataItemException;
+use SMWDIBlob as DIBlob;
 
 /**
  * This class implements container data items that can store SMWSemanticData
@@ -160,6 +65,18 @@ class SMWDIContainer extends SMWDataItem {
 		return '';
 	}
 
+	/**
+	 * @since 2.5
+	 *
+	 * @param string $sortKey
+	 */
+	public function setSortKey( $sortKey ) {
+		$this->m_semanticData->addPropertyObjectValue(
+			new DIProperty( '_SKEY' ),
+			new DIBlob( $this->m_semanticData->getSubject()->getSortKey() . '#' . $sortKey )
+		);
+	}
+
 	public function getSerialization() {
 		return serialize( $this->m_semanticData );
 	}
@@ -170,7 +87,33 @@ class SMWDIContainer extends SMWDataItem {
 	 * @return string
 	 */
 	public function getHash() {
-		return $this->m_semanticData->getHash();
+
+		$hash = $this->getValueHash( $this->m_semanticData );
+		sort( $hash );
+
+		return md5( implode( '#', $hash ) );
+
+		// We want a value hash, not an entity hash!!
+		// return $this->m_semanticData->getHash();
+	}
+
+	private function getValueHash( $semanticData ) {
+
+		$hash = [];
+
+		foreach ( $semanticData->getProperties() as $property ) {
+			$hash[] = $property->getKey();
+
+			foreach ( $semanticData->getPropertyValues( $property ) as $di ) {
+				$hash[] = $di->getHash();
+			}
+		}
+
+		foreach ( $semanticData->getSubSemanticData() as $data ) {
+			$hash[] = $this->getValueHash( $data );
+		}
+
+		return $hash;
 	}
 
 	/**

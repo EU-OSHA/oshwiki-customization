@@ -3,9 +3,9 @@
 namespace SMW;
 
 use Onoi\EventDispatcher\EventListenerCollection;
-use Onoi\EventDispatcher\EventDispatcherFactory;
-use SMWExporter as Exporter;
 use SMW\Query\QueryComparator;
+use SMW\SQLStore\QueryDependency\DependencyLinksUpdateJournal;
+use SMWExporter as Exporter;
 
 /**
  * @license GNU GPL v2+
@@ -19,6 +19,11 @@ class EventListenerRegistry implements EventListenerCollection {
 	 * @var EventListenerCollection
 	 */
 	private $eventListenerCollection = null;
+
+	/**
+	 * @var LoggerInterface
+	 */
+	private $logger;
 
 	/**
 	 * @since 2.2
@@ -40,14 +45,24 @@ class EventListenerRegistry implements EventListenerCollection {
 
 	private function addListenersToCollection() {
 
+		$this->logger = ApplicationFactory::getInstance()->getMediaWikiLogger();
+
+		/**
+		 * Emitted during UpdateJob, ArticlePurge
+		 */
 		$this->eventListenerCollection->registerCallback(
 			'factbox.cache.delete', function( $dispatchContext ) {
 
-				$title = $dispatchContext->get( 'title' );
-				$cache = ApplicationFactory::getInstance()->getCache();
+				if ( $dispatchContext->has( 'subject' ) ) {
+					$title = $dispatchContext->get( 'subject' )->getTitle();
+				} else {
+					$title = $dispatchContext->get( 'title' );
+				}
 
-				$cache->delete(
-					ApplicationFactory::getInstance()->newCacheFactory()->getFactboxCacheKey( $title->getArticleID() )
+				$applicationFactory = ApplicationFactory::getInstance();
+
+				$applicationFactory->getCache()->delete(
+					\SMW\Factbox\CachedFactbox::makeCacheKey( $title )
 				);
 			}
 		);
@@ -64,24 +79,112 @@ class EventListenerRegistry implements EventListenerCollection {
 			}
 		);
 
+		/**
+		 * Emitted during UpdateJob
+		 */
 		$this->eventListenerCollection->registerCallback(
-			'property.spec.change', function( $dispatchContext ) {
+			'cached.propertyvalues.prefetcher.reset', function( $dispatchContext ) {
 
-				$subject = $dispatchContext->get( 'subject' );
+				if ( $dispatchContext->has( 'title' ) ) {
+					$subject = DIWikiPage::newFromTitle( $dispatchContext->get( 'title' ) );
+				} else{
+					$subject = $dispatchContext->get( 'subject' );
+				}
 
-				$updateDispatcherJob = ApplicationFactory::getInstance()->newJobFactory()->newUpdateDispatcherJob(
-					$subject->getTitle()
+				$applicationFactory = ApplicationFactory::getInstance();
+
+				$logContext = [
+					'role' => 'developer',
+					'event' => 'cached.propertyvalues.prefetcher.reset',
+					'origin' => $subject
+				];
+
+				$this->logger->info( '[Event] {event}: {origin}', $logContext );
+
+				$applicationFactory->singleton( 'CachedPropertyValuesPrefetcher' )->resetCacheBy(
+					$subject
 				);
-
-				$updateDispatcherJob->run();
-
-				Exporter::getInstance()->resetCacheFor( $subject );
 
 				$dispatchContext->set( 'propagationstop', true );
 			}
 		);
 
+		/**
+		 * Emitted during NewRevisionFromEditComplete, ArticleDelete, TitleMoveComplete,
+		 * PropertyTableIdReferenceDisposer, ArticlePurge
+		 */
+		$this->eventListenerCollection->registerCallback(
+			'cached.prefetcher.reset', function( $dispatchContext ) {
+
+				if ( $dispatchContext->has( 'title' ) ) {
+					$subject = DIWikiPage::newFromTitle( $dispatchContext->get( 'title' ) );
+				} else{
+					$subject = $dispatchContext->get( 'subject' );
+				}
+
+				$context = $dispatchContext->has( 'context' ) ? $dispatchContext->get( 'context' ) : '';
+
+				$applicationFactory = ApplicationFactory::getInstance();
+
+				$logContext = [
+					'role' => 'developer',
+					'event' => 'cached.prefetcher.reset',
+					'origin' => $subject
+				];
+
+				$this->logger->info( '[Event] {event}: {origin}', $logContext );
+
+				$applicationFactory->singleton( 'CachedPropertyValuesPrefetcher' )->resetCacheBy(
+					$subject
+				);
+
+				$applicationFactory->singleton( 'CachedQueryResultPrefetcher' )->resetCacheBy(
+					$subject,
+					$context
+				);
+
+				if ( $dispatchContext->has( 'ask' ) ) {
+					$applicationFactory->singleton( 'CachedQueryResultPrefetcher' )->resetCacheBy(
+						$dispatchContext->get( 'ask' ),
+						$context
+					);
+				}
+
+				$dispatchContext->set( 'propagationstop', true );
+			}
+		);
+
+		$this->registerStateChangeEvents();
+
 		return $this->eventListenerCollection;
+	}
+
+	private function registerStateChangeEvents() {
+
+		/**
+		 * Emitted during ArticleDelete
+		 */
+		$this->eventListenerCollection->registerCallback(
+			'cached.update.marker.delete', function( $dispatchContext ) {
+
+				$cache = ApplicationFactory::getInstance()->getCache();
+
+				if ( $dispatchContext->has( 'subject' ) ) {
+					$cache->delete(
+						DependencyLinksUpdateJournal::makeKey(
+							$dispatchContext->get( 'subject' )
+						)
+					);
+
+					$cache->delete(
+						smwfCacheKey(
+							ParserData::CACHE_NAMESPACE,
+							$dispatchContext->get( 'subject' )->getHash()
+						)
+					);
+				}
+			}
+		);
 	}
 
 }

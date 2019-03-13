@@ -2,14 +2,10 @@
 
 namespace SMW\Tests\MediaWiki\Hooks;
 
-use SMW\Tests\Utils\Mock\MockTitle;
-use SMW\Tests\Utils\Mock\MockSuperUser;
-
+use SMW\DIProperty;
+use SMW\DIWikiPage;
 use SMW\MediaWiki\Hooks\ArticleDelete;
-use SMW\ApplicationFactory;
-use SMW\Settings;
-
-use Title;
+use SMW\Tests\TestEnvironment;
 
 /**
  * @covers \SMW\MediaWiki\Hooks\ArticleDelete
@@ -22,56 +18,88 @@ use Title;
  */
 class ArticleDeleteTest extends \PHPUnit_Framework_TestCase {
 
-	private $applicationFactory;
+	private $testEnvironment;
+	private $jobFactory;
 
 	protected function setUp() {
 		parent::setUp();
 
-		$this->applicationFactory = ApplicationFactory::getInstance();
-		$this->applicationFactory->getSettings()->set( 'smwgEnableUpdateJobs', false );
-		$this->applicationFactory->getSettings()->set( 'smwgDeleteSubjectWithAssociatesRefresh', false );
+		$this->testEnvironment = new TestEnvironment(
+			[
+				'smwgEnableUpdateJobs' => false,
+				'smwgEnabledDeferredUpdate' => false
+			]
+		);
+
+		$this->jobFactory = $this->getMockBuilder( '\SMW\MediaWiki\JobFactory' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$jobQueue = $this->getMockBuilder( '\SMW\MediaWiki\JobQueue' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$this->testEnvironment->registerObject( 'JobFactory', $this->jobFactory );
+		$this->testEnvironment->registerObject( 'JobQueue', $jobQueue );
 	}
 
 	protected function tearDown() {
-		$this->applicationFactory->clear();
-
+		$this->testEnvironment->tearDown();
 		parent::tearDown();
 	}
 
 	public function testCanConstruct() {
 
-		$wikiPage = $this->getMockBuilder( '\WikiPage' )
+		$store = $this->getMockBuilder( '\SMW\Store' )
 			->disableOriginalConstructor()
-			->getMock();
+			->getMockForAbstractClass();
 
-		$user = $this->getMockBuilder( '\User' )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$reason = '';
-		$error = '';
-
-		$instance = new ArticleDelete(
-			$wikiPage,
-			$user,
-			$reason,
-			$error
-		);
+		$instance = new ArticleDelete( $store );
 
 		$this->assertInstanceOf(
-			'\SMW\MediaWiki\Hooks\ArticleDelete',
+			ArticleDelete::class,
 			$instance
 		);
 	}
 
 	public function testProcess() {
 
-		$store = $this->getMockBuilder( '\SMW\Store' )
+		$idTable = $this->getMockBuilder( '\SMWSql3SmwIds' )
 			->disableOriginalConstructor()
-			->getMockForAbstractClass();
+			->getMock();
+
+		$updateDispatcherJob = $this->getMockBuilder( '\SMW\MediaWiki\Jobs\UpdateDispatcherJob' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$parserCachePurgeJob = $this->getMockBuilder( '\SMW\MediaWiki\Jobs\NullJob' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$this->jobFactory->expects( $this->atLeastOnce() )
+			->method( 'newUpdateDispatcherJob' )
+			->will( $this->returnValue( $updateDispatcherJob ) );
+
+		$this->jobFactory->expects( $this->atLeastOnce() )
+			->method( 'newParserCachePurgeJob' )
+			->will( $this->returnValue( $parserCachePurgeJob ) );
+
+		$subject = DIWikiPage::newFromText( __METHOD__ );
+
+		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
+			->disableOriginalConstructor()
+			->getMock();
 
 		$store->expects( $this->atLeastOnce() )
 			->method( 'deleteSubject' );
+
+		$store->expects( $this->atLeastOnce() )
+			->method( 'getInProperties' )
+			->will( $this->returnValue( [ new DIProperty( 'Foo' ) ] ) );
+
+		$store->expects( $this->atLeastOnce() )
+			->method( 'getObjectIds' )
+			->will( $this->returnValue( $idTable ) );
 
 		$wikiPage = $this->getMockBuilder( '\WikiPage' )
 			->disableOriginalConstructor()
@@ -79,25 +107,15 @@ class ArticleDeleteTest extends \PHPUnit_Framework_TestCase {
 
 		$wikiPage->expects( $this->atLeastOnce() )
 			->method( 'getTitle' )
-			->will( $this->returnValue( Title::newFromText( __METHOD__ ) ) );
-
-		$user = $this->getMockBuilder( '\User' )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$reason = '';
-		$error = '';
-
-		$this->applicationFactory->registerObject( 'Store', $store );
+			->will( $this->returnValue( $subject->getTitle() ) );
 
 		$instance = new ArticleDelete(
-			$wikiPage,
-			$user,
-			$reason,
-			$error
+			$store
 		);
 
-		$this->assertTrue( $instance->process() );
+		$this->assertTrue(
+			$instance->process( $wikiPage )
+		);
 	}
 
 }

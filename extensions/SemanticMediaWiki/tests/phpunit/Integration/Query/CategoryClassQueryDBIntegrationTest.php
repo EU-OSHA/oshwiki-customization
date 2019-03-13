@@ -2,24 +2,17 @@
 
 namespace SMW\Tests\Integration\Query;
 
-use SMW\Tests\MwDBaseUnitTestCase;
-use SMW\Tests\Utils\UtilityFactory;
-
-use SMW\Query\Language\ThingDescription;
+use SMW\DataValueFactory;
+use SMW\DIProperty;
+use SMW\DIWikiPage;
 use SMW\Query\Language\ClassDescription;
 use SMW\Query\Language\SomeProperty;
-
-use SMW\DIWikiPage;
-use SMW\DIProperty;
-use SMW\DataValueFactory;
-
-use SMWDIBlob as DIBlob;
-use SMWQuery as Query;
-use SMWQueryResult as QueryResult;
-use SMWDataValue as DataValue;
-use SMWDataItem as DataItem;
+use SMW\Query\Language\ThingDescription;
 use SMW\Query\PrintRequest as PrintRequest;
+use SMW\Tests\MwDBaseUnitTestCase;
+use SMW\Tests\Utils\UtilityFactory;
 use SMWPropertyValue as PropertyValue;
+use SMWQuery as Query;
 
 /**
  * @group SMW
@@ -38,7 +31,7 @@ use SMWPropertyValue as PropertyValue;
  */
 class CategoryClassQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 
-	private $subjectsToBeCleared = array();
+	private $subjectsToBeCleared = [];
 	private $semanticDataFactory;
 
 	private $dataValueFactory;
@@ -65,7 +58,7 @@ class CategoryClassQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 
 		$property = new DIProperty( '_INST' );
 
-		$dataValue = $this->dataValueFactory->newPropertyObjectValue( $property, 'SomeCategory' );
+		$dataValue = $this->dataValueFactory->newDataValueByProperty( $property, 'SomeCategory' );
 
 		$semanticData = $this->semanticDataFactory->newEmptySemanticData( __METHOD__ );
 

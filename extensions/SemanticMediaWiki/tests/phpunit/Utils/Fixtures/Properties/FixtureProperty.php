@@ -2,8 +2,8 @@
 
 namespace SMW\Tests\Utils\Fixtures\Properties;
 
-use SMW\DIProperty;
 use SMW\DataValueFactory;
+use SMW\DIProperty;
 use SMW\SemanticData;
 
 /**
@@ -38,7 +38,7 @@ abstract class FixtureProperty {
 		$semanticData = new SemanticData( $this->property->getDiWikiPage() );
 
 		$semanticData->addDataValue(
-			DataValueFactory::getInstance()->newPropertyObjectValue(
+			DataValueFactory::getInstance()->newDataValueByProperty(
 				new DIProperty( '_TYPE' ),
 				$this->property->findPropertyTypeID()
 			)

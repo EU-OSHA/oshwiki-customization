@@ -64,14 +64,14 @@ class TitleLookup {
 
 		if ( $this->namespace === NS_CATEGORY ) {
 			$tableName = 'category';
-			$fields = array( 'cat_title' );
+			$fields = [ 'cat_title' ];
 			$conditions = '';
-			$options = array( 'USE INDEX' => 'cat_title' );
+			$options = [ 'USE INDEX' => 'cat_title' ];
 		} else {
 			$tableName = 'page';
-			$fields = array( 'page_namespace', 'page_title' );
-			$conditions = array( 'page_namespace' => $this->namespace );
-			$options = array( 'USE INDEX' => 'PRIMARY' );
+			$fields = [ 'page_namespace', 'page_title' ];
+			$conditions = [ 'page_namespace' => $this->namespace ];
+			$options = [ 'USE INDEX' => 'PRIMARY' ];
 		}
 
 		$res = $this->connection->select(
@@ -80,6 +80,28 @@ class TitleLookup {
 			$conditions,
 			__METHOD__,
 			$options
+		);
+
+		return $this->makeTitlesFromSelection( $res );
+	}
+
+	/**
+	 * @since 2.4
+	 *
+	 * @return Title[]
+	 */
+	public function getRedirectPages() {
+
+		$conditions = [];
+		$options = [];
+
+		$res = $this->connection->select(
+			[ 'page', 'redirect' ],
+			[ 'page_namespace', 'page_title' ],
+			$conditions,
+			__METHOD__,
+			$options,
+			[ 'page' => [ 'INNER JOIN', [ 'page_id=rd_from' ] ] ]
 		);
 
 		return $this->makeTitlesFromSelection( $res );
@@ -102,14 +124,14 @@ class TitleLookup {
 
 		if ( $this->namespace === NS_CATEGORY ) {
 			$tableName = 'category';
-			$fields = array( 'cat_title', 'cat_id' );
-			$conditions = array( "cat_id BETWEEN $startId AND $endId" );
-			$options = array( 'ORDER BY' => 'cat_id ASC', 'USE INDEX' => 'cat_title' );
+			$fields = [ 'cat_title', 'cat_id' ];
+			$conditions = [ "cat_id BETWEEN $startId AND $endId" ];
+			$options = [ 'ORDER BY' => 'cat_id ASC', 'USE INDEX' => 'cat_title' ];
 		} else {
 			$tableName = 'page';
-			$fields = array( 'page_namespace', 'page_title', 'page_id' );
-			$conditions = array( "page_id BETWEEN $startId AND $endId" ) + array( 'page_namespace' => $this->namespace );
-			$options = array( 'ORDER BY' => 'page_id ASC', 'USE INDEX' => 'PRIMARY' );
+			$fields = [ 'page_namespace', 'page_title', 'page_id' ];
+			$conditions = [ "page_id BETWEEN $startId AND $endId" ] + [ 'page_namespace' => $this->namespace ];
+			$options = [ 'ORDER BY' => 'page_id ASC', 'USE INDEX' => 'PRIMARY' ];
 		}
 
 		$res = $this->connection->select(
@@ -148,7 +170,7 @@ class TitleLookup {
 
 	protected function makeTitlesFromSelection( $res ) {
 
-		$pages = array();
+		$pages = [];
 
 		if ( $res === false ) {
 			return $pages;
@@ -166,6 +188,9 @@ class TitleLookup {
 		if ( $this->namespace === NS_CATEGORY ) {
 			$ns = NS_CATEGORY;
 			$title = $row->cat_title;
+		} elseif ( isset( $row->rd_namespace ) ) {
+			$ns =  $row->rd_namespace;
+			$title = $row->rd_title;
 		} else {
 			$ns =  $row->page_namespace;
 			$title = $row->page_title;

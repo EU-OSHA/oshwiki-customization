@@ -3,7 +3,6 @@
 namespace SMW;
 
 use Html;
-use Message;
 use Language;
 
 /**
@@ -28,7 +27,7 @@ use Language;
 class MessageFormatter {
 
 	/** @var array */
-	protected $messages = array();
+	protected $messages = [];
 
 	/** @var string */
 	protected $type = 'warning';
@@ -64,7 +63,7 @@ class MessageFormatter {
 	 *
 	 * @return MessageFormatter
 	 */
-	public static function newFromArray( Language $language, array $messages = array () ) {
+	public static function newFromArray( Language $language, array $messages =  [] ) {
 		$instance = new self( $language );
 		return $instance->addFromArray( $messages );
 	}
@@ -81,7 +80,7 @@ class MessageFormatter {
 	public function addFromKey( $key /*...*/ ) {
 		$params = func_get_args();
 		array_shift( $params );
-		$this->addFromArray( array( new Message( $key, $params ) ) );
+		$this->addFromArray( [ new \Message( $key, $params ) ] );
 		return $this;
 	}
 
@@ -102,7 +101,17 @@ class MessageFormatter {
 	 * @return MessageFormatter
 	 */
 	public function addFromArray( array $messages ) {
-		$this->messages = array_merge ( $messages, $this->messages );
+
+		$messages = ProcessingErrorMsgHandler::normalizeAndDecodeMessages( $messages );
+
+		foreach ( $messages as $message ) {
+			if ( is_string( $message ) ) {
+				$this->messages[md5( $message )] = $message;
+			} else{
+				$this->messages[] = $message;
+			}
+		}
+
 		return $this;
 	}
 
@@ -158,7 +167,7 @@ class MessageFormatter {
 	 * @return MessageFormatter
 	 */
 	public function clear() {
-		$this->messages = array();
+		$this->messages = [];
 		return $this;
 	}
 
@@ -170,7 +179,7 @@ class MessageFormatter {
 	 * @return boolean
 	 */
 	public function exists() {
-		return $this->messages !== array();
+		return $this->messages !== [];
 	}
 
 	/**
@@ -202,22 +211,23 @@ class MessageFormatter {
 	 * @return array
 	 */
 	protected function doFormat( array $messages ) {
-		$newArray = array();
+		$newArray = [];
 
 		foreach ( $messages as $msg ) {
 
-			if ( $msg instanceof Message ) {
-				$newArray[] = $msg->inLanguage( $this->language )->text();
+			if ( $msg instanceof \Message ) {
+				$text = $msg->inLanguage( $this->language )->text();
+				$newArray[md5( $text )] = $text;
 			} elseif ( (array)$msg === $msg ) {
 				foreach ( $this->doFormat( $msg ) as $m ) {
-					$newArray[] = $m;
+					$newArray[md5( $m )] = $m;
 				}
 			} elseif ( (string)$msg === $msg ) {
-				$newArray[] = $msg;
+				$newArray[md5( $msg )] = $msg;
 			}
 		}
 
-		return array_unique( $newArray );
+		return $newArray;
 	}
 
 	/**
@@ -233,20 +243,20 @@ class MessageFormatter {
 	protected function getString( $html = true ) {
 
 		if ( $this->escape ) {
-			$messages = array_map( 'htmlspecialchars', $this->doFormat( $this->messages ) );
+			$messages = array_map( 'htmlspecialchars', array_values( $this->doFormat( $this->messages ) ) );
 		} else {
-			$messages = $this->doFormat( $this->messages );
+			$messages = array_values( $this->doFormat( $this->messages ) );
 		}
 
 		if ( count( $messages ) == 1 ) {
 			$messageString = $messages[0];
 		} else {
 			foreach ( $messages as &$message ) {
-				$message = $html ? Html::rawElement( 'li', array(), $message ) : $message;
+				$message = $html ? Html::rawElement( 'li', [], $message ) : $message;
 			}
 
 			$messageString = implode( $this->separator, $messages );
-			$messageString = $html ? Html::rawElement( 'ul', array(), $messageString ) : $messageString;
+			$messageString = $html ? Html::rawElement( 'ul', [], $messageString ) : $messageString;
 		}
 
 		return $messageString;
@@ -264,7 +274,7 @@ class MessageFormatter {
 		if ( $this->exists() ) {
 
 			$highlighter = Highlighter::factory( $this->type );
-			$highlighter->setContent( array( 'content' => $this->getString( true ) ) );
+			$highlighter->setContent( [ 'content' => $this->getString( true ) ] );
 
 			return $highlighter->getHtml();
 		}

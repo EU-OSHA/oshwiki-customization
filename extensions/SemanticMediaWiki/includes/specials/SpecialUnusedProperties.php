@@ -37,6 +37,7 @@ class SpecialUnusedProperties extends SpecialPage {
 	 * @see SpecialPage::execute
 	 */
 	public function execute( $param ) {
+		$this->setHeaders();
 
 		$out = $this->getOutput();
 
@@ -46,22 +47,14 @@ class SpecialUnusedProperties extends SpecialPage {
 		$page->setContext( $this->getContext() );
 
 		list( $limit, $offset ) = $this->getLimitOffset();
-		$page->doQuery( $offset, $limit );
+		$page->doQuery( $offset, $limit, $this->getRequest()->getVal( 'property' ) );
 
 		// Ensure locally collected output data is pushed to the output!
 		SMWOutputs::commitToOutputPage( $out );
 	}
 
-	/**
-	 * FIXME MW 1.24 wfCheckLimits was deprecated in MediaWiki 1.24
-	 */
 	private function getLimitOffset() {
-
-		if ( method_exists( $this->getRequest(), 'getLimitOffset' ) ) {
-			return $this->getRequest()->getLimitOffset();
-		}
-
-		return wfCheckLimits();
+		return $this->getRequest()->getLimitOffset();
 	}
 
 	protected function getGroupName() {

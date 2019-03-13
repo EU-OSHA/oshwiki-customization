@@ -2,19 +2,13 @@
 
 namespace SMW\SQLStore\QueryEngine;
 
-use OutOfBoundsException;
 use InvalidArgumentException;
+use OutOfBoundsException;
+use SMW\Message;
+use SMW\Query\Language\Conjuncton;
 use SMW\Query\Language\Description;
-use SMW\SQLStore\QueryEngine\Interpreter\ClassDescriptionInterpreter;
-use SMW\SQLStore\QueryEngine\Interpreter\ConceptDescriptionInterpreter;
-use SMW\SQLStore\QueryEngine\Interpreter\DisjunctionConjunctionInterpreter;
-use SMW\SQLStore\QueryEngine\Interpreter\NamespaceDescriptionInterpreter;
-use SMW\SQLStore\QueryEngine\Interpreter\SomePropertyInterpreter;
-use SMW\SQLStore\QueryEngine\Interpreter\ThingDescriptionInterpreter;
-use SMW\SQLStore\QueryEngine\Interpreter\ValueDescriptionInterpreter;
-use SMW\SQLStore\QueryEngine\Interpreter\DispatchingDescriptionInterpreter;
 use SMW\Store;
-use SMW\CircularReferenceGuard;
+use SMW\Utils\CircularReferenceGuard;
 
 /**
  * @license GNU GPL v2+
@@ -32,11 +26,21 @@ class QuerySegmentListBuilder {
 	private $store;
 
 	/**
+	 * @var DispatchingDescriptionInterpreter
+	 */
+	private $dispatchingDescriptionInterpreter = null;
+
+	/**
+	 * @var boolean
+	 */
+	private $isFilterDuplicates = true;
+
+	/**
 	 * Array of generated QueryContainer query descriptions (index => object).
 	 *
 	 * @var QuerySegment[]
 	 */
-	private $querySegments = array();
+	private $querySegments = [];
 
 	/**
 	 * Array of sorting requests ("Property_name" => "ASC"/"DESC"). Used during query
@@ -45,12 +49,12 @@ class QuerySegmentListBuilder {
 	 *
 	 * @var string[]
 	 */
-	private $sortKeys = array();
+	private $sortKeys = [];
 
 	/**
 	 * @var string[]
 	 */
-	private $errors = array();
+	private $errors = [];
 
 	/**
 	 * @var integer
@@ -58,32 +62,30 @@ class QuerySegmentListBuilder {
 	private $lastQuerySegmentId = -1;
 
 	/**
-	 * @var DispatchingDescriptionInterpreter
-	 */
-	private $dispatchingDescriptionInterpreter = null;
-
-	/**
 	 * @since 2.2
 	 *
 	 * @param Store $store
+	 * @param DescriptionInterpreterFactory $descriptionInterpreterFactory
 	 */
-	public function __construct( Store $store ) {
+	public function __construct( Store $store, DescriptionInterpreterFactory $descriptionInterpreterFactory ) {
 		$this->store = $store;
-
-		QuerySegment::$qnum = 0;
-
-		$this->dispatchingDescriptionInterpreter = new DispatchingDescriptionInterpreter();
-		$this->dispatchingDescriptionInterpreter->addDefaultInterpreter( new ThingDescriptionInterpreter( $this ) );
-
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new SomePropertyInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new DisjunctionConjunctionInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new NamespaceDescriptionInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new ClassDescriptionInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new ValueDescriptionInterpreter( $this ) );
-		$this->dispatchingDescriptionInterpreter->addInterpreter( new ConceptDescriptionInterpreter( $this ) );
-
+		$this->dispatchingDescriptionInterpreter = $descriptionInterpreterFactory->newDispatchingDescriptionInterpreter( $this );
 		$this->circularReferenceGuard = new CircularReferenceGuard( 'sql-query' );
 		$this->circularReferenceGuard->setMaxRecursionDepth( 2 );
+
+		QuerySegment::$qnum = 0;
+	}
+
+	/**
+	 * Filter dulicate segments that represent the same query and to be identified
+	 * by the same hash.
+	 *
+	 * @since 2.5
+	 *
+	 * @param boolean $isFilterDuplicates
+	 */
+	public function isFilterDuplicates( $isFilterDuplicates ) {
+		$this->isFilterDuplicates = (bool)$isFilterDuplicates;
 	}
 
 	/**
@@ -162,7 +164,7 @@ class QuerySegmentListBuilder {
 	 * @param QuerySegment $query
 	 */
 	public function addQuerySegment( QuerySegment $query ) {
-		$this->querySegments[$query->segmentNumber] = $query;
+		$this->querySegments[$query->queryNumber] = $query;
 	}
 
 	/**
@@ -188,8 +190,8 @@ class QuerySegmentListBuilder {
 	 *
 	 * @param string $error
 	 */
-	public function addError( $error ) {
-		$this->errors[] = $error;
+	public function addError( $error, $type = Message::TEXT ) {
+		$this->errors[Message::getHash( $error, $type )] = Message::encode( $error, $type );
 	}
 
 	/**
@@ -202,13 +204,30 @@ class QuerySegmentListBuilder {
 	 *
 	 * @return integer
 	 */
-	public function buildQuerySegmentFor( Description $description ) {
+	public function getQuerySegmentFrom( Description $description ) {
 
-		$query = $this->dispatchingDescriptionInterpreter->interpretDescription( $description );
+		$fingerprint = $description->getFingerprint();
 
-		$this->registerQuerySegment( $query );
+		// Get membership of descriptions that are resolved recursively
+		if ( $description->getMembership() !== '' ) {
+			$fingerprint = $fingerprint . $description->getMembership();
+		}
 
-		$this->lastQuerySegmentId = $query->type === QuerySegment::Q_NOQUERY ? -1 : $query->queryNumber;
+		if ( ( $querySegment = $this->findDuplicates( $fingerprint ) ) ) {
+			return $querySegment;
+		}
+
+		$querySegment = $this->dispatchingDescriptionInterpreter->interpretDescription(
+			$description
+		);
+
+		$querySegment->fingerprint = $fingerprint;
+		//$querySegment->membership = $description->getMembership();
+		//$querySegment->queryString = $description->getQueryString();
+
+		$this->lastQuerySegmentId = $this->registerQuerySegment(
+			$querySegment
+		);
 
 		return $this->lastQuerySegmentId;
 	}
@@ -222,10 +241,8 @@ class QuerySegmentListBuilder {
 	 */
 	private function registerQuerySegment( QuerySegment $query ) {
 		if ( $query->type === QuerySegment::Q_NOQUERY ) {
-			return;
+			return -1;
 		}
-
-		$query->segmentNumber = $query->queryNumber;
 
 		$this->addQuerySegment( $query );
 
@@ -237,6 +254,23 @@ class QuerySegmentListBuilder {
 				$query->sortfields = array_merge( $this->findQuerySegment( $cid )->sortfields, $query->sortfields );
 			}
 		}
+
+		return $query->queryNumber;
+	}
+
+	private function findDuplicates( $fingerprint ) {
+
+		if ( $this->errors !== [] || $this->isFilterDuplicates === false ) {
+			return false;
+		}
+
+		foreach ( $this->querySegments as $querySegment ) {
+			if ( $querySegment->fingerprint === $fingerprint ) {
+				return $querySegment->queryNumber;
+			};
+		}
+
+		return false;
 	}
 
 }

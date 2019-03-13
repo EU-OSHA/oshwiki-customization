@@ -2,19 +2,14 @@
 
 namespace SMW\Tests\Integration\MediaWiki\Hooks;
 
-use SMW\Tests\Utils\UtilityFactory;
-use SMW\Tests\MwDBaseUnitTestCase;
-
-use SMW\Query\Language\SomeProperty;
-use SMW\Query\Language\ValueDescription;
-use SMW\Query\Language\ThingDescription;
-
 use SMW\ApplicationFactory;
 use SMW\DIProperty;
 use SMW\DIWikiPage;
-
+use SMW\Query\Language\SomeProperty;
+use SMW\Query\Language\ValueDescription;
+use SMW\Tests\MwDBaseUnitTestCase;
+use SMW\Tests\Utils\UtilityFactory;
 use SMWQuery as Query;
-
 use Title;
 use WikiPage;
 
@@ -32,13 +27,13 @@ class TitleMoveCompleteIntegrationTest extends MwDBaseUnitTestCase {
 	private $mwHooksHandler;
 	private $queryResultValidator;
 	private $applicationFactory;
-	private $toBeDeleted = array();
+	private $toBeDeleted = [];
 	private $pageCreator;
 
 	protected function setUp() {
 		parent::setUp();
 
-		$utilityFactory = UtilityFactory::getInstance();
+		$utilityFactory = $this->testEnvironment->getUtilityFactory();
 
 		$this->applicationFactory = ApplicationFactory::getInstance();
 		$this->queryResultValidator = $utilityFactory->newValidatorFactory()->newQueryResultValidator();
@@ -52,12 +47,17 @@ class TitleMoveCompleteIntegrationTest extends MwDBaseUnitTestCase {
 		);
 
 		$this->pageCreator = $utilityFactory->newPageCreator();
+
+		$this->testEnvironment->addConfiguration(
+			'smwgEnabledDeferredUpdate',
+			false
+		);
 	}
 
 	protected function tearDown() {
 
 		$this->mwHooksHandler->restoreListedHooks();
-		$this->applicationFactory->clear();
+		$this->testEnvironment->tearDown();
 
 		$pageDeleter = UtilityFactory::getInstance()->newPageDeleter();
 		$pageDeleter->doDeletePoolOfPages( $this->toBeDeleted );
@@ -91,19 +91,13 @@ class TitleMoveCompleteIntegrationTest extends MwDBaseUnitTestCase {
 			WikiPage::factory( $expectedNewTitle )->getRevision()
 		);
 
-		$this->toBeDeleted = array(
+		$this->toBeDeleted = [
 			$oldTitle,
 			$expectedNewTitle
-		);
+		];
 	}
 
 	public function testPageMoveWithRemovalOfOldPage() {
-
-		// PHPUnit query issue
-		$this->skipTestForDatabase( array( 'postgres' ) );
-
-		// Revison showed an issue on 1.19 not being null after the move
-		$this->skipTestForMediaWikiVersionLowerThan( '1.21' );
 
 		// Further hooks required to ensure in-text annotations can be used for queries
 		$this->mwHooksHandler->register(
@@ -131,6 +125,8 @@ class TitleMoveCompleteIntegrationTest extends MwDBaseUnitTestCase {
 			->getPage()
 			->getTitle()
 			->moveTo( $expectedNewTitle, false, 'test', false );
+
+		$this->testEnvironment->executePendingDeferredUpdates();
 
 		$this->assertNull(
 			WikiPage::factory( $title )->getRevision()
@@ -165,14 +161,14 @@ class TitleMoveCompleteIntegrationTest extends MwDBaseUnitTestCase {
 		);
 
 		$this->queryResultValidator->assertThatQueryResultHasSubjects(
-			array( DIWikiPage::newFromTitle( $expectedNewTitle ) ),
+			[ DIWikiPage::newFromTitle( $expectedNewTitle ) ],
 			$queryResult
 		);
 
-		$this->toBeDeleted = array(
+		$this->toBeDeleted = [
 			$title,
 			$expectedNewTitle
-		);
+		];
 	}
 
 	public function testPredefinedPropertyPageIsNotMovable() {
@@ -201,10 +197,10 @@ class TitleMoveCompleteIntegrationTest extends MwDBaseUnitTestCase {
 			WikiPage::factory( $expectedNewTitle )->getRevision()
 		);
 
-		$this->toBeDeleted = array(
+		$this->toBeDeleted = [
 			$title,
 			$expectedNewTitle
-		);
+		];
 	}
 
 }

@@ -3,11 +3,12 @@
 namespace SMW;
 
 use MWException;
+use SMW\DataModel\SubSemanticData;
+use SMW\Exception\SemanticDataImportException;
+use SMWContainerSemanticData;
+use SMWDataItem;
 use SMWDataValue;
 use SMWDIContainer;
-use SMWDataItem;
-use SMWContainerSemanticData;
-use SMWPropertyValue;
 
 /**
  * Class for representing chunks of semantic data for one given
@@ -28,6 +29,22 @@ use SMWPropertyValue;
  * @author Jeroen De Dauw
  */
 class SemanticData {
+
+	/**
+	 * Returns the last modified timestamp the data were stored to the Store or
+	 * have been fetched from cache.
+	 */
+	const OPT_LAST_MODIFIED = 'opt.last.modified';
+
+	/**
+	 * Identifies that a data block was created by a user.
+	 */
+	const PROC_USER = 'proc.user';
+
+	/**
+	 * Identifies that a data block was initiated by a delete request.
+	 */
+	const PROC_DELETE = 'proc.delete';
 
 	/**
 	 * Cache for the localized version of the namespace prefix "Property:".
@@ -52,14 +69,14 @@ class SemanticData {
 	 *
 	 * @var SMWDataItem[]
 	 */
-	protected $mPropVals = array();
+	protected $mPropVals = [];
 
 	/**
 	 * Array mapping property keys (string) to DIProperty objects.
 	 *
 	 * @var DIProperty[]
 	 */
-	protected $mProperties = array();
+	protected $mProperties = [];
 
 	/**
 	 * States whether the container holds any normal properties.
@@ -106,9 +123,9 @@ class SemanticData {
 	 * These key-value pairs of subObjectName (string) =>SMWSemanticData.
 	 *
 	 * @since 1.8
-	 * @var SemanticData[]
+	 * @var SubSemanticData
 	 */
-	protected $subSemanticData = array();
+	protected $subSemanticData;
 
 	/**
 	 * Internal flag that indicates if this semantic data will accept
@@ -123,7 +140,7 @@ class SemanticData {
 	/**
 	 * @var array
 	 */
-	protected $errors = array();
+	protected $errors = [];
 
 	/**
 	 * Cache the hash to ensure a minimal impact in case of repeated usage. Any
@@ -135,9 +152,22 @@ class SemanticData {
 	private $hash = null;
 
 	/**
-	 * @var integer|null
+	 * @var Options
 	 */
-	private $lastModified = null;
+	protected $options;
+
+	/**
+	 * @var array
+	 */
+	protected $extensionData = [];
+
+	/**
+	 * This is kept public to keep track of the depth during a recursive processing
+	 * when accessed through the SubSemanticData instance.
+	 *
+	 * @var integer
+	 */
+	public $subContainerDepthCounter = 0;
 
 	/**
 	 * Constructor.
@@ -149,6 +179,7 @@ class SemanticData {
 		$this->clear();
 		$this->mSubject = $subject;
 		$this->mNoDuplicates = $noDuplicates;
+		$this->subSemanticData = new SubSemanticData( $subject, $noDuplicates );
 	}
 
 	/**
@@ -165,7 +196,7 @@ class SemanticData {
 	 * @return array
 	 */
 	public function __sleep() {
-		return array( 'mSubject', 'mPropVals', 'mProperties', 'subSemanticData', 'mHasVisibleProps', 'mHasVisibleSpecs', 'lastModified' );
+		return [ 'mSubject', 'mPropVals', 'mProperties', 'subSemanticData', 'mHasVisibleProps', 'mHasVisibleSpecs', 'options', 'extensionData' ];
 	}
 
 	/**
@@ -188,6 +219,17 @@ class SemanticData {
 	}
 
 	/**
+	 * @since 2.4
+	 *
+	 * @param DIProperty $property
+	 *
+	 * @return boolean
+	 */
+	public function hasProperty( DIProperty $property ) {
+		return isset( $this->mProperties[$property->getKey()] ) || array_key_exists( $property->getKey(), $this->mProperties );
+	}
+
+	/**
 	 * Get the array of all stored values for some property.
 	 *
 	 * @param DIProperty $property
@@ -195,14 +237,76 @@ class SemanticData {
 	 */
 	public function getPropertyValues( DIProperty $property ) {
 		if ( $property->isInverse() ) { // we never have any data for inverses
-			return array();
+			return [];
 		}
 
 		if ( array_key_exists( $property->getKey(), $this->mPropVals ) ) {
-			return $this->mPropVals[$property->getKey()];
-		} else {
-			return array();
+			return array_values( $this->mPropVals[$property->getKey()] );
 		}
+
+		return [];
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @param string $key
+	 * @param mixed $value
+	 */
+	public function setExtensionData( $key, $value ) {
+		$this->extensionData[$key] = $value;
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @param string $key
+	 *
+	 * @return mixed|null
+	 */
+	public function getExtensionData( $key ) {
+
+		if ( !isset( $this->extensionData[$key] ) ) {
+			return null;
+		}
+
+		return $this->extensionData[$key];
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param string $key
+	 * @param mixed $default
+	 *
+	 * @return mixed
+	 */
+	public function getOption( $key, $default = null ) {
+
+		if ( !$this->options instanceof Options ) {
+			$this->options = new Options();
+		}
+
+		if ( $this->options->has( $key ) ) {
+			return $this->options->get( $key );
+		}
+
+		return $default;
+	}
+
+	/**
+	 * @since 2.5
+	 *
+	 * @param string $key
+	 * @param string $value
+	 */
+	public function setOption( $key, $value ) {
+
+		if ( !$this->options instanceof Options ) {
+			$this->options = new Options();
+		}
+
+		$this->options->set( $key, $value );
 	}
 
 	/**
@@ -221,10 +325,10 @@ class SemanticData {
 	 *
 	 * @since  1.9
 	 *
-	 * @return array
+	 * @return array|string
 	 */
-	public function addError( array $errors ) {
-		return $this->errors = array_merge( $errors, $this->errors );
+	public function addError( $error ) {
+		$this->errors = array_merge( $this->errors, (array)$error );
 	}
 
 	/**
@@ -246,38 +350,43 @@ class SemanticData {
 			return $this->hash;
 		}
 
-		$hash = array();
-
-		$hash[] = $this->mSubject->getSerialization();
-
-		foreach ( $this->getProperties() as $property ) {
-			$hash[] = $property->getKey();
-
-			foreach ( $this->getPropertyValues( $property ) as $di ) {
-				$hash[] = $di->getSerialization();
-			}
-		}
-
-		foreach ( $this->getSubSemanticData() as $data ) {
-			$hash[] = $data->getHash();
-		}
-
-		sort( $hash );
-
-		$this->hash = md5( implode( '#', $hash ) );
-		unset( $hash );
-
-		return $this->hash;
+		return $this->hash = Hash::createFromSemanticData( $this );
 	}
 
 	/**
-	 * Return the array of subSemanticData objects for this SemanticData
+	 * @see SubSemanticData::getSubSemanticData
 	 *
 	 * @since 1.8
-	 * @return SMWContainerSemanticData[] subobject => SMWContainerSemanticData
+	 *
+	 * @return ContainerSemanticData[]
 	 */
 	public function getSubSemanticData() {
-		return $this->subSemanticData;
+
+		// Remove the check in 3.0
+		$subSemanticData = $this->subSemanticData;
+
+		// Avoids an issue where the serialized array from a previous usage is
+		// returned from a __wakeup, where now a SubSemanticData (#2177) is expected.
+		if ( !$subSemanticData instanceof SubSemanticData ) {
+			$this->subSemanticData = new SubSemanticData( $this->mSubject, $this->mNoDuplicates );
+			$this->subSemanticData->copyDataFrom( $subSemanticData );
+		}
+
+		return $this->subSemanticData->getSubSemanticData();
+	}
+
+	/**
+	 * @since 2.5
+	 */
+	public function clearSubSemanticData() {
+
+		if ( $this->subContainerDepthCounter > 0 ) {
+			$this->subContainerDepthCounter--;
+		}
+
+		if ( $this->subSemanticData !== null ) {
+			$this->subSemanticData->clear();
+		}
 	}
 
 	/**
@@ -327,12 +436,16 @@ class SemanticData {
 			$dataItem = $dataItem->getSemanticData()->getSubject();
 		}
 
+		if( $property->getKey() === DIProperty::TYPE_MODIFICATION_DATE ) {
+			$this->setOption( self::OPT_LAST_MODIFIED, $dataItem->getMwTimestamp() );
+		}
+
 		if ( $property->isInverse() ) { // inverse properties cannot be used for annotation
 			return;
 		}
 
 		if ( !array_key_exists( $property->getKey(), $this->mPropVals ) ) {
-			$this->mPropVals[$property->getKey()] = array();
+			$this->mPropVals[$property->getKey()] = [];
 			$this->mProperties[$property->getKey()] = $property;
 		}
 
@@ -349,6 +462,15 @@ class SemanticData {
 			}
 		} else {
 			$this->mHasVisibleProps = true;
+		}
+
+		// Account for things like DISPLAYTITLE or DEFAULTSORT which are only set
+		// after #subobject has been processed therefore keep them in-memory
+		// for a post process
+		if ( $this->mSubject->getSubobjectName() === '' && $property->getKey() === DIProperty::TYPE_SORTKEY ) {
+			foreach ( $this->getSubSemanticData() as $subSemanticData ) {
+				$subSemanticData->setExtensionData( 'sort.extension', $dataItem->getString() );
+			}
 		}
 	}
 
@@ -370,7 +492,7 @@ class SemanticData {
 				self::$mPropertyPrefix = $wgContLang->getNsText( SMW_NS_PROPERTY ) . ':';
 			} // explicitly use prefix to cope with things like [[Property:User:Stupid::somevalue]]
 
-			$propertyDV = SMWPropertyValue::makeUserProperty( self::$mPropertyPrefix . $propertyName );
+			$propertyDV = DataValueFactory::getInstance()->newPropertyValueByLabel( self::$mPropertyPrefix . $propertyName );
 
 			if ( !$propertyDV->isValid() ) { // error, maybe illegal title text
 				return;
@@ -389,25 +511,24 @@ class SemanticData {
 	 */
 	public function addDataValue( SMWDataValue $dataValue ) {
 
-		if ( !$dataValue->getProperty() instanceof DIProperty ) {
-			$this->addError( $dataValue->getErrors() );
-			return null;
-		}
+		if ( !$dataValue->getProperty() instanceof DIProperty || !$dataValue->isValid() ) {
 
-		if ( !$dataValue->isValid() ) {
-
-			$this->addPropertyObjectValue(
-				new DIProperty( DIProperty::TYPE_ERROR ),
-				$dataValue->getProperty()->getDiWikiPage()
+			$processingErrorMsgHandler = new ProcessingErrorMsgHandler(
+				$this->getSubject()
 			);
 
-			$this->addError( $dataValue->getErrors() );
-		} else {
-			$this->addPropertyObjectValue(
-				$dataValue->getProperty(),
-				$dataValue->getDataItem()
+			$processingErrorMsgHandler->addToSemanticData(
+				$this,
+				$processingErrorMsgHandler->newErrorContainerFromDataValue( $dataValue )
 			);
+
+			return $this->addError( $dataValue->getErrors() );
 		}
+
+		$this->addPropertyObjectValue(
+			$dataValue->getProperty(),
+			$dataValue->getDataItem()
+		);
 	}
 
 	/**
@@ -468,23 +589,62 @@ class SemanticData {
 			$this->mPropVals[$property->getKey()] = array_values( $this->mPropVals[$property->getKey()] );
 		}
 
-		if ( $this->mPropVals[$property->getKey()] === array() ) {
+		if ( $this->mPropVals[$property->getKey()] === [] ) {
 			unset( $this->mProperties[$property->getKey()] );
 			unset( $this->mPropVals[$property->getKey()] );
 		}
 	}
 
 	/**
+	 * Removes a property and all the values associated with this property.
+	 *
+	 * @since 2.5
+	 *
+	 * @param $property DIProperty
+	 */
+	public function removeProperty( DIProperty $property ) {
+
+		$this->hash = null;
+		$key = $property->getKey();
+
+		 // Inverse properties cannot be used for an annotation
+		if ( $property->isInverse() ) {
+			return;
+		}
+
+		if ( !isset( $this->mProperties[$key] ) || !isset( $this->mPropVals[$key] ) ) {
+			return;
+		}
+
+		// Find and remove associated assignments (e.g. _ASK as subobject
+		// contains _ASKSI ...)
+		foreach ( $this->mPropVals[$key] as $dataItem ) {
+
+			if ( !$dataItem instanceof DIWikiPage || $dataItem->getSubobjectName() === '' ) {
+				continue;
+			}
+
+			if ( ( $subSemanticData = $this->findSubSemanticData( $dataItem->getSubobjectName() ) ) !== null ) {
+				$this->removeSubSemanticData( $subSemanticData );
+			}
+		}
+
+		unset( $this->mPropVals[$key] );
+		unset( $this->mProperties[$key] );
+	}
+
+	/**
 	 * Delete all data other than the subject.
 	 */
 	public function clear() {
-		$this->mPropVals = array();
-		$this->mProperties = array();
+		$this->mPropVals = [];
+		$this->mProperties = [];
 		$this->mHasVisibleProps = false;
 		$this->mHasVisibleSpecs = false;
 		$this->stubObject = false;
-		$this->subSemanticData = array();
+		$this->clearSubSemanticData();
 		$this->hash = null;
+		$this->options = null;
 	}
 
 	/**
@@ -497,7 +657,7 @@ class SemanticData {
 	 * @return boolean
 	 */
 	public function isEmpty() {
-		return $this->getProperties() === array() && $this->getSubSemanticData() === array();
+		return $this->getProperties() === [] && $this->getSubSemanticData() === [];
 	}
 
 	/**
@@ -509,12 +669,12 @@ class SemanticData {
 	 *
 	 * @param SemanticData $semanticData object to copy from
 	 *
-	 * @throws MWException if subjects do not match
+	 * @throws SemanticDataImportException
 	 */
 	public function importDataFrom( SemanticData $semanticData ) {
 
 		if( !$this->mSubject->equals( $semanticData->getSubject() ) ) {
-			throw new MWException( "SMWSemanticData can only represent data about one subject. Importing data for another subject is not possible." );
+			throw new SemanticDataImportException( "SemanticData can only represent data about one subject. Importing data for another subject is not possible." );
 		}
 
 		$this->hash = null;
@@ -524,7 +684,7 @@ class SemanticData {
 		if ( count( $this->mProperties ) == 0 &&
 		     ( $semanticData->mNoDuplicates >= $this->mNoDuplicates ) ) {
 			$this->mProperties = $semanticData->getProperties();
-			$this->mPropVals = array();
+			$this->mPropVals = [];
 
 			foreach ( $this->mProperties as $property ) {
 				$this->mPropVals[$property->getKey()] = $semanticData->getPropertyValues( $property );
@@ -564,10 +724,7 @@ class SemanticData {
 		}
 
 		foreach ( $semanticData->getProperties() as $property ) {
-			$values = $semanticData->getPropertyValues( $property );
-			foreach ( $values as $dataItem ) {
-				$this->removePropertyObjectValue( $property, $dataItem );
-			}
+			$this->removeProperty( $property );
 		}
 
 		foreach( $semanticData->getSubSemanticData() as $semData ) {
@@ -576,9 +733,7 @@ class SemanticData {
 	}
 
 	/**
-	 * Whether the SemanticData has a SubSemanticData container and if
-	 * specified has a particular subobject using its name as identifier
-	 *
+	 * @see SubSemanticData::hasSubSemanticData
 	 * @since 1.9
 	 *
 	 * @param string $subobjectName|null
@@ -586,130 +741,42 @@ class SemanticData {
 	 * @return boolean
 	 */
 	public function hasSubSemanticData( $subobjectName = null ) {
-
-		if ( $this->subSemanticData === array() ) {
-			return false;
-		}
-
-		return $subobjectName !== null ? isset( $this->subSemanticData[$subobjectName] ) : true;
+		return $this->subSemanticData->hasSubSemanticData( $subobjectName );
 	}
 
 	/**
-	 * Find a particular subobject container using its name as identifier
-	 *
+	 * @see SubSemanticData::findSubSemanticData
 	 * @since 1.9
 	 *
 	 * @param string $subobjectName
 	 *
-	 * @return SMWContainerSemanticData|[]
+	 * @return SMWContainerSemanticData|null
 	 */
 	public function findSubSemanticData( $subobjectName ) {
-
-		if ( $this->hasSubSemanticData( $subobjectName ) ) {
-			return $this->subSemanticData[$subobjectName];
-		}
-
-		return array();
+		return $this->subSemanticData->findSubSemanticData( $subobjectName );
 	}
 
 	/**
-	 * Add data about subobjects.
-	 * Will only work if the data that is added is about a subobject of
-	 * this SMWSemanticData's subject. Otherwise an exception is thrown.
-	 * The SMWSemanticData object that is given will belong to this object
-	 * after the operation; it should not be modified further by the caller.
-	 *
+	 * @see SubSemanticData::addSubSemanticData
 	 * @since 1.8
 	 *
 	 * @param SemanticData $semanticData
-	 *
-	 * @throws MWException if not adding data about a subobject of this data
+	 * @throws SubSemanticDataException
 	 */
 	public function addSubSemanticData( SemanticData $semanticData ) {
-
 		$this->hash = null;
-
-		if ( !$this->subDataAllowed ) {
-			throw new MWException( "Cannot add subdata. Are you trying to add data to an SMWSemanticData object that is already used as a subdata object?" );
-		}
-		$subobjectName = $semanticData->getSubject()->getSubobjectName();
-		if ( $subobjectName == '' ) {
-			throw new MWException( "Cannot add data that is not about a subobject." );
-		}
-		if( $semanticData->getSubject()->getDBkey() !== $this->getSubject()->getDBkey() ) {
-			throw new MWException( "Data for a subobject of {$semanticData->getSubject()->getDBkey()} cannot be added to {$this->getSubject()->getDBkey()}." );
-		}
-
-		if( $this->hasSubSemanticData( $subobjectName ) ) {
-			$this->subSemanticData[$subobjectName]->importDataFrom( $semanticData );
-		} else {
-			$semanticData->subDataAllowed = false;
-			foreach ( $semanticData->getSubSemanticData() as $subsubdata ) {
-				$this->addSubSemanticData( $subsubdata );
-			}
-			$semanticData->subSemanticData = array();
-			$this->subSemanticData[$subobjectName] = $semanticData;
-		}
+		$this->subSemanticData->addSubSemanticData( $semanticData );
 	}
 
 	/**
-	* Remove data about a subobject.
-	* If the removed data is not about a subobject of this object,
-	* it will silently be ignored (nothing to remove). Likewise,
-	* removing data that is not present does not change anything.
-	*
-	* @since 1.8
-	* @param SMWSemanticData
+	 * @see SubSemanticData::removeSubSemanticData
+	 * @since 1.8
+	 *
+	 * @param SemanticData $semanticData
 	*/
 	public function removeSubSemanticData( SemanticData $semanticData ) {
-		if( $semanticData->getSubject()->getDBkey() !== $this->getSubject()->getDBkey() ) {
-			return;
-		}
-
 		$this->hash = null;
-		$subobjectName = $semanticData->getSubject()->getSubobjectName();
-
-		if( $this->hasSubSemanticData( $subobjectName ) ) {
-			$this->subSemanticData[$subobjectName]->removeDataFrom( $semanticData );
-
-			if( $this->subSemanticData[$subobjectName]->isEmpty() ) {
-				unset( $this->subSemanticData[$subobjectName] );
-			}
-		}
-	}
-
-	/**
-	 * Returns the last modified timestamp the data were stored to the Store or
-	 * have been fetched from cache.
-	 *
-	 * @since  2.3
-	 *
-	 * @return integer|null
-	 */
-	public function getLastModified() {
-
-		if ( $this->lastModified !== null ) {
-			return $this->lastModified;
-		}
-
-		$lastModified = $this->getPropertyValues( new DIProperty( '_MDAT' ) );
-
-		if ( $lastModified === array() ) {
-			return null;
-		}
-
-		$lastModified = end( $lastModified );
-
-		return $this->lastModified = $lastModified->getMwTimestamp();
-	}
-
-	/**
-	 * @since  2.3
-	 *
-	 * @param string|null $lastModified
-	 */
-	public function setLastModified( $lastModified ) {
-		$this->lastModified = $lastModified;
+		$this->subSemanticData->removeSubSemanticData( $semanticData );
 	}
 
 }

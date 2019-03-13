@@ -9,7 +9,7 @@
 			"Ion"
 		]
 	},
-	"smw-desc": "Wikiul dumneavoastră devine mai accesibil — pentru mașini ''și'' oameni ([https://semantic-mediawiki.org/wiki/Help:User_manual documentație on-line])",
+	"smw-desc": "Wikiul dumneavoastră devine mai accesibil — pentru mașini ''și'' oameni ([https://www.semantic-mediawiki.org/wiki/Help:User_manual documentație on-line])",
 	"smw_viewasrdf": "Flux RDF",
 	"smw_finallistconjunct": "și",
 	"smw_factbox_head": "Informații despre „$1”",
@@ -61,13 +61,13 @@
 	"smw_wantedproperty_template": "$1 ($2 {{PLURAL:$2|utilizare|utilizări}})",
 	"smw_purge": "Reîncărcare",
 	"types": "Tipuri",
-	"semanticstatistics": "Statistici semantice",
+
 	"ask": "Căutare semantică",
 	"smw_ask_sortby": "Sortare după coloană (opțional)",
 	"smw_ask_ascorder": "Crescător",
 	"smw_ask_descorder": "Descrescător",
 	"smw_ask_submit": "Găsește rezultate",
-	"smw_ask_editquery": "[Modifică interogarea]",
+	"smw_ask_editquery": "Modifică interogarea",
 	"smw_add_sortcondition": "[Adaugă o condiție de sortare]",
 	"smw_ask_hidequery": "Ascunde interogarea",
 	"smw_ask_help": "Ajutor despre interogare",

@@ -2,9 +2,8 @@
 
 namespace SMW\Maintenance;
 
-use SMW\Maintenance\ConceptCacheRebuilder;
-use Onoi\MessageReporter\MessageReporterFactory;
 use SMW\ApplicationFactory;
+use SMW\Setup;
 
 $basePath = getenv( 'MW_INSTALL_PATH' ) !== false ? getenv( 'MW_INSTALL_PATH' ) : __DIR__ . '/../../..';
 
@@ -86,6 +85,8 @@ class RebuildConceptCache extends \Maintenance {
 	 */
 	protected function addDefaultParams() {
 
+		parent::addDefaultParams();
+
 		// Actions
 		$this->addOption( 'status', 'Show the cache status of the selected concepts' );
 		$this->addOption( 'create', 'Rebuild caches for the selected concepts.' );
@@ -102,6 +103,7 @@ class RebuildConceptCache extends \Maintenance {
 		$this->addOption( 's', '<startid> Process only concepts with page id of at least <startid>', false, true );
 		$this->addOption( 'e', '<endid> Process only concepts with page id of at most <endid>', false, true );
 
+		$this->addOption( 'with-maintenance-log', 'Add log entry to `Special:Log` about the maintenance run.', false );
 		$this->addOption( 'report-runtime', 'Report execution time and memory usage', false );
 		$this->addOption( 'debug', 'Sets global variables to support debug ouput while running the script', false );
 		$this->addOption( 'quiet', 'Do not give any output', false );
@@ -113,9 +115,14 @@ class RebuildConceptCache extends \Maintenance {
 	 */
 	public function execute() {
 
-		if ( !defined( 'SMW_VERSION' ) ) {
-			$this->reportMessage( "You need to have SMW enabled in order to run the maintenance script!\n\n" );
-			return false;
+		if ( !Setup::isEnabled() ) {
+			$this->reportMessage( "\nYou need to have SMW enabled in order to run the maintenance script!\n" );
+			exit;
+		}
+
+		if ( !Setup::isValid( true ) ) {
+			$this->reportMessage( "\nYou need to run `update.php` or `setupStore.php` first before continuing\nwith any maintenance tasks!\n" );
+			exit;
 		}
 
 		$applicationFactory = ApplicationFactory::getInstance();
@@ -130,17 +137,25 @@ class RebuildConceptCache extends \Maintenance {
 			$maintenanceHelper->setGlobalToValue( 'wgShowDBErrorBacktrace', true );
 		}
 
-		$reporter = MessageReporterFactory::getInstance()->newObservableMessageReporter();
-		$reporter->registerReporterCallback( array( $this, 'reportMessage' ) );
+		$conceptCacheRebuilder = $maintenanceFactory->newConceptCacheRebuilder(
+			$applicationFactory->getStore(),
+			[ $this, 'reportMessage' ]
+		);
 
-		$conceptCacheRebuilder = $maintenanceFactory->newConceptCacheRebuilder( $applicationFactory->getStore() );
-		$conceptCacheRebuilder->setMessageReporter( $reporter );
 		$conceptCacheRebuilder->setParameters( $this->mOptions );
 
-		$result = $this->checkForRebuildState( $conceptCacheRebuilder->rebuild() );
+		$result = $this->checkForRebuildState(
+			$conceptCacheRebuilder->rebuild()
+		);
 
 		if ( $result && $this->hasOption( 'report-runtime' ) ) {
-			$this->reportMessage( "\n" . $maintenanceHelper->transformRuntimeValuesForOutput() . "\n" );
+			$this->reportMessage( "\n" . "Runtime report ..." . "\n" );
+			$this->reportMessage( $maintenanceHelper->getFormattedRuntimeValues( '   ...' ) . "\n" );
+		}
+
+		if ( $this->hasOption( 'with-maintenance-log' ) ) {
+			$maintenanceLogger = $maintenanceFactory->newMaintenanceLogger( 'RebuildConceptCacheLogger' );
+			$maintenanceLogger->log( $maintenanceHelper->getFormattedRuntimeValues() );
 		}
 
 		$maintenanceHelper->reset();

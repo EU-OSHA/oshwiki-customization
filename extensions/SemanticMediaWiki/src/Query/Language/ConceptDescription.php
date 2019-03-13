@@ -30,6 +30,16 @@ class ConceptDescription extends Description {
 	}
 
 	/**
+	 * @see Description::getFingerprint
+	 * @since 2.5
+	 *
+	 * @return string
+	 */
+	public function getFingerprint() {
+		return 'Co:' . md5( $this->concept->getHash() );
+	}
+
+	/**
 	 * @return DIWikiPage
 	 */
 	public function getConcept() {
@@ -38,7 +48,7 @@ class ConceptDescription extends Description {
 
 	public function getQueryString( $asValue = false ) {
 
-		$pageValue = DataValueFactory::getInstance()->newDataItemValue( $this->concept, null );
+		$pageValue = DataValueFactory::getInstance()->newDataValueByItem( $this->concept, null );
 		$result = '[[' . $pageValue->getPrefixedText() . ']]';
 
 		if ( $asValue ) {

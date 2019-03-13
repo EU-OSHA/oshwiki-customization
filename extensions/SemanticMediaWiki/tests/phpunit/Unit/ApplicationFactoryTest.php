@@ -48,7 +48,7 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 	public function testCanConstructJobFactory() {
 
 		$this->assertInstanceOf(
-			'\SMW\MediaWiki\Jobs\JobFactory',
+			'\SMW\MediaWiki\JobFactory',
 			$this->applicationFactory->newJobFactory()
 		);
 	}
@@ -65,11 +65,11 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testCanConstructQueryProfilerFactory() {
+	public function testCanConstructQuerySourceFactory() {
 
 		$this->assertInstanceOf(
-			'\SMW\Query\ProfileAnnotator\QueryProfileAnnotatorFactory',
-			$this->applicationFactory->newQueryProfileAnnotatorFactory()
+			'\SMW\Query\QuerySourceFactory',
+			$this->applicationFactory->getQuerySourceFactory()
 		);
 	}
 
@@ -89,11 +89,19 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testCanConstructTitleCreator() {
+	public function testGetConnectionManager() {
 
 		$this->assertInstanceOf(
-			'\SMW\MediaWiki\TitleCreator',
-			$this->applicationFactory->newTitleCreator()
+			'\SMW\Connection\ConnectionManager',
+			$this->applicationFactory->getConnectionManager()
+		);
+	}
+
+	public function testCanConstructTitleFactory() {
+
+		$this->assertInstanceOf(
+			'\SMW\MediaWiki\TitleFactory',
+			$this->applicationFactory->newTitleFactory()
 		);
 	}
 
@@ -105,19 +113,11 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testCanConstructPropertyAnnotatorFactory() {
+	public function testCanConstructPageUpdater() {
 
 		$this->assertInstanceOf(
-			'\SMW\PropertyAnnotatorFactory',
-			$this->applicationFactory->newPropertyAnnotatorFactory()
-		);
-	}
-
-	public function testCanConstructFactboxFactory() {
-
-		$this->assertInstanceOf(
-			'SMW\Factbox\FactboxFactory',
-			$this->applicationFactory->newFactboxFactory()
+			'\SMW\MediaWiki\PageUpdater',
+			$this->applicationFactory->newPageUpdater()
 		);
 	}
 
@@ -128,7 +128,7 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 			->getMock();
 
 		$this->assertInstanceOf(
-			'\SMW\InTextAnnotationParser',
+			'\SMW\Parser\InTextAnnotationParser',
 			$this->applicationFactory->newInTextAnnotationParser( $parserData )
 		);
 	}
@@ -161,23 +161,23 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testCanConstructStoreUpdater() {
+	public function testCanConstructDataUpdater() {
 
 		$semanticData = $this->getMockBuilder( '\SMW\SemanticData' )
 			->disableOriginalConstructor()
 			->getMock();
 
 		$this->assertInstanceOf(
-			'\SMW\StoreUpdater',
-			$this->applicationFactory->newStoreUpdater( $semanticData )
+			'\SMW\DataUpdater',
+			$this->applicationFactory->newDataUpdater( $semanticData )
 		);
 	}
 
-	public function testCanConstructQueryParser() {
+	public function testCanConstructDataItemFactory() {
 
 		$this->assertInstanceOf(
-			'\SMWQueryParser',
-			$this->applicationFactory->newQueryParser()
+			'\SMW\DataItemFactory',
+			$this->applicationFactory->getDataItemFactory()
 		);
 	}
 
@@ -195,6 +195,134 @@ class ApplicationFactoryTest extends \PHPUnit_Framework_TestCase {
 			'\SMW\CacheFactory',
 			$this->applicationFactory->newCacheFactory()
 		);
+	}
+
+	public function testCanConstructIteratorFactory() {
+
+		$this->assertInstanceOf(
+			'\SMW\IteratorFactory',
+			$this->applicationFactory->getIteratorFactory()
+		);
+	}
+
+	public function testCanConstructDataValueFactory() {
+
+		$this->assertInstanceOf(
+			'\SMW\DataValueFactory',
+			$this->applicationFactory->getDataValueFactory()
+		);
+	}
+
+	public function testCanConstructPropertySpecificationLookup() {
+
+		$this->assertInstanceOf(
+			'\SMW\PropertySpecificationLookup',
+			$this->applicationFactory->getPropertySpecificationLookup()
+		);
+	}
+
+	public function testCanConstructHierarchyLookup() {
+
+		$this->assertInstanceOf(
+			'\SMW\HierarchyLookup',
+			$this->applicationFactory->newHierarchyLookup()
+		);
+	}
+
+	public function testCanConstructCachedPropertyValuesPrefetcher() {
+
+		$this->assertInstanceOf(
+			'\SMW\CachedPropertyValuesPrefetcher',
+			$this->applicationFactory->getCachedPropertyValuesPrefetcher()
+		);
+	}
+
+	public function testCanConstructQueryFactory() {
+
+		$this->assertInstanceOf(
+			'\SMW\QueryFactory',
+			$this->applicationFactory->getQueryFactory()
+		);
+	}
+
+	public function testCanConstructPropertyLabelFinder() {
+
+		$this->assertInstanceOf(
+			'\SMW\PropertyLabelFinder',
+			$this->applicationFactory->getPropertyLabelFinder()
+		);
+	}
+
+	public function testCanConstructDeferredCallableUpdate() {
+
+		$callback = function() {
+			return null;
+		};
+
+		$this->assertInstanceOf(
+			'\SMW\MediaWiki\Deferred\CallableUpdate',
+			$this->applicationFactory->newDeferredCallableUpdate( $callback )
+		);
+	}
+
+	public function testCanConstructDeferredTransactionalCallableUpdate() {
+
+		$this->assertInstanceOf(
+			'\SMW\MediaWiki\Deferred\TransactionalCallableUpdate',
+			$this->applicationFactory->newDeferredTransactionalCallableUpdate( null )
+		);
+	}
+
+	public function testCanConstructMediaWikiLogger() {
+
+		$this->assertInstanceOf(
+			'\Psr\Log\LoggerInterface',
+			$this->applicationFactory->getMediaWikiLogger()
+		);
+	}
+
+	public function testCanConstructJobQueue() {
+
+		$this->assertInstanceOf(
+			'\SMW\MediaWiki\JobQueue',
+			$this->applicationFactory->getJobQueue()
+		);
+	}
+
+	/**
+	 * @dataProvider callbackContainerProvider
+	 */
+	public function testCanConstructFromCallbackContainer( $service, $arguments, $expected ) {
+
+		array_unshift( $arguments, $service );
+
+		$this->assertInstanceOf(
+			$expected,
+			call_user_func_array( [ $this->applicationFactory, 'create' ], $arguments )
+		);
+	}
+
+	public function callbackContainerProvider() {
+
+		$provider[] = [
+			'CachedQueryResultPrefetcher',
+			[],
+			'\SMW\Query\Result\CachedQueryResultPrefetcher'
+		];
+
+		$provider[] = [
+			'FactboxFactory',
+			[],
+			'SMW\Factbox\FactboxFactory'
+		];
+
+		$provider[] = [
+			'PropertyAnnotatorFactory',
+			[],
+			'SMW\PropertyAnnotatorFactory'
+		];
+
+		return $provider;
 	}
 
 }

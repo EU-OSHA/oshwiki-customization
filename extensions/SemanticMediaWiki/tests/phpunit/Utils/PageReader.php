@@ -2,9 +2,9 @@
 
 namespace SMW\Tests\Utils;
 
-use Title;
+use Revision;
 use TextContent;
-
+use Title;
 use UnexpectedValueException;
 
 /**
@@ -79,11 +79,27 @@ class PageReader {
 			);
 		}
 
+		if ( method_exists( $this->getPage()->getRevision(), 'getContent' ) ) {
+			$text = $this->getPage()->getRevision()->getContent( Revision::RAW );
+		} else {
+			$text = $this->getPage()->getRevision()->getRawText();
+		}
 		return $this->page->prepareTextForEdit(
-			$this->page->getRevision()->getRawText(),
+			$text,
 			null,
 			null
 		);
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @param Title $title
+	 *
+	 * @return ParserOutput|null
+	 */
+	public function getParserOutputFromEdit( Title $title ) {
+		return $this->getEditInfo( $title )->output;
 	}
 
 }

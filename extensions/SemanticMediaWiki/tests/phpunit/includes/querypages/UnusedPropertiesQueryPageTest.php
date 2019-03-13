@@ -2,176 +2,154 @@
 
 namespace SMW\Test;
 
+use SMW\DataItemFactory;
+use SMW\Settings;
+use SMW\Tests\TestEnvironment;
 use SMW\UnusedPropertiesQueryPage;
-use SMW\MessageFormatter;
-
-use SMWDataItem;
+use SMW\Tests\PHPUnitCompat;
 
 /**
  * @covers \SMW\UnusedPropertiesQueryPage
- * @covers \SMW\QueryPage
+ * @group semantic-mediawiki
  *
- *
- * @group SMW
- * @group SMWExtension
- *
- * @licence GNU GPL v2+
+ * @license GNU GPL v2+
  * @since 1.9
  *
  * @author mwjames
  */
-class UnusedPropertiesQueryPageTest extends SemanticMediaWikiTestCase {
+class UnusedPropertiesQueryPageTest extends \PHPUnit_Framework_TestCase {
 
-	/**
-	 * @return string|false
-	 */
-	public function getClass() {
-		return '\SMW\UnusedPropertiesQueryPage';
-	}
+	use PHPUnitCompat;
 
-	/**
-	 * @since 1.9
-	 *
-	 * @return DIWikiPage
-	 */
-	private function getMockDIWikiPage( $exists = true ) {
+	private $store;
+	private $skin;
+	private $settings;
+	private $dataItemFactory;
+	private $testEnvironment;
 
-		$text  = $this->newRandomString();
+	protected function setUp() {
+		parent::setUp();
 
-		$title = $this->newMockBuilder()->newObject( 'Title', array(
-			'exists'  => $exists,
-			'getText' => $text,
-			'getNamespace'    => NS_MAIN,
-			'getPrefixedText' => $text
-		) );
+		$this->testEnvironment = new TestEnvironment();
 
-		$diWikiPage = $this->newMockBuilder()->newObject( 'DIWikiPage', array(
-			'getTitle'  => $title,
-		) );
+		$this->store = $this->getMockBuilder( '\SMW\Store' )
+			->disableOriginalConstructor()
+			->getMockForAbstractClass();
 
-		return $diWikiPage;
-	}
-
-	/**
-	 * @since 1.9
-	 *
-	 * @return UnusedPropertiesQueryPage
-	 */
-	private function newInstance( $result = null, $values = array() ) {
-
-		$listLookup = $this->getMockBuilder( '\SMW\SQLStore\Lookup\ListLookup' )
+		$this->skin = $this->getMockBuilder( '\Skin' )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$listLookup->expects( $this->any() )
-			->method( 'fetchList' )
-			->will( $this->returnValue( $result ) );
+		$container = $this->getMockBuilder( '\Onoi\BlobStore\Container' )
+			->disableOriginalConstructor()
+			->getMock();
 
-		$mockStore = $this->newMockBuilder()->newObject( 'Store', array(
-			'getPropertyValues'          => $values,
-			'getUnusedPropertiesSpecial' => $listLookup
-		) );
+		$blobStore = $this->getMockBuilder( '\Onoi\BlobStore\BlobStore' )
+			->disableOriginalConstructor()
+			->getMock();
 
-		$instance = new UnusedPropertiesQueryPage( $mockStore, $this->newSettings() );
-		$instance->setContext( $this->newContext() );
+		$blobStore->expects( $this->any() )
+			->method( 'read' )
+			->will( $this->returnValue( $container ) );
 
-		return $instance;
+		$cachedPropertyValuesPrefetcher = $this->getMockBuilder( '\SMW\CachedPropertyValuesPrefetcher' )
+			->setConstructorArgs( [ $this->store, $blobStore ] )
+			->setMethods( null )
+			->getMock();
+
+		$this->testEnvironment->registerObject( 'CachedPropertyValuesPrefetcher', $cachedPropertyValuesPrefetcher );
+
+		$this->settings = Settings::newFromArray( [] );
+
+		$this->dataItemFactory = new DataItemFactory();
 	}
 
-	/**
-	 * @since 1.9
-	 */
-	public function testConstructor() {
-		$this->assertInstanceOf( $this->getClass(), $this->newInstance() );
+	protected function tearDown() {
+		$this->testEnvironment->tearDown();
 	}
 
-	/**
-	 * @dataProvider getUserDefinedDataProvider
-	 *
-	 * @since 1.9
-	 */
-	public function testFormatResult( $isUserDefined ) {
+	public function testCanConstruct() {
 
-		// Skin stub object
-		$skin = $this->getMock( 'Skin' );
-
-		// DIProperty
-		$instance = $this->newInstance();
-
-		$property = $this->newMockBuilder()->newObject( 'DIProperty', array(
-			'isUserDefined' => $isUserDefined,
-			'getDiWikiPage' => $this->getMockDIWikiPage( true ),
-			'getLabel'      => $this->newRandomString(),
-		) );
-
-		$expected = $property->getDiWikiPage()->getTitle()->getText();
-		$result   = $instance->formatResult( $skin, $property );
-
-		$this->assertInternalType( 'string', $result );
-		$this->assertContains( $expected, $result );
-
-		// Multiple entries
-		$instance = $this->newInstance();
-		$multiple = array( $this->getMockDIWikiPage(), $this->getMockDIWikiPage() );
-
-		$property = $this->newMockBuilder()->newObject( 'DIProperty', array(
-			'isUserDefined' => $isUserDefined,
-			'getDiWikiPage' => $this->getMockDIWikiPage( true ),
-			'getLabel'      => $this->newRandomString(),
-		) );
-
-		$expected = $property->getDiWikiPage()->getTitle()->getText();
-		$instance = $this->newInstance( null, $multiple );
-
-		$result   = $instance->formatResult( $skin, $property );
-
-		$this->assertInternalType( 'string', $result );
-		$this->assertContains( $expected, $result );
-
-		// DIError
-		$instance = $this->newInstance();
-		$error    = $this->newRandomString();
-		$diError  = $this->newMockBuilder()->newObject( 'DIError', array(
-			'getErrors' => $error
-		) );
-
-		$result   = $instance->formatResult( $skin, $diError );
-
-		$this->assertInternalType( 'string', $result );
-		$this->assertContains( $error, $result );
-
+		$this->assertInstanceOf(
+			'\SMW\UnusedPropertiesQueryPage',
+			new UnusedPropertiesQueryPage( $this->store, $this->settings )
+		);
 	}
 
-	/**
-	 * @since 1.9
-	 */
-	public function testInvalidResultException() {
+	public function testFormatResultDIError() {
 
-		$this->setExpectedException( '\SMW\InvalidResultException' );
+		$error = $this->dataItemFactory->newDIError( 'Foo');
 
-		$instance = $this->newInstance();
-		$skin = $this->getMock( 'Skin' );
+		$instance = new UnusedPropertiesQueryPage(
+			$this->store,
+			$this->settings
+		);
 
-		$this->assertInternalType( 'string', $instance->formatResult( $skin, null ) );
+		$result = $instance->formatResult(
+			$this->skin,
+			$error
+		);
 
+		$this->assertInternalType(
+			'string',
+			$result
+		);
+
+		$this->assertContains(
+			'Foo',
+			$result
+		);
 	}
 
-	/**
-	 * @return array
-	 */
-	public function getUserDefinedDataProvider() {
-		return array( array( true ), array( false ) );
+	public function testInvalidResultThrowsException() {
+
+		$instance = new UnusedPropertiesQueryPage(
+			$this->store,
+			$this->settings
+		);
+
+		$this->setExpectedException( '\SMW\Exception\PropertyNotFoundException' );
+		$instance->formatResult( $this->skin, null );
 	}
 
-	/**
-	 * @since 1.9
-	 */
-	public function testGetResults() {
+	public function testFormatPropertyItemOnUserDefinedProperty() {
 
-		$expected = 'Lala';
+		$property = $this->dataItemFactory->newDIProperty( 'Foo' );
 
-		$instance = $this->newInstance( $expected );
-		$this->assertEquals( $expected, $instance->getResults( null ) );
+		$instance = new UnusedPropertiesQueryPage(
+			$this->store,
+			$this->settings
+		);
 
+		$result = $instance->formatResult(
+			$this->skin,
+			$property
+		);
+
+		$this->assertContains(
+			'Foo',
+			$result
+		);
 	}
+
+	public function testFormatPropertyItemOnPredefinedProperty() {
+
+		$property = $this->dataItemFactory->newDIProperty( '_MDAT' );
+
+		$instance = new UnusedPropertiesQueryPage(
+			$this->store,
+			$this->settings
+		);
+
+		$result = $instance->formatResult(
+			$this->skin,
+			$property
+		);
+
+		$this->assertContains(
+			'Help:Special_properties',
+			$result
+		);
+	}
+
 }

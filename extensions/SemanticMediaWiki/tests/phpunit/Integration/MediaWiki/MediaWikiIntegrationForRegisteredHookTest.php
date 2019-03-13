@@ -2,21 +2,16 @@
 
 namespace SMW\Tests\Integration\MediaWiki;
 
-use SMW\Tests\Utils\UtilityFactory;
+use RequestContext;
+use SMW\ApplicationFactory;
+use SMW\DIWikiPage;
+use SMW\ParserData;
+use SMW\Tests\MwDBaseUnitTestCase;
 use SMW\Tests\Utils\PageCreator;
 use SMW\Tests\Utils\PageDeleter;
-
-use SMW\Tests\MwDBaseUnitTestCase;
-
-use SMW\MediaWiki\Hooks\ArticlePurge;
-use SMW\SemanticData;
-use SMW\ParserData;
-use SMW\DIWikiPage;
-use SMW\ApplicationFactory;
-
-use RequestContext;
-use WikiPage;
+use SMW\Tests\Utils\UtilityFactory;
 use Title;
+use WikiPage;
 
 /**
  * @group semantic-mediawiki
@@ -48,14 +43,12 @@ class MediaWikiIntegrationForRegisteredHookTest extends MwDBaseUnitTestCase {
 
 		$this->applicationFactory = ApplicationFactory::getInstance();
 
-		$settings = array(
-			'smwgPageSpecialProperties' => array( '_MDAT' ),
-			'smwgNamespacesWithSemanticLinks' => array( NS_MAIN => true ),
-			'smwgCacheType' => 'hash',
-			'smwgAutoRefreshOnPurge' => true,
-			'smwgDeleteSubjectAsDeferredJob' => false,
-			'smwgDeleteSubjectWithAssociatesRefresh' => false
-		);
+		$settings = [
+			'smwgPageSpecialProperties' => [ '_MDAT' ],
+			'smwgNamespacesWithSemanticLinks' => [ NS_MAIN => true ],
+			'smwgMainCacheType' => 'hash',
+			'smwgAutoRefreshOnPurge' => true
+		];
 
 		foreach ( $settings as $key => $value ) {
 			$this->applicationFactory->getSettings()->set( $key, $value );
@@ -142,9 +135,9 @@ class MediaWikiIntegrationForRegisteredHookTest extends MwDBaseUnitTestCase {
 			$parserOutput
 		);
 
-		$expected = array(
-			'propertyKeys' => array( '_SKEY', '_MDAT', 'EditPageToGetNewRevisionHookTest' )
-		);
+		$expected = [
+			'propertyKeys' => [ '_SKEY', '_MDAT', 'EditPageToGetNewRevisionHookTest' ]
+		];
 
 		$this->semanticDataValidator->assertThatPropertiesAreSet(
 			$expected,

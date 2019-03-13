@@ -2,10 +2,10 @@
 
 namespace SMW\Tests\MediaWiki\Jobs;
 
+use SMW\DIWikiPage;
 use SMW\MediaWiki\Jobs\UpdateJob;
-use SMW\Settings;
-use SMW\ApplicationFactory;
-
+use SMW\Tests\TestEnvironment;
+use SMWDIBlob as DIBlob;
 use Title;
 
 /**
@@ -19,29 +19,46 @@ use Title;
  */
 class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 
-	private $applicationFactory;
+	private $testEnvironment;
+	private $semanticDataFactory;
+	private $semanticDataSerializer;
 
 	protected function setUp() {
 		parent::setUp();
 
-		$this->applicationFactory = ApplicationFactory::getInstance();
+		$this->testEnvironment = new TestEnvironment( [
+			'smwgMainCacheType'        => 'hash',
+			'smwgEnableUpdateJobs' => false,
+			'smwgEnabledDeferredUpdate' => false,
+			'smwgDVFeatures' => '',
+			'smwgSemanticsEnabled' => false
+		] );
 
-		$settings = Settings::newFromArray( array(
-			'smwgCacheType'        => 'hash',
-			'smwgEnableUpdateJobs' => false
-		) );
+		$idTable = $this->getMockBuilder( '\stdClass' )
+			->setMethods( [ 'exists' ] )
+			->getMock();
 
-		$store = $this->getMockBuilder( '\SMW\Store' )
+		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
 			->disableOriginalConstructor()
-			->getMockForAbstractClass();
+			->setMethods( [ 'getObjectIds', 'getPropertyValues', 'updateData' ] )
+			->getMock();
 
-		$this->applicationFactory->registerObject( 'Store', $store );
-		$this->applicationFactory->registerObject( 'Settings', $settings );
+		$store->expects( $this->any() )
+			->method( 'getObjectIds' )
+			->will( $this->returnValue( $idTable ) );
+
+		$store->expects( $this->any() )
+			->method( 'getPropertyValues' )
+			->will( $this->returnValue( [] ) );
+
+		$this->testEnvironment->registerObject( 'Store', $store );
+
+		$this->semanticDataFactory = $this->testEnvironment->getUtilityFactory()->newSemanticDataFactory();
+		$this->semanticDataSerializer = \SMW\ApplicationFactory::getInstance()->newSerializerFactory()->newSemanticDataSerializer();
 	}
 
 	protected function tearDown() {
-		$this->applicationFactory->clear();
-
+		$this->testEnvironment->tearDown();
 		parent::tearDown();
 	}
 
@@ -75,7 +92,7 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( true ) );
 
 		$instance = new UpdateJob( $title );
-		$instance->setJobQueueEnabledState( false );
+		$instance->isEnabledJobQueue( false );
 
 		$this->assertFalse(	$instance->run() );
 	}
@@ -98,10 +115,10 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 			->method( 'exists' )
 			->will( $this->returnValue( false ) );
 
-		$this->applicationFactory->registerObject( 'ContentParser', null );
+		$this->testEnvironment->registerObject( 'ContentParser', null );
 
 		$instance = new UpdateJob( $title );
-		$instance->setJobQueueEnabledState( false );
+		$instance->isEnabledJobQueue( false );
 
 		$this->assertTrue( $instance->run() );
 	}
@@ -124,10 +141,10 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getOutput' )
 			->will( $this->returnValue( null ) );
 
-		$this->applicationFactory->registerObject( 'ContentParser', $contentParser );
+		$this->testEnvironment->registerObject( 'ContentParser', $contentParser );
 
 		$instance = new UpdateJob( $title );
-		$instance->setJobQueueEnabledState( false );
+		$instance->isEnabledJobQueue( false );
 
 		$this->assertFalse( $instance->run() );
 	}
@@ -138,11 +155,11 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$title->expects( $this->once() )
+		$title->expects( $this->atLeastOnce() )
 			->method( 'getDBkey' )
 			->will( $this->returnValue( __METHOD__ ) );
 
-		$title->expects( $this->once() )
+		$title->expects( $this->atLeastOnce() )
 			->method( 'getNamespace' )
 			->will( $this->returnValue( 0 ) );
 
@@ -158,20 +175,32 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getOutput' )
 			->will( $this->returnValue( new \ParserOutput ) );
 
-		$this->applicationFactory->registerObject( 'ContentParser', $contentParser );
+		$this->testEnvironment->registerObject( 'ContentParser', $contentParser );
 
-		$store = $this->getMockBuilder( '\SMW\Store' )
+		$idTable = $this->getMockBuilder( '\stdClass' )
+			->setMethods( [ 'exists' ] )
+			->getMock();
+
+		$idTable->expects( $this->atLeastOnce() )
+			->method( 'exists' )
+			->will( $this->returnValue( true ) );
+
+		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
 			->disableOriginalConstructor()
-			->setMethods( array( 'updateData' ) )
-			->getMockForAbstractClass();
+			->setMethods( [ 'clearData', 'getObjectIds' ] )
+			->getMock();
+
+		$store->expects( $this->any() )
+			->method( 'getObjectIds' )
+			->will( $this->returnValue( $idTable ) );
 
 		$store->expects( $this->once() )
-			->method( 'updateData' );
+			->method( 'clearData' );
 
-		$this->applicationFactory->registerObject( 'Store', $store );
+		$this->testEnvironment->registerObject( 'Store', $store );
 
 		$instance = new UpdateJob( $title );
-		$instance->setJobQueueEnabledState( false );
+		$instance->isEnabledJobQueue( false );
 
 		$this->assertTrue( $instance->run() );
 	}
@@ -202,27 +231,95 @@ class UpdateJobTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getOutput' )
 			->will( $this->returnValue( new \ParserOutput ) );
 
-		$this->applicationFactory->registerObject( 'ContentParser', $contentParser );
+		$this->testEnvironment->registerObject( 'ContentParser', $contentParser );
+
+		$idTable = $this->getMockBuilder( '\stdClass' )
+			->setMethods( [ 'exists' ] )
+			->getMock();
+
+		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
+			->disableOriginalConstructor()
+			->setMethods( [ 'getPropertyValues', 'getObjectIds' ] )
+			->getMock();
+
+		$store->expects( $this->any() )
+			->method( 'getObjectIds' )
+			->will( $this->returnValue( $idTable ) );
+
+		$store->expects( $this->any() )
+			->method( 'getPropertyValues' )
+			->will( $this->returnValue( [] ) );
+
+		$this->testEnvironment->registerObject( 'Store', $store );
+
+		$instance = new UpdateJob( $title, [ 'shallowUpdate' => true ] );
+		$instance->isEnabledJobQueue( false );
+
+		$this->assertTrue( $instance->run() );
+	}
+
+	public function testJobOnSerializedSemanticData() {
+
+		$title = Title::newFromText( __METHOD__ );
 
 		$store = $this->getMockBuilder( '\SMW\Store' )
 			->disableOriginalConstructor()
-			->setMethods( array( 'getPropertyValues', 'getWikiPageLastModifiedTimestamp' ) )
+			->setMethods( [ 'updateData' ] )
+			->getMockForAbstractClass();
+
+		$store->expects( $this->once() )
+			->method( 'updateData' );
+
+		$this->testEnvironment->registerObject( 'Store', $store );
+
+		$semanticData = $this->semanticDataSerializer->serialize(
+			$this->semanticDataFactory->newEmptySemanticData( __METHOD__ )
+		);
+
+		$instance = new UpdateJob( $title,
+			[
+				UpdateJob::SEMANTIC_DATA => $semanticData
+			]
+		);
+
+		$instance->isEnabledJobQueue( false );
+
+		$this->assertTrue(
+			$instance->run()
+		);
+	}
+
+	public function testJobOnChangePropagation() {
+
+		$subject = DIWikiPage::newFromText( __METHOD__, SMW_NS_PROPERTY );
+
+		$semanticData = $this->semanticDataSerializer->serialize(
+			$this->semanticDataFactory->newEmptySemanticData( __METHOD__ )
+		);
+
+		$store = $this->getMockBuilder( '\SMW\Store' )
+			->disableOriginalConstructor()
+			->setMethods( [ 'updateData', 'getPropertyValues' ] )
 			->getMockForAbstractClass();
 
 		$store->expects( $this->any() )
 			->method( 'getPropertyValues' )
-			->will( $this->returnValue( array() ) );
+			->will( $this->returnValue( [ new DIBlob( json_encode( $semanticData ) ) ] ) );
 
 		$store->expects( $this->once() )
-			->method( 'getWikiPageLastModifiedTimestamp' )
-			->will( $this->returnValue( 0 ) );
+			->method( 'updateData' );
 
-		$this->applicationFactory->registerObject( 'Store', $store );
+		$this->testEnvironment->registerObject( 'Store', $store );
 
-		$instance = new UpdateJob( $title, array( 'pm' => SMW_UJ_PM_CLASTMDATE ) );
-		$instance->setJobQueueEnabledState( false );
+		$instance = new UpdateJob( $subject->getTitle(),
+			[
+				UpdateJob::CHANGE_PROP => $subject->getSerialization()
+			]
+		);
 
-		$this->assertTrue( $instance->run() );
+		$instance->isEnabledJobQueue( false );
+
+		$instance->run();
 	}
 
 }

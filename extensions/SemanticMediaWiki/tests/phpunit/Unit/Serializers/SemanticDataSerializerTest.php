@@ -2,14 +2,13 @@
 
 namespace SMW\Tests\Serializers;
 
-use SMW\Serializers\SemanticDataSerializer;
-use SMW\Tests\Utils\UtilityFactory;
 use SMW\DataValueFactory;
-use SMw\SemanticData;
 use SMW\DIWikiPage;
+use SMW\Serializers\SemanticDataSerializer;
 use SMW\Subobject;
-
+use SMW\Tests\Utils\UtilityFactory;
 use Title;
+use SMW\Tests\PHPUnitCompat;
 
 /**
  * @covers \SMW\Serializers\SemanticDataSerializer
@@ -21,6 +20,8 @@ use Title;
  * @author mwjames
  */
 class SemanticDataSerializerTest extends \PHPUnit_Framework_TestCase {
+
+	use PHPUnitCompat;
 
 	private $dataValueFactory;
 	private $semanticDataFactory;
@@ -64,47 +65,47 @@ class SemanticDataSerializerTest extends \PHPUnit_Framework_TestCase {
 
 		#0 Empty container
 		$foo = $this->semanticDataFactory->setSubject( DIWikiPage::newFromTitle( $title ) )->newEmptySemanticData();
-		$provider[] = array( $foo );
+		$provider[] = [ $foo ];
 
 		#1 Single entry
 		$foo = $this->semanticDataFactory->setSubject( DIWikiPage::newFromTitle( $title ) )->newEmptySemanticData();
-		$foo->addDataValue( $this->dataValueFactory->newPropertyValue( 'Has fooQuex', 'Bar' ) );
-		$provider[] = array( $foo );
+		$foo->addDataValue( $this->dataValueFactory->newDataValueByText( 'Has fooQuex', 'Bar' ) );
+		$provider[] = [ $foo ];
 
 		// #2 Single + single subobject entry
 		$foo = $this->semanticDataFactory->setSubject( DIWikiPage::newFromTitle( $title ) )->newEmptySemanticData();
-		$foo->addDataValue( $this->dataValueFactory->newPropertyValue( 'Has fooQuex', 'Bar' ) );
+		$foo->addDataValue( $this->dataValueFactory->newDataValueByText( 'Has fooQuex', 'Bar' ) );
 
 		$subobject = new Subobject( $title );
 		$subobject->setSemanticData( 'Foo' );
-		$subobject->addDataValue( $this->dataValueFactory->newPropertyValue( 'Has subobjects', 'Bam' ) );
+		$subobject->addDataValue( $this->dataValueFactory->newDataValueByText( 'Has subobjects', 'Bam' ) );
 
 		$foo->addPropertyObjectValue(
 			$subobject->getProperty(),
 			$subobject->getContainer()
 		);
 
-		$provider[] = array( $foo );
+		$provider[] = [ $foo ];
 
 		#3 Multiple entries
 		$foo = $this->semanticDataFactory->setSubject( DIWikiPage::newFromTitle( $title ) )->newEmptySemanticData();
-		$foo->addDataValue( $this->dataValueFactory->newPropertyValue( 'Has fooQuex', 'Bar' ) );
-		$foo->addDataValue( $this->dataValueFactory->newPropertyValue( 'Has queez', 'Xeey' ) );
+		$foo->addDataValue( $this->dataValueFactory->newDataValueByText( 'Has fooQuex', 'Bar' ) );
+		$foo->addDataValue( $this->dataValueFactory->newDataValueByText( 'Has queez', 'Xeey' ) );
 
 		$subobject = new Subobject( $title );
 		$subobject->setSemanticData( 'Foo' );
-		$subobject->addDataValue( $this->dataValueFactory->newPropertyValue( 'Has subobjects', 'Bam' ) );
-		$subobject->addDataValue( $this->dataValueFactory->newPropertyValue( 'Has fooQuex', 'Fuz' ) );
+		$subobject->addDataValue( $this->dataValueFactory->newDataValueByText( 'Has subobjects', 'Bam' ) );
+		$subobject->addDataValue( $this->dataValueFactory->newDataValueByText( 'Has fooQuex', 'Fuz' ) );
 
 		$subobject->setSemanticData( 'Bar' );
-		$subobject->addDataValue( $this->dataValueFactory->newPropertyValue( 'Has fooQuex', 'Fuz' ) );
+		$subobject->addDataValue( $this->dataValueFactory->newDataValueByText( 'Has fooQuex', 'Fuz' ) );
 
 		$foo->addPropertyObjectValue(
 			$subobject->getProperty(),
 			$subobject->getContainer()
 		);
 
-		$provider[] = array( $foo );
+		$provider[] = [ $foo ];
 
 		return $provider;
 	}

@@ -2,12 +2,12 @@
 
 namespace SMW\Tests\Utils\Runners;
 
-use ImportStreamSource;
 use ImportReporter;
-use WikiImporter;
+use ImportStreamSource;
 use RequestContext;
-
 use RuntimeException;
+use SMW\Tests\TestEnvironment;
+use WikiImporter;
 
 /**
  * @group SMW
@@ -26,7 +26,20 @@ class XmlImportRunner {
 	protected $result = null;
 	protected $verbose = false;
 
+	/**
+	 * @var TestEnvironment
+	 */
+	private $testEnvironment;
+
 	public function __construct( $file = null ) {
+		$this->file = $file;
+		$this->testEnvironment = new TestEnvironment();
+	}
+
+	/**
+	 * @param string $file
+	 */
+	public function setFile( $file ) {
 		$this->file = $file;
 	}
 
@@ -93,6 +106,8 @@ class XmlImportRunner {
 		$this->result = $reporter->close();
 		$this->importTime = microtime( true ) - $start;
 
+		$this->testEnvironment->executePendingDeferredUpdates();
+
 		return $this->result->isGood() && !$this->exception;
 	}
 
@@ -132,7 +147,7 @@ class XmlImportRunner {
 
 	private function assertThatFileIsReadableOrThrowException( $file ) {
 
-		$file = str_replace( array( '\\', '/' ), DIRECTORY_SEPARATOR, $file );
+		$file = str_replace( [ '\\', '/' ], DIRECTORY_SEPARATOR, $file );
 
 		if ( is_readable( $file ) ) {
 			return $file;

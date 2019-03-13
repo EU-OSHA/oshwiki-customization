@@ -2,17 +2,13 @@
 
 namespace SMW\Tests\Utils;
 
-use SMW\MediaWiki\Jobs\UpdateJob;
-
-use SMW\Store;
-use SMW\ContentParser;
+use RuntimeException;
 use SMW\ApplicationFactory;
+use SMW\ContentParser;
 use SMW\DIWikiPage;
-
+use SMW\MediaWiki\Jobs\UpdateJob;
 use Title;
 use WikiPage;
-
-use RuntimeException;
 
 /**
  *
@@ -42,7 +38,6 @@ class PageRefresher {
 		}
 
 		$contentParser = new ContentParser( $title );
-		$contentParser->forceToUseParser();
 
 		$parserData = ApplicationFactory::getInstance()->newParserData(
 			$title,

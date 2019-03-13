@@ -2,12 +2,10 @@
 
 namespace SMW\Tests\Integration\MediaWiki\Import;
 
-use SMW\Tests\Utils\UtilityFactory;
-use SMW\Tests\Utils\ByPageSemanticDataFinder;
-use SMW\Tests\MwDBaseUnitTestCase;
-
 use SMW\DIProperty;
-
+use SMW\Tests\MwDBaseUnitTestCase;
+use SMW\Tests\Utils\ByPageSemanticDataFinder;
+use SMW\Tests\Utils\UtilityFactory;
 use Title;
 
 /**
@@ -26,7 +24,7 @@ class PageWithTemplateInclusionTest extends MwDBaseUnitTestCase {
 
 	protected $destroyDatabaseTablesAfterRun = true;
 
-	private $importedTitles = array();
+	private $importedTitles = [];
 	private $runnerFactory;
 	private $titleValidator;
 	private $semanticDataValidator;
@@ -58,18 +56,18 @@ class PageWithTemplateInclusionTest extends MwDBaseUnitTestCase {
 
 	public function testImportToVerifyAnnotationByTemplateInclusion() {
 
-		$this->importedTitles = array(
+		$this->importedTitles = [
 			'Foo-1-19-7',
 			'Template:FooAsk',
 			'Template:FooShow',
 			'Template:FooSubobject',
 			'Template:FooTemplate'
-		);
+		];
 
 		$this->titleValidator->assertThatTitleIsKnown( $this->importedTitles );
 
-		$expectedProperties = array(
-			'properties' => array(
+		$expectedProperties = [
+			'properties' => [
 				DIProperty::newFromUserLabel( 'Foo' ),
 				DIProperty::newFromUserLabel( 'Quux' ),
 				new DIProperty( '_ASK' ),
@@ -77,8 +75,8 @@ class PageWithTemplateInclusionTest extends MwDBaseUnitTestCase {
 				new DIProperty( '_SKEY' ),
 				new DIProperty( '_SOBJ' ),
 				new DIProperty( '_INST' )
-			)
-		);
+			]
+		];
 
 		$title = Title::newFromText( 'Foo-1-19-7' );
 

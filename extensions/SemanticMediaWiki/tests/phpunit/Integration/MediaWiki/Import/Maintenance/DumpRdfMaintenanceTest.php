@@ -2,10 +2,10 @@
 
 namespace SMW\Tests\Integration\MediaWiki\Import\Maintenance;
 
-use SMW\Tests\Utils\UtilityFactory;
-use SMW\Tests\MwDBaseUnitTestCase;
 use SMW\ApplicationFactory;
 use SMW\EventHandler;
+use SMW\Tests\MwDBaseUnitTestCase;
+use SMW\Tests\Utils\UtilityFactory;
 
 /**
  * @group SMW
@@ -23,7 +23,7 @@ class DumpRdfMaintenanceTest extends MwDBaseUnitTestCase {
 
 	protected $destroyDatabaseTablesAfterRun = true;
 
-	private $importedTitles = array();
+	private $importedTitles = [];
 	private $runnerFactory;
 	private $titleValidator;
 	private $stringValidator;
@@ -63,7 +63,9 @@ class DumpRdfMaintenanceTest extends MwDBaseUnitTestCase {
 
 	public function testMaintenanceRdfOutput() {
 
-		$this->importedTitles = array(
+		$this->testEnvironment->executePendingDeferredUpdates();
+
+		$this->importedTitles = [
 			'Category:Lorem ipsum',
 			'Lorem ipsum',
 			'Elit Aliquam urna interdum',
@@ -78,7 +80,7 @@ class DumpRdfMaintenanceTest extends MwDBaseUnitTestCase {
 			'Property:Has quantity',
 			'Property:Has temperature',
 			'Property:Has text'
-		);
+		];
 
 		$this->titleValidator->assertThatTitleIsKnown( $this->importedTitles );
 
@@ -91,7 +93,7 @@ class DumpRdfMaintenanceTest extends MwDBaseUnitTestCase {
 
 	private function doExportForDefaultOptions( $maintenanceRunner ) {
 
-		$expectedOutputContent = array(
+		$expectedOutputContent = [
 		//	'<rdf:type rdf:resource="&wiki;Category-3ALorem_ipsum"/>',
 			'<rdfs:label>Lorem ipsum</rdfs:label>',
 			'<rdfs:label>Has annotation uri</rdfs:label>',
@@ -104,7 +106,7 @@ class DumpRdfMaintenanceTest extends MwDBaseUnitTestCase {
 			'<rdfs:label>Has temperature</rdfs:label>',
 			'<rdfs:label>Has text</rdfs:label>',
 			'<rdfs:label>Has Url</rdfs:label>',
-		);
+		];
 
 		$maintenanceRunner->run();
 
@@ -116,15 +118,15 @@ class DumpRdfMaintenanceTest extends MwDBaseUnitTestCase {
 
 	private function doExportForPageOption( $maintenanceRunner ) {
 
-		$expectedOutputContent = array(
+		$expectedOutputContent = [
 			'<rdfs:label>Lorem ipsum</rdfs:label>',
 			'<swivt:masterPage rdf:resource="&wiki;Lorem_ipsum"/>',
-			'<property:Has_subobject-23aux rdf:resource="&wiki;Lorem_ipsum-23_017ced50ca5208f4cc77f90c43a0d4a9"/>',
+			'<property:Has_subobject-23aux rdf:resource="&wiki;Lorem_ipsum-23_b704f46f7acbb89982564cc97d8e9019"/>',
 			'<swivt:wikiPageSortKey rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Lorem ipsum</swivt:wikiPageSortKey>'
-		);
+		];
 
 		$maintenanceRunner
-			->setOptions( array( 'page' => 'Lorem ipsum' ) )
+			->setOptions( [ 'page' => 'Lorem ipsum' ] )
 			->run();
 
 		$this->stringValidator->assertThatStringContains(

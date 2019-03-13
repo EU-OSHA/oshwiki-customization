@@ -2,8 +2,8 @@
 
 namespace SMW\Tests;
 
-use SMW\StoreFactory;
 use SMW\Settings;
+use SMW\StoreFactory;
 
 /**
  * @covers \SMW\StoreFactory
@@ -18,6 +18,8 @@ use SMW\Settings;
  * @author mwjames
  */
 class StoreFactoryTest extends \PHPUnit_Framework_TestCase {
+
+	use PHPUnitCompat;
 
 	protected function tearDown() {
 		StoreFactory::clear();
@@ -58,22 +60,8 @@ class StoreFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testSetDefaultStoreForUnitTest() {
-
-		$store = $this->getMockBuilder( '\SMWSQLStore3' )
-			->disableOriginalConstructor()
-			->getMock();
-
-		StoreFactory::setDefaultStoreForUnitTest( $store );
-
-		$this->assertSame(
-			$store,
-			StoreFactory::getStore()
-		);
-	}
-
 	public function testStoreInstanceException() {
-		$this->setExpectedException( '\SMW\InvalidStoreException' );
+		$this->setExpectedException( '\SMW\Exception\StoreNotFoundException' );
 		StoreFactory::getStore( '\SMW\StoreFactory' );
 	}
 

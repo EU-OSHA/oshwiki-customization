@@ -2,11 +2,11 @@
 
 namespace SMW\Tests\Utils\Runners;
 
-use SMW\DBConnectionProvider;
-use SMW\Tests\Utils\MwDBConnectionProvider;
-
 use Job;
 use JobQueueGroup;
+use SMW\Connection\ConnectionProvider as IConnectionProvider;
+use SMW\Tests\TestEnvironment;
+use SMW\Tests\Utils\Connection\ConnectionProvider;
 
 /**
  * Partly copied from the MW 1.19 RunJobs maintenance script
@@ -20,22 +20,29 @@ use JobQueueGroup;
 class JobQueueRunner {
 
 	protected $type = null;
-	protected $status = array();
-	protected $dbConnectionProvider = null;
+	protected $status = [];
+	protected $connectionProvider = null;
+
+	/**
+	 * @var TestEnvironment
+	 */
+	private $testEnvironment;
 
 	/**
 	 * @since 1.9.2
 	 *
 	 * @param string|null $type
-	 * @param DBConnectionProvider|null $dbConnectionProvider
+	 * @param IConnectionProvider|null $connectionProvider
 	 */
-	public function __construct( $type = null, DBConnectionProvider $dbConnectionProvider = null ) {
+	public function __construct( $type = null, IConnectionProvider $connectionProvider = null ) {
 		$this->type = $type;
-		$this->dbConnectionProvider = $dbConnectionProvider;
+		$this->connectionProvider = $connectionProvider;
 
-		if ( $this->dbConnectionProvider === null ) {
-			$this->dbConnectionProvider = new MwDBConnectionProvider();
+		if ( $this->connectionProvider === null ) {
+			$this->connectionProvider = new ConnectionProvider();
 		}
+
+		$this->testEnvironment = new TestEnvironment();
 	}
 
 	/**
@@ -53,12 +60,12 @@ class JobQueueRunner {
 	/**
 	 * @since 2.1
 	 *
-	 * @param DBConnectionProvider $dbConnectionProvider
+	 * @param IConnectionProvider $connectionProvider
 	 *
 	 * @return JobQueueRunner
 	 */
-	public function setDBConnectionProvider( DBConnectionProvider $dbConnectionProvider ) {
-		$this->dbConnectionProvider = $dbConnectionProvider;
+	public function setConnectionProvider( IConnectionProvider $connectionProvider ) {
+		$this->connectionProvider = $connectionProvider;
 		return $this;
 	}
 
@@ -68,12 +75,13 @@ class JobQueueRunner {
 	public function run() {
 
 		$conds = '';
+		$connection = $this->connectionProvider->getConnection();
 
 		if ( $this->type !== null ) {
-			$conds = "job_cmd = " . $this->dbConnectionProvider->getConnection()->addQuotes( $this->type );
+			$conds = "job_cmd = " . $connection->addQuotes( $this->type );
 		}
 
-		while ( $this->dbConnectionProvider->getConnection()->selectField( 'job', 'job_id', $conds, __METHOD__ ) ) {
+		while ( $connection->selectField( 'job', 'job_id', $conds, __METHOD__ ) ) {
 
 			$job = $this->type === null ? $this->pop() : $this->pop_type( $this->type );
 
@@ -83,11 +91,13 @@ class JobQueueRunner {
 
 			wfWaitForSlaves();
 
-			$this->status[] = array(
+			$this->status[] = [
 				'type'   => $job->command,
 				'status' => $job->run()
-			);
+			];
 		}
+
+		$this->testEnvironment->executePendingDeferredUpdates();
 	}
 
 	/**
@@ -96,12 +106,13 @@ class JobQueueRunner {
 	public function deleteAllJobs() {
 
 		$conditions = '*';
+		$connection = $this->connectionProvider->getConnection();
 
 		if ( $this->type !== null ) {
-			$conditions = "job_cmd = " . $this->dbConnectionProvider->getConnection()->addQuotes( $this->type );
+			$conditions = "job_cmd = " . $connection->addQuotes( $this->type );
 		}
 
-		$this->dbConnectionProvider->getConnection()->delete(
+		$connection->delete(
 			'job',
 			$conditions,
 			__METHOD__

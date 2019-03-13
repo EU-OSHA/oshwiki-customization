@@ -2,9 +2,8 @@
 
 namespace SMW\Tests\MediaWiki\Hooks;
 
-use SMW\MediaWiki\Hooks\SpecialStatsAddExtra;
 use SMW\ApplicationFactory;
-use SMW\StoreFactory;
+use SMW\MediaWiki\Hooks\SpecialStatsAddExtra;
 
 /**
  * @covers \SMW\MediaWiki\Hooks\SpecialStatsAddExtra
@@ -25,33 +24,20 @@ class SpecialStatsAddExtraTest extends \PHPUnit_Framework_TestCase {
 
 	public function testCanConstruct() {
 
-		$userLanguage = $this->getMockBuilder( '\Language' )
+		$store = $this->getMockBuilder( '\SMW\Store' )
 			->disableOriginalConstructor()
-			->getMock();
-
-		$extraStats = array();
-		$version = '';
+			->getMockForAbstractClass();
 
 		$this->assertInstanceOf(
-			'\SMW\MediaWiki\Hooks\SpecialStatsAddExtra',
-			new SpecialStatsAddExtra( $extraStats, $version, $userLanguage )
+			SpecialStatsAddExtra::class,
+			new SpecialStatsAddExtra( $store )
 		);
 	}
 
 	/**
 	 * @dataProvider statisticsDataProvider
 	 */
-	public function testProcessForMockedStore( $setup, $expected ) {
-
-		$formatNumReturnValue = isset( $setup['statistics']['PROPUSES'] ) ? $setup['statistics']['PROPUSES'] : '';
-
-		$userLanguage = $this->getMockBuilder( '\Language' )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$userLanguage->expects( $this->any() )
-			->method( 'formatNum' )
-			->will( $this->returnValue( $formatNumReturnValue ) );
+	public function testProcess( $setup, $expected ) {
 
 		$store = $this->getMockBuilder( '\SMW\Store' )
 			->disableOriginalConstructor()
@@ -61,14 +47,19 @@ class SpecialStatsAddExtraTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getStatistics' )
 			->will( $this->returnValue( $setup['statistics'] ) );
 
-		ApplicationFactory::getInstance()->registerObject( 'Store', $store );
-
 		$extraStats = $setup['extraStats'];
-		$version = $setup['version'];
 
-		$instance = new SpecialStatsAddExtra( $extraStats, $version, $userLanguage );
+		$instance = new SpecialStatsAddExtra( $store );
 
-		$this->assertTrue( $instance->process() );
+		$instance->setOptions(
+			[
+				'smwgSemanticsEnabled' => true
+			]
+		);
+
+		$this->assertTrue(
+			$instance->process( $extraStats )
+		);
 
 		$this->assertTrue(
 			$this->matchArray( $extraStats, $expected['statistics'] )
@@ -77,18 +68,21 @@ class SpecialStatsAddExtraTest extends \PHPUnit_Framework_TestCase {
 
 	public function testProcessOnSQLStore() {
 
-		$userLanguage = $this->getMockBuilder( '\Language' )
-			->disableOriginalConstructor()
-			->getMock();
+		$extraStats = [];
 
-		ApplicationFactory::getInstance()->registerObject( 'Store', StoreFactory::getStore() );
+		$instance = new SpecialStatsAddExtra(
+			ApplicationFactory::getInstance()->getStore()
+		);
 
-		$extraStats = array();
-		$version = '1.21';
+		$instance->setOptions(
+			[
+				'smwgSemanticsEnabled' => true
+			]
+		);
 
-		$instance = new SpecialStatsAddExtra( $extraStats, $version, $userLanguage );
-
-		$this->assertTrue( $instance->process() );
+		$this->assertTrue(
+			$instance->process( $extraStats )
+		);
 
 		// This is a "cheap" check against the SQLStore as it could return any
 		// value therefore we use a message key as only known constant to verify
@@ -116,57 +110,53 @@ class SpecialStatsAddExtraTest extends \PHPUnit_Framework_TestCase {
 
 	public function statisticsDataProvider() {
 
-		$input = array(
+		$input = [
 			'PROPUSES' => 1001
-		);
+		];
 
-		#0 Legacy
-		$provider[] = array(
-			array(
-				'version'    => '1.20',
-				'extraStats' => array(),
+		#0
+		$provider[] = [
+			[
+				'extraStats' => [],
 				'statistics' => $input
-			),
-			array(
+			],
+			[
 				'statistics' => 1001
-			)
-		);
+			]
+		];
 
-		#1 Legacy - unknown
-		$provider[] = array(
-			array(
-				'version'    => '1.20',
-				'extraStats' => array(),
-				'statistics' => array( 'Yeey' => 2002 )
-			),
-			array(
+		#1 unknown
+		$provider[] = [
+			[
+				'extraStats' => [],
+				'statistics' => [ 'Yeey' => 2002 ]
+			],
+			[
 				'statistics' => null
-			)
-		);
+			]
+		];
 
 		#2 MW 1.21+
-		$provider[] = array(
-			array(
-				'version'    => '1.21',
-				'extraStats' => array(),
+		$provider[] = [
+			[
+				'extraStats' => [],
 				'statistics' => $input
-			),
-			array(
+			],
+			[
 				'statistics' => 1001
-			)
-		);
+			]
+		];
 
 		#3 MW 1.21+ - unknown
-		$provider[] = array(
-			array(
-				'version'    => '1.21',
-				'extraStats' => array(),
-				'statistics' => array( 'Quuxy' => 2002 )
-			),
-			array(
+		$provider[] = [
+			[
+				'extraStats' => [],
+				'statistics' => [ 'Quuxy' => 2002 ]
+			],
+			[
 				'statistics' => null
-			)
-		);
+			]
+		];
 
 		return $provider;
 	}

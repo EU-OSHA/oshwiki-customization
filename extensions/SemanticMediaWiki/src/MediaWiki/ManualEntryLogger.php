@@ -2,6 +2,7 @@
 
 namespace SMW\MediaWiki;
 
+use LogEntry;
 use ManualLogEntry;
 use Title;
 use User;
@@ -15,52 +16,69 @@ use User;
 class ManualEntryLogger {
 
 	/**
+	 * @var logEntry
+	 */
+	private $logEntry = null;
+
+	/**
 	 * @var array
 	 */
-	private $logEventTypes = array();
+	private $eventTypes = [];
 
 	/**
-	 * @note This is set in the constructor to make them non-accessible through
-	 * the standard settings as those are bound to MediaWiki and this class
+	 * @since 2.4
 	 *
-	 * @since 2.1
+	 * @param LogEntry|null $logEntry
 	 */
-	public function __construct() {
-		$GLOBALS['wgLogTypes'][] = 'smw';
-		$GLOBALS['wgFilterLogTypes']['smw'] = true;
+	public function __construct( LogEntry $logEntry = null ) {
+		$this->logEntry = $logEntry;
+	}
+
+	/**
+	 * @since 2.4
+	 *
+	 * @param string $eventTypes
+	 */
+	public function registerLoggableEventType( $eventType ) {
+		$this->eventTypes[$eventType] = true;
 	}
 
 	/**
 	 * @since 2.1
 	 *
-	 * @param array $logEventTypes
-	 */
-	public function registerLoggableEventTypes( array $logEventTypes ) {
-		$this->logEventTypes = $logEventTypes;
-	}
-
-	/**
-	 * @since 2.1
+	 * @param string $type
+	 * @param string $performer
+	 * @param string $target
+	 * @param string $comment
 	 *
 	 * @return integer|null
 	 */
 	public function log( $type, $performer, $target, $comment ) {
 
-		if ( !isset( $this->logEventTypes[$type] ) || !$this->logEventTypes[$type] ) {
+		if ( !isset( $this->eventTypes[$type] ) || !$this->eventTypes[$type] ) {
 			return null;
 		}
 
 		$logEntry = $this->newManualLogEntryForType( $type );
 		$logEntry->setTarget( Title::newFromText( $target ) );
 
-		$logEntry->setPerformer( User::newFromName( $performer ) );
-		$logEntry->setParameters( array() );
+		if ( is_string( $performer) ) {
+			$performer = User::newFromName( $performer );
+		}
+
+		$logEntry->setPerformer( $performer );
+		$logEntry->setParameters( [] );
 		$logEntry->setComment( $comment );
 
 		return $logEntry->insert();
 	}
 
 	protected function newManualLogEntryForType( $type ) {
+
+		if ( $this->logEntry !== null ) {
+			return $this->logEntry;
+		}
+
 		return new ManualLogEntry( 'smw', $type );
 	}
 

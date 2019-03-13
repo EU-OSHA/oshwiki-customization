@@ -2,9 +2,9 @@
 
 namespace SMW\Exporter\Element;
 
-use SMWDataItem as DataItem;
-use RuntimeException;
 use InvalidArgumentException;
+use RuntimeException;
+use SMWDataItem as DataItem;
 
 /**
  * A single resource (individual) for export, defined by a URI for which there
@@ -124,10 +124,10 @@ class ExpNsResource extends ExpResource {
 	public function getSerialization() {
 
 		// Use '|' as divider as it is unlikely that symbol appears within a uri
-		$serialization = array(
+		$serialization = [
 			'type' => self::TYPE_NSRESOURCE,
 			'uri'  => $this->localName . '|' . $this->namespace . '|' . $this->namespaceId
-		);
+		];
 
 		return $serialization + parent::getSerialization();
 	}

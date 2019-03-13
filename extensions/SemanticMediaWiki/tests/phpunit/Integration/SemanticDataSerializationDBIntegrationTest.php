@@ -2,18 +2,12 @@
 
 namespace SMW\Tests\Integration;
 
-use SMW\Tests\MwDBaseUnitTestCase;
-use SMW\Tests\Utils\Validators\SemanticDataValidator;
-
-use SMW\DIWikiPage;
-use SMW\DIProperty;
-use SMW\SemanticData;
 use SMW\DataValueFactory;
-use SMW\Subobject;
+use SMW\DIWikiPage;
+use SMW\SemanticData;
 use SMW\SerializerFactory;
-
-use SMWDIBlob as DIBlob;
-
+use SMW\Subobject;
+use SMW\Tests\MwDBaseUnitTestCase;
 use Title;
 
 /**
@@ -36,7 +30,7 @@ class SemanticDataSerializationDBIntegrationTest extends MwDBaseUnitTestCase {
 		$subobject->setEmptyContainerForId( 'SomeSubobjectToSerialize' );
 
 		$subobject->getSemanticData()->addDataValue(
-			DataValueFactory::getInstance()->newPropertyValue( 'Foo', 'Bar' )
+			DataValueFactory::getInstance()->newDataValueByText( 'Foo', 'Bar' )
 		);
 
 		$semanticDataBeforeUpdate->addSubobject( $subobject );

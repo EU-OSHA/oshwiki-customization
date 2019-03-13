@@ -2,16 +2,15 @@
 
 namespace SMW\Maintenance;
 
+use Exception;
 use LinkCache;
-use SMW\DIWikiPage;
-use SMW\MediaWiki\Jobs\UpdateJob;
-use SMW\MediaWiki\TitleCreator;
-use SMW\MediaWiki\TitleLookup;
 use Onoi\MessageReporter\MessageReporter;
 use Onoi\MessageReporter\MessageReporterFactory;
-use SMW\Store;
+use SMW\ApplicationFactory;
+use SMW\DIWikiPage;
+use SMW\MediaWiki\TitleFactory;
 use SMW\Options;
-use SMWQueryProcessor;
+use SMW\Store;
 use Title;
 
 /**
@@ -33,9 +32,9 @@ class DataRebuilder {
 	private $store;
 
 	/**
-	 * @var TitleCreator
+	 * @var TitleFactory
 	 */
-	private $titleCreator;
+	private $titleFactory;
 
 	/**
 	 * @var Options
@@ -47,10 +46,27 @@ class DataRebuilder {
 	 */
 	private $reporter;
 
+	/**
+	 * @var DistinctEntityDataRebuilder
+	 */
+	private $distinctEntityDataRebuilder;
+
+	/**
+	 * @var ExceptionFileLogger
+	 */
+	private $exceptionFileLogger;
+
+	/**
+	 * @var integer
+	 */
 	private $rebuildCount = 0;
 
+	/**
+	 * @var integer
+	 */
+	private $exceptionCount = 0;
+
 	private $delay = false;
-	private $pages = false;
 	private $canWriteToIdFile = false;
 	private $start = 1;
 	private $end = false;
@@ -58,7 +74,7 @@ class DataRebuilder {
 	/**
 	 * @var int[]
 	 */
-	private $filters = array();
+	private $filters = [];
 	private $verbose = false;
 	private $startIdFile = false;
 
@@ -66,12 +82,14 @@ class DataRebuilder {
 	 * @since 1.9.2
 	 *
 	 * @param Store $store
-	 * @param TitleCreator $titleCreator
+	 * @param TitleFactory $titleFactory
 	 */
-	public function __construct( Store $store, TitleCreator $titleCreator ) {
+	public function __construct( Store $store, TitleFactory $titleFactory ) {
 		$this->store = $store;
-		$this->titleCreator = $titleCreator;
+		$this->titleFactory = $titleFactory;
 		$this->reporter = MessageReporterFactory::getInstance()->newNullMessageReporter();
+		$this->distinctEntityDataRebuilder = new DistinctEntityDataRebuilder( $store, $titleFactory );
+		$this->exceptionFileLogger = new ExceptionFileLogger( 'rebuilddata' );
 	}
 
 	/**
@@ -99,15 +117,11 @@ class DataRebuilder {
 			$this->delay = intval( $options->get( 'd' ) ) * 1000; // convert milliseconds to microseconds
 		}
 
-		if ( $options->has( 'page' ) ) {
-			$this->pages = explode( '|', $options->get( 'page' ) );
-		}
-
 		if ( $options->has( 's' ) ) {
 			$this->start = max( 1, intval( $options->get( 's' ) ) );
 		} elseif ( $options->has( 'startidfile' ) ) {
 
-			$this->canWriteToIdFile = $this->idFileIsWritable( $options->get( 'startidfile' )  );
+			$this->canWriteToIdFile = $this->is_writable( $options->get( 'startidfile' )  );
 			$this->startIdFile = $options->get( 'startidfile' );
 
 			if ( is_readable( $options->get( 'startidfile' ) ) ) {
@@ -123,6 +137,7 @@ class DataRebuilder {
 		}
 
 		$this->verbose = $options->has( 'v' );
+		$this->exceptionFileLogger->setOptions( $options );
 
 		$this->setFiltersFromOptions( $options );
 	}
@@ -134,21 +149,41 @@ class DataRebuilder {
 	 */
 	public function rebuild() {
 
-		$this->reportMessage( "\nRunning for storage: " . get_class( $this->store ) . "\n\n" );
+		$this->reportMessage(
+			"\nLong-running scripts may cause memory leaks, if a deteriorating\n" .
+			"rebuild process is detected (after many pages, typically more\n".
+			"than 10000), please abort with CTRL-C and resume this script\n" .
+			"at the last processed ID using the parameter -s. Continue this\n" .
+			"until all pages have been refreshed.\n"
+		);
+
+		$this->reportMessage(
+			"\nThe progress displayed is an estimation and is self-adjusting \n" .
+			"during the maintenance process.\n"
+		);
+
+		$storeName = get_class( $this->store );
+
+		if ( strpos( $storeName, "\\") !== false ) {
+			$storeName = explode("\\", $storeName );
+			$storeName = end( $storeName );
+		}
+
+		$this->reportMessage( "\nRunning for storage: " . $storeName . "\n\n" );
 
 		if ( $this->options->has( 'f' ) ) {
 			$this->performFullDelete();
 		}
 
-		if ( $this->pages || $this->options->has( 'query' ) || $this->hasFilters() ) {
-			return $this->doRebuildPagesFor( "Refreshing selected pages!" );
+		if ( $this->options->has( 'page' ) || $this->options->has( 'query' ) || $this->hasFilters() || $this->options->has( 'redirects' ) ) {
+			return $this->rebuild_selection();
 		}
 
-		return $this->doRebuildAll();
+		return $this->rebuild_all();
 	}
 
 	private function hasFilters() {
-		return $this->filters !== array();
+		return $this->filters !== [];
 	}
 
 	/**
@@ -160,140 +195,253 @@ class DataRebuilder {
 		return $this->rebuildCount;
 	}
 
-	private function doRebuildPagesFor( $message ) {
+	/**
+	 * @since 3.0
+	 *
+	 * @return int
+	 */
+	public function getExceptionCount() {
+		return $this->exceptionCount;
+	}
 
-		$this->reportMessage( $message  . "\n" );
+	private function rebuild_selection() {
 
-		$pages = $this->getPagesFromQuery();
-		$pages = $this->pages ? array_merge( (array)$this->pages, $pages ) : $pages;
-		$pages = $this->hasFilters() ? array_merge( $pages, $this->getPagesFromFilters() ) : $pages;
+		$this->distinctEntityDataRebuilder->setOptions(
+			$this->options
+		);
 
-		$this->normalizeBulkOfPages( $pages );
-		$numPages = count( $pages );
+		$this->distinctEntityDataRebuilder->setMessageReporter(
+			$this->reporter
+		);
 
-		foreach ( $pages as $page ) {
+		$this->distinctEntityDataRebuilder->setExceptionFileLogger(
+			$this->exceptionFileLogger
+		);
 
-			$this->rebuildCount++;
-			$percentage = round( ( $this->rebuildCount / $numPages ) * 100 ) ."%";
+		$this->distinctEntityDataRebuilder->doRebuild();
 
-			$this->reportMessage( "($this->rebuildCount/$numPages $percentage) Processing page " . $page->getPrefixedDBkey() . " ...\n", $this->verbose );
+		$this->rebuildCount = $this->distinctEntityDataRebuilder->getRebuildCount();
 
-			$updatejob = new UpdateJob( $page, array(
-				'pm' => $this->options->has( 'shallow-update' ) ? SMW_UJ_PM_CLASTMDATE : false
-			) );
+		if ( $this->options->has( 'ignore-exceptions' ) && $this->exceptionFileLogger->getExceptionCount() > 0 ) {
+			$count = $this->exceptionFileLogger->getExceptionCount();
+			$this->exceptionFileLogger->doWrite();
 
-			$updatejob->run();
-			$this->doPrintDotProgressIndicator( $this->verbose, $percentage );
+			$path_parts = pathinfo(
+				str_replace( [ '\\', '/' ], DIRECTORY_SEPARATOR, $this->exceptionFileLogger->getExceptionFile() )
+			);
+
+			$this->reportMessage( "\nException log ..." );
+			$this->reportMessage( "\n   ... counted $count exceptions"	);
+			$this->reportMessage( "\n   ... written to ... " . $path_parts['basename']	);
+			$this->reportMessage( "\n   ... done.\n" );
+
+			$this->exceptionCount += $count;
 		}
-
-		$this->reportMessage( "\n\n$this->rebuildCount pages refreshed.\n" );
 
 		return true;
 	}
 
-	private function doRebuildAll() {
+	private function rebuild_all() {
 
-		$linkCache = LinkCache::singleton();
-
-		$byIdDataRebuildDispatcher = $this->store->refreshData(
+		$this->entityRebuildDispatcher = $this->store->refreshData(
 			$this->start,
 			1
 		);
 
-		$byIdDataRebuildDispatcher->setIterationLimit( 1 );
+		$this->entityRebuildDispatcher->setDispatchRangeLimit( 1 );
 
-		$byIdDataRebuildDispatcher->setUpdateJobParseMode(
-			$this->options->has( 'shallow-update' ) ? SMW_UJ_PM_CLASTMDATE : false
+		$this->entityRebuildDispatcher->setOptions(
+			[
+				'shallow-update' => $this->options->safeGet( 'shallow-update', false ),
+				'force-update' => $this->options->safeGet( 'force-update', false ),
+				'revision-mode' => $this->options->safeGet( 'revision-mode', false ),
+				'use-job' => false
+			]
 		);
 
-		$byIdDataRebuildDispatcher->setUpdateJobToUseJobQueueScheduler( false );
+		// By default we expect the disposal action to take place whenever the
+		// script is run
+		$this->dispose_outdated();
 
-		$this->deleteMarkedSubjects( $byIdDataRebuildDispatcher );
+		// Only expected the disposal action?
+		if ( $this->options->has( 'dispose-outdated' ) ) {
+			return true;
+		}
+
+		$this->reportMessage( "\n" );
 
 		if ( !$this->options->has( 'skip-properties' ) ) {
-			$this->filters[] = SMW_NS_PROPERTY;
-			$this->doRebuildPagesFor( "Rebuilding property pages." );
+			$this->options->set( 'p', true );
+			$this->rebuild_selection();
 			$this->reportMessage( "\n" );
 		}
 
-		$this->rebuildCount = 0;
 		$this->store->clear();
 
-		$this->reportMessage( "Refreshing all semantic data in the database!\n---\n" .
-			" Some versions of PHP suffer from memory leaks in long-running \n" .
-			" scripts. If your machine gets very slow after many pages \n" .
-			" (typically more than 1000) were refreshed, please abort with\n" .
-			" CTRL-C and resume this script at the last processed page id\n" .
-			" using the parameter -s (use -v to display page ids during \n" .
-			" refresh). Continue this until all pages have been refreshed.\n---\n"
-		);
+		if ( $this->start > 1 && $this->end === false ) {
+			$this->end = $this->entityRebuildDispatcher->getMaxId();
+		}
 
-
-		$total = $this->end && $this->end - $this->start > 0 ? $this->end - $this->start : $byIdDataRebuildDispatcher->getMaxId();
+		$total = $this->end && $this->end - $this->start > 0 ? $this->end - $this->start : $this->entityRebuildDispatcher->getMaxId();
+		$id = $this->start;
 
 		$this->reportMessage(
-			" The displayed progress is an estimation and is self-adjusting \n" .
-			" during the update process.\n---\n" );
+			"Rebuilding semantic data ..."
+		);
 
-		$this->reportMessage( "Processing all IDs from $this->start to " . ( $this->end ? "$this->end" : $byIdDataRebuildDispatcher->getMaxId() ) . " ...\n" );
+		$this->reportMessage(
+			"\n   ... selecting $this->start to " .
+			( $this->end ? "$this->end" : $this->entityRebuildDispatcher->getMaxId() ) . " IDs ...\n"
+		);
 
-		$id = $this->start;
+		$this->rebuildCount = 0;
+		$progress = 0;
+		$estimatedProgress = 0;
+		$skipped_update = 0;
 
 		while ( ( ( !$this->end ) || ( $id <= $this->end ) ) && ( $id > 0 ) ) {
 
-			$this->rebuildCount++;
-			$progress = '';
+			$current_id = $id;
 
-			$byIdDataRebuildDispatcher->dispatchRebuildFor( $id );
+			// Changes the ID to next target!
+			$this->do_update( $id );
 
 			if ( $this->rebuildCount % 60 === 0 ) {
-				$progress = round( ( $this->end - $this->start > 0 ? $this->rebuildCount / $total : $byIdDataRebuildDispatcher->getEstimatedProgress() ) * 100 ) . "%";
+				$estimatedProgress = $this->entityRebuildDispatcher->getEstimatedProgress();
 			}
 
-			$this->reportMessage( "($this->rebuildCount/$total) Processing ID " . $id . " ...\n", $this->verbose );
+			$progress = round( ( $this->end - $this->start > 0 ? $this->rebuildCount / $total : $estimatedProgress ) * 100 );
 
-			if ( $this->delay !== false ) {
-				usleep( $this->delay );
+			foreach ( $this->entityRebuildDispatcher->getDispatchedEntities() as $value ) {
+
+				if ( isset( $value['skipped'] ) ) {
+					$skipped_update++;
+					continue;
+				}
+
+				$text = $this->getHumanReadableTextFrom( $current_id, $value );
+
+				$this->reportMessage(
+					sprintf( "%-16s%s\n", "   ... updating", sprintf( "%-10s%s", $text[0], $text[1] ) ),
+					$this->options->has( 'v' )
+				);
 			}
 
-			if ( $this->rebuildCount % 100 === 0 ) { // every 100 pages only
-				$linkCache->clear(); // avoid memory leaks
+			if ( !$this->options->has( 'v' ) && $id > 0 ) {
+				$this->reportMessage(
+					"\r". sprintf( "%-50s%s", "   ... updating document no.", sprintf( "%s (%1.0f%%)", $current_id, min( 100, $progress ) ) )
+				);
 			}
-
-			$this->doPrintDotProgressIndicator( $this->verbose, $progress );
 		}
 
-		$this->writeIdToFile( $id );
-		$this->reportMessage( "\n\n$this->rebuildCount IDs refreshed.\n" );
+		if ( !$this->options->has( 'v' ) ) {
+			$this->reportMessage(
+				"\r". sprintf( "%-50s%s", "   ... updating document no.", sprintf( "%s (%1.0f%%)", $current_id, 100 ) )
+			);
+		}
+
+		$this->write_to_file( $id );
+
+		$this->reportMessage( "\n   ... $this->rebuildCount IDs checked or refreshed ..." );
+		$this->reportMessage( "\n   ... $skipped_update IDs skipped ..." );
+		$this->reportMessage( "\n   ... done.\n" );
+
+		if ( $this->options->has( 'ignore-exceptions' ) && $this->exceptionFileLogger->getExceptionCount() > 0 ) {
+			$this->exceptionCount += $this->exceptionFileLogger->getExceptionCount();
+			$this->exceptionFileLogger->doWrite();
+
+			$path_parts = pathinfo(
+				str_replace( [ '\\', '/' ], DIRECTORY_SEPARATOR, $this->exceptionFileLogger->getExceptionFile() )
+			);
+
+			$this->reportMessage( "\nException log ..." );
+			$this->reportMessage( "\n   ... counted $this->exceptionCount exceptions"	);
+			$this->reportMessage( "\n   ... written to ... " . $path_parts['basename']	);
+			$this->reportMessage( "\n   ... done.\n" );
+		}
 
 		return true;
 	}
 
+	private function do_update( &$id ) {
+
+		if ( !$this->options->has( 'ignore-exceptions' ) ) {
+			$this->entityRebuildDispatcher->rebuild( $id );
+		} else {
+
+			try {
+				$this->entityRebuildDispatcher->rebuild( $id );
+			} catch ( Exception $e ) {
+				$this->exceptionFileLogger->recordException( $id, $e );
+			}
+		}
+
+		if ( $this->delay !== false ) {
+			usleep( $this->delay );
+		}
+
+		if ( $this->rebuildCount % 100 === 0 ) { // every 100 pages only
+			LinkCache::singleton()->clear(); // avoid memory leaks
+		}
+
+		$this->rebuildCount++;
+	}
+
+	private function getHumanReadableTextFrom( $id, array $entities ) {
+
+		if ( !$this->options->has( 'v' ) ) {
+			return [ '', ''];
+		}
+
+		// Indicates whether this is a MW page (*) or SMW's object table
+		$text = $id . ( isset( $entities['t'] ) ? '*' : ' ' );
+
+		$entity = end( $entities );
+
+		if ( $entity instanceof \Title ) {
+			return [ $text, '[' . $entity->getPrefixedDBKey() .']' ];
+		}
+
+		if ( $entity instanceof DIWikiPage ) {
+			return [ $text, '[' . $entity->getHash() .']' ];
+		}
+
+		return [ $text, '[' . ( is_string( $entity ) && $entity !== '' ? $entity : 'N/A' ) . ']' ];
+	}
+
 	private function performFullDelete() {
 
-		$this->reportMessage( "Deleting all stored data completely and rebuilding it again later!\n---\n" .
-			" Semantic data in the wiki might be incomplete for some time while this operation runs.\n\n" .
-			" NOTE: It is usually necessary to run this script ONE MORE TIME after this operation,\n" .
-			" since some properties' types are not stored yet in the first run.\n---\n"
+		$this->reportMessage(
+			"Deleting all stored data completely and rebuilding it again later!\n\n" .
+			"Semantic data in the wiki might be incomplete for some time while\n".
+			"this operation runs.\n\n" .
+			"NOTE: It is usually necessary to run this script ONE MORE TIME\n".
+			"after this operation, given that some properties and types are not\n" .
+			"yet stored with the first run.\n\n"
 		);
 
 		if ( $this->options->has( 's' ) || $this->options->has( 'e' ) ) {
-			$this->reportMessage( " WARNING: -s or -e are used, so some pages will not be refreshed at all!\n" .
-				" Data for those pages will only be available again when they have been\n" .
-				" refreshed as well!\n\n"
+			$this->reportMessage(
+				"WARNING: -s or -e are used, so some pages will not be refreshed at all!\n" .
+				"Data for those pages will only be available again when they have been\n" .
+				"refreshed as well!\n\n"
 			);
 		}
 
 		$obLevel = ob_get_level();
 
-		$this->reportMessage( ' Abort with control-c in the next five seconds ...  ' );
-		wfCountDown( 6 );
+		$this->reportMessage( 'Abort with control-c in the next five seconds ...  ' );
+		swfCountDown( 6 );
 
+		$this->reportMessage( "\nDeleting all data ..." );
+
+		$this->reportMessage( "\n   ... dropping tables ..." );
 		$this->store->drop( $this->verbose );
-		wfRunHooks( 'smwDropTables' );
-		wfRunHooks( 'SMW::Store::dropTables', array( $this->verbose ) );
 
+		$this->reportMessage( "\n   ... creating tables ..." );
 		$this->store->setupStore( $this->verbose );
+
+		$this->reportMessage( "\n   ... done.\n" );
 
 		// Be sure to have some buffer, otherwise some PHPs complain
 		while ( ob_get_level() > $obLevel ) {
@@ -305,40 +453,47 @@ class DataRebuilder {
 		return true;
 	}
 
-	private function deleteMarkedSubjects( $byIdDataRebuildDispatcher ) {
+	private function dispose_outdated() {
 
-		$matches = array();
-
-		$res = $this->store->getConnection( 'mw.db' )->select(
-			\SMWSql3SmwIds::TABLE_NAME,
-			array( 'smw_id' ),
-			array( 'smw_iw' => SMW_SQL3_SMWDELETEIW ),
-			__METHOD__
+		$applicationFactory = ApplicationFactory::getInstance();
+		$entityIdDisposerJob = $applicationFactory->newJobFactory()->newEntityIdDisposerJob(
+			Title::newFromText( __METHOD__ )
 		);
 
-		foreach ( $res as $row ) {
-			$matches[] = $row->smw_id;
+		$outdatedEntitiesResultIterator = $entityIdDisposerJob->newOutdatedEntitiesResultIterator();
+		$matchesCount = $outdatedEntitiesResultIterator->count();
+		$counter = 0;
+
+		$this->reportMessage( "Removing outdated entities ..." );
+
+		if ( $matchesCount > 0 ) {
+			$this->reportMessage( "\n" );
+
+			$chunkedIterator = $applicationFactory->getIteratorFactory()->newChunkedIterator(
+				$outdatedEntitiesResultIterator,
+				200
+			);
+
+			foreach ( $chunkedIterator as $chunk ) {
+				foreach ( $chunk as $row ) {
+					$counter++;
+					$msg = sprintf( "%s (%1.0f%%)", $row->smw_id, round( $counter / $matchesCount * 100 ) );
+
+					$this->reportMessage(
+						"\r". sprintf( "%-50s%s", "   ... cleaning up document no.", $msg )
+					);
+
+					$entityIdDisposerJob->dispose( $row );
+				}
+			}
+
+			$this->reportMessage( "\n   ... {$matchesCount} IDs removed ..." );
 		}
 
-		if ( $matches === array() ) {
-			return null;
-		}
-
-		$this->reportMessage( "Removing marked for deletion entries.\n" );
-		$matchesCount = count( $matches );
-
-		foreach ( $matches as $id ) {
-			$this->rebuildCount++;
-			$this->doPrintDotProgressIndicator( $this->verbose, round( $this->rebuildCount / $matchesCount * 100 ) . ' %' );
-			$byIdDataRebuildDispatcher->dispatchRebuildFor( $id );
-		}
-
-		$this->rebuildCount = 0;
-
-		$this->reportMessage( "\n\n{$matchesCount} IDs removed.\n\n" );
+		$this->reportMessage( "\n   ... done.\n" );
 	}
 
-	private function idFileIsWritable( $startIdFile ) {
+	private function is_writable( $startIdFile ) {
 
 		if ( !is_writable( file_exists( $startIdFile ) ? $startIdFile : dirname( $startIdFile ) ) ) {
 			die( "Cannot use a startidfile that we can't write to.\n" );
@@ -347,7 +502,7 @@ class DataRebuilder {
 		return true;
 	}
 
-	private function writeIdToFile( $id ) {
+	private function write_to_file( $id ) {
 		if ( $this->canWriteToIdFile ) {
 			file_put_contents( $this->startIdFile, "$id" );
 		}
@@ -357,9 +512,9 @@ class DataRebuilder {
 	 * @param array $options
 	 */
 	private function setFiltersFromOptions( Options $options ) {
-		$this->filters = array();
+		$this->filters = [];
 
-		if ( $options->has( 'c' ) ) {
+		if ( $options->has( 'categories' ) ) {
 			$this->filters[] = NS_CATEGORY;
 		}
 
@@ -368,87 +523,9 @@ class DataRebuilder {
 		}
 	}
 
-	private function getPagesFromQuery() {
-
-		if ( !$this->options->has( 'query' ) ) {
-			return array();
-		}
-
-		$queryString = $this->options->get( 'query' );
-
-		// get number of pages and fix query limit
-		$query = SMWQueryProcessor::createQuery(
-			$queryString,
-			SMWQueryProcessor::getProcessedParams( array( 'format' => 'count' ) )
-		);
-
-		$result = $this->store->getQueryResult( $query );
-
-		// get pages and add them to the pages explicitly listed in the 'page' parameter
-		$query = SMWQueryProcessor::createQuery(
-			$queryString,
-			SMWQueryProcessor::getProcessedParams( array() )
-		);
-
-		$query->setUnboundLimit( $result instanceof \SMWQueryResult ? $result->getCountValue() : $result );
-
-		return $this->store->getQueryResult( $query )->getResults();
-	}
-
-	private function getPagesFromFilters() {
-
-		$pages = array();
-
-		$titleLookup = new TitleLookup( $this->store->getConnection( 'mw.db' ) );
-
-		foreach ( $this->filters as $namespace ) {
-			$pages = array_merge( $pages, $titleLookup->setNamespace( $namespace )->selectAll() );
-		}
-
-		return $pages;
-	}
-
-	private function normalizeBulkOfPages( &$pages ) {
-
-		$titleCache = array();
-
-		foreach ( $pages as $key => &$page ) {
-
-			if ( $page instanceof DIWikiPage ) {
-				$page = $page->getTitle();
-			}
-
-			if ( !$page instanceof Title ) {
-				$page = $this->titleCreator->createFromText( $page );
-			}
-
-			// Filter out pages with fragments (subobjects)
-			if ( isset( $titleCache[$page->getPrefixedDBkey()] ) ) {
-				unset( $pages[$key] );
-			} else{
-				$titleCache[$page->getPrefixedDBkey()] = true;
-			}
-		}
-
-		unset( $titleCache );
-	}
-
 	private function reportMessage( $message, $output = true ) {
 		if ( $output ) {
 			$this->reporter->reportMessage( $message );
-		}
-	}
-
-	private function doPrintDotProgressIndicator( $verbose, $progress ) {
-
-		if ( ( $this->rebuildCount - 1 ) % 60 === 0 ) {
-			$this->reportMessage( "\n", !$verbose );
-		}
-
-		$this->reportMessage( '.', !$verbose );
-
-		if ( $this->rebuildCount % 60 === 0 ) {
-			$this->reportMessage( " $progress", !$verbose );
 		}
 	}
 

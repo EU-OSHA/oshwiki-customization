@@ -2,17 +2,13 @@
 
 namespace SMW\Tests\Integration\MediaWiki;
 
+use SMW\DataValueFactory;
+use SMW\MediaWiki\Api\BrowseBySubject;
+use SMW\SerializerFactory;
+use SMW\Subobject;
 use SMW\Tests\MwDBaseUnitTestCase;
 use SMW\Tests\Utils\MwApiFactory;
 use SMW\Tests\Utils\SemanticDataFactory;
-
-use SMW\MediaWiki\Api\BrowseBySubject;
-
-use SMW\SemanticData;
-use SMW\DIWikiPage;
-use SMW\DataValueFactory;
-use SMW\Subobject;
-use SMW\SerializerFactory;
 
 /**
  * @group semantic-mediawiki-integration
@@ -70,7 +66,7 @@ class ApiBrowseBySubjectDBIntegrationTest extends MwDBaseUnitTestCase {
 		$semanticData = $this->semanticDataFactory->newEmptySemanticData( __METHOD__ );
 
 		$semanticData->addDataValue(
-			$this->dataValueFactory->newPropertyValue( __METHOD__, 'Bar' )
+			$this->dataValueFactory->newDataValueByText( __METHOD__, 'Bar' )
 		);
 
 		$this->getStore()->updateData( $semanticData );
@@ -98,14 +94,14 @@ class ApiBrowseBySubjectDBIntegrationTest extends MwDBaseUnitTestCase {
 		$semanticData = $this->semanticDataFactory->newEmptySemanticData( __METHOD__ );
 
 		$semanticData->addDataValue(
-			$this->dataValueFactory->newPropertyValue( __METHOD__, 'Bar' )
+			$this->dataValueFactory->newDataValueByText( __METHOD__, 'Bar' )
 		);
 
 		$subobject = new Subobject( $semanticData->getSubject()->getTitle() );
 		$subobject->setEmptyContainerForId( 'Foo' );
 
 		$subobject->addDataValue(
-			$this->dataValueFactory->newPropertyValue( __METHOD__, 'Bam' )
+			$this->dataValueFactory->newDataValueByText( __METHOD__, 'Bam' )
 		);
 
 		$semanticData->addPropertyObjectValue(
@@ -136,7 +132,7 @@ class ApiBrowseBySubjectDBIntegrationTest extends MwDBaseUnitTestCase {
 	private function newBrowseBySubject( $subject, $asRawMode = false ) {
 
 		$instance = new BrowseBySubject(
-			$this->apiFactory->newApiMain( array( 'subject' => $subject ) ),
+			$this->apiFactory->newApiMain( [ 'subject' => $subject ] ),
 			'browsebysubject'
 		);
 

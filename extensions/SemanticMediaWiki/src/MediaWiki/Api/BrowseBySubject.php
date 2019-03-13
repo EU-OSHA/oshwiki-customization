@@ -5,6 +5,7 @@ namespace SMW\MediaWiki\Api;
 use ApiBase;
 use SMW\ApplicationFactory;
 use SMW\DIWikiPage;
+use SMW\MediaWiki\Specials\Browse\HtmlBuilder;
 
 /**
  * Browse a subject api module
@@ -25,26 +26,74 @@ use SMW\DIWikiPage;
 class BrowseBySubject extends ApiBase {
 
 	/**
+	 * @deprecated since 3.0, use the smwbrowse API module
+	 */
+	public function isDeprecated() {
+		return true;
+	}
+
+	/**
 	 * @see ApiBase::execute
 	 */
 	public function execute() {
 
 		$params = $this->extractRequestParams();
 
+		if ( isset( $params['type'] ) && $params['type'] === 'html' ) {
+			$data = $this->buildHTML( $params );
+		} else {
+			$data = $this->doSerialize( $params );
+		}
+
+		$this->getResult()->addValue(
+			null,
+			'query',
+			$data
+		);
+	}
+
+	protected function buildHTML( $params ) {
+
+		$subject = new DIWikiPage(
+			$params['subject'],
+			$params['ns'],
+			$params['iw'],
+			$params['subobject']
+		);
+
+		$htmlBuilder = new HtmlBuilder(
+			ApplicationFactory::getInstance()->getStore(),
+			$subject
+		);
+
+		$htmlBuilder->setOptions(
+			(array)$params['options']
+		);
+
+		return $htmlBuilder->buildHTML();
+	}
+
+	protected function doSerialize( $params ) {
+
 		$applicationFactory = ApplicationFactory::getInstance();
 
-		$title = $applicationFactory
-			->newTitleCreator()
-			->createFromText( $params['subject'] );
+		$title = $applicationFactory->newTitleFactory()->newFromText(
+			$params['subject'],
+			$params['ns']
+		);
 
-		$deepRedirectTargetResolver = $applicationFactory
-			->newMwCollaboratorFactory()
-			->newDeepRedirectTargetResolver();
+		$deepRedirectTargetResolver = $applicationFactory->newMwCollaboratorFactory()->newDeepRedirectTargetResolver();
 
 		try {
 			$title = $deepRedirectTargetResolver->findRedirectTargetFor( $title );
 		} catch ( \Exception $e ) {
-			$this->dieUsage( $e->getMessage(), 'redirect-target-unresolvable'  );
+
+			// 1.29+
+			if ( method_exists( $this, 'dieWithError' ) ) {
+				$this->dieWithError( [ 'smw-redirect-target-unresolvable', $e->getMessage() ] );
+			} else {
+				$this->dieUsage( $e->getMessage(), 'redirect-target-unresolvable'  );
+			}
 		}
 
 		$dataItem = new DIWikiPage(
@@ -54,17 +103,13 @@ class BrowseBySubject extends ApiBase {
 			$params['subobject']
 		);
 
-		$semanticData = $applicationFactory
-			->getStore()
-			->getSemanticData( $dataItem );
+		$semanticData = $applicationFactory->getStore()->getSemanticData(
+			$dataItem
+		);
 
 		$semanticDataSerializer = $applicationFactory->newSerializerFactory()->newSemanticDataSerializer();
 
-		$this->getResult()->addValue(
-			null,
-			'query',
-			$this->doFormat( $semanticDataSerializer->serialize( $semanticData ) )
-		);
+		return $this->doFormat( $semanticDataSerializer->serialize( $semanticData ) );
 	}
 
 	protected function doFormat( $serialized ) {
@@ -104,19 +149,43 @@ class BrowseBySubject extends ApiBase {
 	 * @return array
 	 */
 	public function getAllowedParams() {
-		return array(
-			'subject' => array(
+		return [
+			'subject' => [
 				ApiBase::PARAM_TYPE => 'string',
 				ApiBase::PARAM_ISMULTI => false,
 				ApiBase::PARAM_REQUIRED => true,
-			),
-			'subobject' => array(
+			],
+			'ns' => [
+				ApiBase::PARAM_TYPE => 'integer',
+				ApiBase::PARAM_ISMULTI => false,
+				ApiBase::PARAM_DFLT => 0,
+				ApiBase::PARAM_REQUIRED => false,
+			],
+			'iw' => [
 				ApiBase::PARAM_TYPE => 'string',
 				ApiBase::PARAM_ISMULTI => false,
 				ApiBase::PARAM_DFLT => '',
 				ApiBase::PARAM_REQUIRED => false,
-			)
-		);
+			],
+			'subobject' => [
+				ApiBase::PARAM_TYPE => 'string',
+				ApiBase::PARAM_ISMULTI => false,
+				ApiBase::PARAM_DFLT => '',
+				ApiBase::PARAM_REQUIRED => false,
+			],
+			'type' => [
+				ApiBase::PARAM_TYPE => 'string',
+				ApiBase::PARAM_ISMULTI => false,
+				ApiBase::PARAM_DFLT => '',
+				ApiBase::PARAM_REQUIRED => false,
+			],
+			'options' => [
+				ApiBase::PARAM_TYPE => 'string',
+				ApiBase::PARAM_ISMULTI => false,
+				ApiBase::PARAM_DFLT => '',
+				ApiBase::PARAM_REQUIRED => false,
+			]
+		];
 	}
 
 	/**
@@ -126,10 +195,10 @@ class BrowseBySubject extends ApiBase {
 	 * @return array
 	 */
 	public function getParamDescription() {
-		return array(
+		return [
 			'subject' => 'The subject to be queried',
 			'subobject' => 'A particular subobject id for the related subject'
-		);
+		];
 	}
 
 	/**
@@ -139,9 +208,9 @@ class BrowseBySubject extends ApiBase {
 	 * @return array
 	 */
 	public function getDescription() {
-		return array(
+		return [
 			'API module to query a subject.'
-		);
+		];
 	}
 
 	/**
@@ -151,9 +220,9 @@ class BrowseBySubject extends ApiBase {
 	 * @return array
 	 */
 	protected function getExamples() {
-		return array(
+		return [
 			'api.php?action=browsebysubject&subject=Main_Page',
-		);
+		];
 	}
 
 	/**

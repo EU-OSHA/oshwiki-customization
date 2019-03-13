@@ -32,6 +32,25 @@ class ManualEntryLoggerTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
+	public function testRegisterLoggableEventType() {
+
+		$manualLogEntry = $this->getMockBuilder( '\ManualLogEntry' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$manualLogEntry->expects( $this->once() )
+			->method( 'insert' )
+			->will( $this->returnValue( 42 ) );
+
+		$instance = new ManualEntryLogger( $manualLogEntry );
+		$instance->registerLoggableEventType( 'Foo' );
+
+		$this->assertEquals(
+			42,
+			$instance->log( 'Foo', 'Bar', 'Baz', 'Yui' )
+		);
+	}
+
 	public function testLogToTableForLoggableEvent() {
 
 		$manualLogEntry = $this->getMockBuilder( '\ManualLogEntry' )
@@ -43,7 +62,7 @@ class ManualEntryLoggerTest extends \PHPUnit_Framework_TestCase {
 			->will( $this->returnValue( 42 ) );
 
 		$instance = $this->getMockBuilder( '\SMW\MediaWiki\ManualEntryLogger' )
-			->setMethods( array( 'newManualLogEntryForType' ) )
+			->setMethods( [ 'newManualLogEntryForType' ] )
 			->getMock();
 
 		$instance->expects( $this->once() )
@@ -51,11 +70,42 @@ class ManualEntryLoggerTest extends \PHPUnit_Framework_TestCase {
 			->with( $this->equalTo( 'Foo' ) )
 			->will( $this->returnValue( $manualLogEntry ) );
 
-		$instance->registerLoggableEventTypes( array( 'Foo' => true ) );
+		$instance->registerLoggableEventType( 'Foo' );
 
 		$this->assertInternalType(
 			'integer',
 			$instance->log( 'Foo', 'Bar', 'Baz', 'Yui' )
+		);
+	}
+
+	public function testLogToTableForLoggableEventWithPerformer() {
+
+		$performer = $this->getMockBuilder( '\User' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$manualLogEntry = $this->getMockBuilder( '\ManualLogEntry' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$manualLogEntry->expects( $this->once() )
+			->method( 'insert' )
+			->will( $this->returnValue( 42 ) );
+
+		$instance = $this->getMockBuilder( '\SMW\MediaWiki\ManualEntryLogger' )
+			->setMethods( [ 'newManualLogEntryForType' ] )
+			->getMock();
+
+		$instance->expects( $this->once() )
+			->method( 'newManualLogEntryForType' )
+			->with( $this->equalTo( 'Foo' ) )
+			->will( $this->returnValue( $manualLogEntry ) );
+
+		$instance->registerLoggableEventType( 'Foo' );
+
+		$this->assertInternalType(
+			'integer',
+			$instance->log( 'Foo', $performer, 'Baz', 'Yui' )
 		);
 	}
 

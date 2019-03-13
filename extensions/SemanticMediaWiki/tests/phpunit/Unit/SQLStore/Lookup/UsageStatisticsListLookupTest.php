@@ -3,6 +3,7 @@
 namespace SMW\Tests\SQLStore\Lookup;
 
 use SMW\SQLStore\Lookup\UsageStatisticsListLookup;
+use SMW\Tests\PHPUnitCompat;
 
 /**
  * @covers \SMW\SQLStore\Lookup\UsageStatisticsListLookup
@@ -16,6 +17,8 @@ use SMW\SQLStore\Lookup\UsageStatisticsListLookup;
  */
 class UsageStatisticsListLookupTest extends \PHPUnit_Framework_TestCase {
 
+	use PHPUnitCompat;
+
 	private $store;
 	private $propertyStatisticsStore;
 	private $requestOptions;
@@ -26,7 +29,7 @@ class UsageStatisticsListLookupTest extends \PHPUnit_Framework_TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$this->propertyStatisticsStore = $this->getMockBuilder( '\SMW\Store\PropertyStatisticsStore' )
+		$this->propertyStatisticsStore = $this->getMockBuilder( '\SMW\SQLStore\PropertyStatisticsStore' )
 			->disableOriginalConstructor()
 			->getMock();
 	}
@@ -52,12 +55,12 @@ class UsageStatisticsListLookupTest extends \PHPUnit_Framework_TestCase {
 		);
 
 		$this->assertFalse(
-			$instance->isCached()
+			$instance->isFromCache()
 		);
 
 		$this->assertEquals(
 			'statistics-lookup',
-			$instance->getLookupIdentifier()
+			$instance->getHash()
 		);
 	}
 
@@ -67,13 +70,17 @@ class UsageStatisticsListLookupTest extends \PHPUnit_Framework_TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
+		$connection->expects( $this->any() )
+			->method( 'select' )
+			->will( $this->returnValue( new \FakeResultWrapper( [] ) ) );
+
 		$this->store->expects( $this->any() )
 			->method( 'findPropertyTableID' )
 			->will( $this->returnValue( 'Bar' ) );
 
 		$this->store->expects( $this->any() )
 			->method( 'getPropertyTables' )
-			->will( $this->returnValue( array( 'Foo' => 'throwExceptionForMismatch' ) ) );
+			->will( $this->returnValue( [ 'Foo' => 'throwExceptionForMismatch' ] ) );
 
 		$this->store->expects( $this->any() )
 			->method( 'getConnection' )
@@ -103,7 +110,7 @@ class UsageStatisticsListLookupTest extends \PHPUnit_Framework_TestCase {
 
 		$connection->expects( $this->any() )
 			->method( 'select' )
-			->will( $this->returnValue( array( $row ) ) );
+			->will( $this->returnValue( new \FakeResultWrapper( [ $row ] ) ) );
 
 		$tableDefinition = $this->getMockBuilder( '\SMW\SQLStore\TableDefinition' )
 			->disableOriginalConstructor()
@@ -111,7 +118,7 @@ class UsageStatisticsListLookupTest extends \PHPUnit_Framework_TestCase {
 
 		$objectIdFetcher = $this->getMockBuilder( '\stdClass' )
 			->disableOriginalConstructor()
-			->setMethods( array( 'getSMWPropertyID' ) )
+			->setMethods( [ 'getSMWPropertyID' ] )
 			->getMock();
 
 		$this->store->expects( $this->any() )
@@ -124,7 +131,7 @@ class UsageStatisticsListLookupTest extends \PHPUnit_Framework_TestCase {
 
 		$this->store->expects( $this->any() )
 			->method( 'getPropertyTables' )
-			->will( $this->returnValue( array( 'Foo' => $tableDefinition ) ) );
+			->will( $this->returnValue( [ 'Foo' => $tableDefinition ] ) );
 
 		$this->store->expects( $this->any() )
 			->method( 'getConnection' )
@@ -158,18 +165,20 @@ class UsageStatisticsListLookupTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	public function bySegmentDataProvider() {
-		return array(
-			array( 'OWNPAGE',      'integer' ),
-			array( 'QUERY',        'integer' ),
-			array( 'QUERYSIZE',    'integer' ),
-			array( 'QUERYFORMATS', 'array'   ),
-			array( 'CONCEPTS',     'integer' ),
-			array( 'SUBOBJECTS',   'integer' ),
-			array( 'DECLPROPS',    'integer' ),
-			array( 'USEDPROPS',    'integer' ),
-			array( 'PROPUSES',     'integer' ),
-			array( 'ERRORUSES',    'integer' )
-		);
+		return [
+			[ 'OWNPAGE',      'integer' ],
+			[ 'QUERY',        'integer' ],
+			[ 'QUERYSIZE',    'integer' ],
+			[ 'QUERYFORMATS', 'array'   ],
+			[ 'CONCEPTS',     'integer' ],
+			[ 'SUBOBJECTS',   'integer' ],
+			[ 'DECLPROPS',    'integer' ],
+			[ 'USEDPROPS',    'integer' ],
+			[ 'TOTALPROPS',   'integer' ],
+			[ 'PROPUSES',     'integer' ],
+			[ 'ERRORUSES',    'integer' ],
+			[ 'DELETECOUNT',  'integer' ]
+		];
 	}
 
 }

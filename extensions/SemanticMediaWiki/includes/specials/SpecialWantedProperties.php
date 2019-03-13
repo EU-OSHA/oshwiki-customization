@@ -37,13 +37,19 @@ class SpecialWantedProperties extends SpecialPage {
 	 * @see SpecialPage::execute
 	 */
 	public function execute( $param ) {
+		$this->setHeaders();
 
 		$out = $this->getOutput();
+
+		$out->addModuleStyles( [
+			'ext.smw.special.style'
+		] );
 
 		$out->setPageTitle( $this->msg( 'wantedproperties' )->text() );
 
 		$page = new WantedPropertiesQueryPage( $this->getStore(), $this->getSettings() );
 		$page->setContext( $this->getContext() );
+		$page->setTitle( $this->getPageTitle() );
 
 		list( $limit, $offset ) = $this->getLimitOffset();
 		$page->doQuery( $offset, $limit );
@@ -53,16 +59,8 @@ class SpecialWantedProperties extends SpecialPage {
 		SMWOutputs::commitToOutputPage( $out );
 	}
 
-	/**
-	 * FIXME MW 1.24 wfCheckLimits was deprecated in MediaWiki 1.24
-	 */
 	private function getLimitOffset() {
-
-		if ( method_exists( $this->getRequest(), 'getLimitOffset' ) ) {
-			return $this->getRequest()->getLimitOffset();
-		}
-
-		return wfCheckLimits();
+		return $this->getRequest()->getLimitOffset();
 	}
 
 	protected function getGroupName() {

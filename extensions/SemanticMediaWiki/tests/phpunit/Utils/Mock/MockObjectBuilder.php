@@ -2,12 +2,10 @@
 
 namespace SMW\Tests\Utils\Mock;
 
-use SMW\ObjectDictionary;
-use SMW\SimpleDictionary;
-use SMWDataItem;
-
 use InvalidArgumentException;
 use OutOfBoundsException;
+use SMW\ObjectDictionary;
+use SMW\Options;
 
 /**
  * @codeCoverageIgnore
@@ -35,7 +33,7 @@ class MockObjectBuilder extends \PHPUnit_Framework_TestCase {
 	protected $configuration;
 
 	/** @var MockObjectRepository */
-	protected $repository = array();
+	protected $repository = [];
 
 	/**
 	 * @since  1.9
@@ -70,13 +68,13 @@ class MockObjectBuilder extends \PHPUnit_Framework_TestCase {
 	 *
 	 * @return mixed
 	 */
-	public function newObject( $objectName, $objectArguments = array() ) {
+	public function newObject( $objectName, $objectArguments = [] ) {
 
 		if ( !is_string( $objectName ) ) {
 			throw new InvalidArgumentException( "Object name is not a string" );
 		}
 
-		if ( $objectArguments !== array() && !is_array( $objectArguments ) ) {
+		if ( $objectArguments !== [] && !is_array( $objectArguments ) ) {
 			throw new InvalidArgumentException( "Arguments are not an array type" );
 		}
 
@@ -100,7 +98,7 @@ class MockObjectBuilder extends \PHPUnit_Framework_TestCase {
 	 * @return array
 	 */
 	public function getInvokedMethods() {
-		return array_keys( $this->configuration->toArray() );
+		return array_keys( $this->configuration->getOptions() );
 	}
 
 	/**
@@ -183,10 +181,12 @@ class MockObjectBuilder extends \PHPUnit_Framework_TestCase {
 	 */
 	protected function setupConfiguration( $config ) {
 
-		$configuration = new SimpleDictionary( $config );
+		$configuration = new Options( $config );
 
-		if ( $this->configuration instanceof SimpleDictionary ) {
-			return $this->configuration->merge( $configuration->toArray() );
+		if ( $this->configuration instanceof Options ) {
+			return $this->configuration = new Options(
+				array_merge( $this->configuration->getOptions(), $configuration->getOptions() )
+			);
 		}
 
 		$this->configuration = $configuration;

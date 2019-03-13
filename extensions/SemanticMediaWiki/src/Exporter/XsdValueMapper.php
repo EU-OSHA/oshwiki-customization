@@ -2,12 +2,12 @@
 
 namespace SMW\Exporter;
 
-use SMWDIBoolean as DIBoolean;
-use SMWDataItem as DataItem;
-use SMWDITime as DITime;
-use SMWDINumber as DINumber;
-use SMWDIBlob as DIBlob;
 use RuntimeException;
+use SMWDataItem as DataItem;
+use SMWDIBlob as DIBlob;
+use SMWDIBoolean as DIBoolean;
+use SMWDINumber as DINumber;
+use SMWDITime as DITime;
 
 /**
  * This class only maps primitive types (string, boolean, integers ) mostly to
@@ -38,19 +38,19 @@ class XsdValueMapper {
 	 *
 	 * @throws RuntimeException
 	 */
-	public function process( DataItem $dataItem ) {
+	public function map( DataItem $dataItem ) {
 
 		if ( $dataItem instanceof DIBoolean ) {
-			return $this->parseToBooleanValue( $dataItem );
+			$this->parseToBooleanValue( $dataItem );
 		} elseif ( $dataItem instanceof DINumber ) {
-			return $this->parseToDoubleValue( $dataItem );
+			$this->parseToDoubleValue( $dataItem );
 		} elseif ( $dataItem instanceof DIBlob ) {
-			return $this->parseToStringValue( $dataItem );
+			$this->parseToStringValue( $dataItem );
 		} elseif ( $dataItem instanceof DITime && $dataItem->getCalendarModel() === DITime::CM_GREGORIAN ) {
-			return $this->parseToTimeValueForGregorianCalendarModel( $dataItem );
+			$this->parseToTimeValueForGregorianCalendarModel( $dataItem );
+		} else {
+			throw new RuntimeException( "Cannot match the dataItem of type " . $dataItem->getDIType() );
 		}
-
-		throw new RuntimeException( "Cannot match the dataItem of type " . $dataItem->getDIType() );
 	}
 
 	/**
@@ -109,10 +109,16 @@ class XsdValueMapper {
 						sprintf( "%02d", $dataItem->getMinute()) . ':' .
 						sprintf( "%02d", $dataItem->getSecond() );
 				}
+
+				// https://www.w3.org/TR/2005/NOTE-timezone-20051013/
+				// "Time zone identification in the date and time types relies
+				// entirely on time zone offset from UTC."
+				// Zone offset Z indicates UTC
+				$xsdvalue .= 'Z';
 			}
 		}
 
-		$this->xsdValue = $xsdvalue .= 'Z';
+		$this->xsdValue = $xsdvalue;
 		$this->xsdType = $xsdtype;
 	}
 

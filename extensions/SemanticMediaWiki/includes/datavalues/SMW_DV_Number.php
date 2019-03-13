@@ -1,6 +1,9 @@
 <?php
 
-use SMW\NumberFormatter;
+use SMW\DataValues\Number\IntlNumberFormatter;
+use SMW\DataValues\ValueFormatters\DataValueFormatter;
+use SMW\Localizer;
+use SMW\Message;
 
 /**
  * @ingroup SMWDataValues
@@ -26,7 +29,7 @@ use SMW\NumberFormatter;
  * Subclasses that support unit conversion may interpret the output format set
  * via setOutputFormat() to allow a unit to be selected for display. Note that
  * this setting does not affect the internal representation of the value
- * though. So chosing a specific output format will change the behavior of
+ * though. So choosing a specific output format will change the behavior of
  * output functions like getLongWikiText(), but not of functions that access
  * the value itself, such as getUnit() or getDBKeys().
  *
@@ -39,11 +42,34 @@ use SMW\NumberFormatter;
 class SMWNumberValue extends SMWDataValue {
 
 	/**
+	 * DV identifier
+	 */
+	const TYPE_ID = '_num';
+
+	/**
+	 * Internal state to ensure no precision limitation is applied to an output
+	 */
+	const NO_DISP_PRECISION_LIMIT = 'num.no.displayprecision.limit';
+
+	/**
+	 * Separator related constants
+	 */
+	const DECIMAL_SEPARATOR = 'decimal.separator';
+	const THOUSANDS_SEPARATOR = 'thousands.separator';
+
+	/**
 	 * Array with entries unit=>value, mapping a normalized unit to the
 	 * converted value. Used for conversion tooltips.
 	 * @var array
 	 */
 	protected $m_unitvalues;
+
+	/**
+	 * Whether the unit is preferred as prefix or not
+	 *
+	 * @var array
+	 */
+	protected $prefixalUnitPreference = [];
 
 	/**
 	 * Canonical identifier for the unit that the user gave as input. Used
@@ -57,6 +83,32 @@ class SMWNumberValue extends SMWDataValue {
 	protected $m_unitin;
 
 	/**
+	 * @var integer|null
+	 */
+	protected $precision = null;
+
+	/**
+	 * @var IntlNumberFormatter
+	 */
+	private $intlNumberFormatter;
+
+	/**
+	 * @var ValueFormatter
+	 */
+	private $valueFormatter;
+
+	/**
+	 * @since 2.4
+	 *
+	 * @param string $typeid
+	 */
+	public function __construct( $typeid = '' ) {
+		parent::__construct( $typeid );
+		$this->intlNumberFormatter = IntlNumberFormatter::getInstance();
+		$this->intlNumberFormatter->reset();
+	}
+
+	/**
 	 * Parse a string of the form "number unit" where unit is optional. The
 	 * results are stored in the $number and $unit parameters. Returns an
 	 * error code.
@@ -66,15 +118,38 @@ class SMWNumberValue extends SMWDataValue {
 	 * @return integer 0 (no errors), 1 (no number found at all), 2 (number
 	 * too large for this platform)
 	 */
-	static protected function parseNumberValue( $value, &$number, &$unit ) {
-		// Parse to find $number and (possibly) $unit
-		$decseparator = NumberFormatter::getInstance()->getDecimalSeparatorForContentLanguage();
-		$kiloseparator = NumberFormatter::getInstance()->getThousandsSeparatorForContentLanguage();
+	public function parseNumberValue( $value, &$number, &$unit, &$asPrefix = false ) {
 
-		$parts = preg_split( '/([-+]?\s*\d+(?:\\' . $kiloseparator . '\d\d\d)*' .
-		                      '(?:\\' . $decseparator . '\d+)?\s*(?:[eE][-+]?\d+)?)/u',
-		                      trim( str_replace( array( '&nbsp;', '&#160;', '&thinsp;', ' ' ), '', $value ) ),
-		                      2, PREG_SPLIT_DELIM_CAPTURE );
+		$intlNumberFormatter = $this->getNumberFormatter();
+
+		// Parse to find $number and (possibly) $unit
+		$kiloseparator = $intlNumberFormatter->getSeparatorByLanguage(
+			self::THOUSANDS_SEPARATOR,
+			IntlNumberFormatter::CONTENT_LANGUAGE
+		);
+
+		$decseparator = $intlNumberFormatter->getSeparatorByLanguage(
+			self::DECIMAL_SEPARATOR,
+			IntlNumberFormatter::CONTENT_LANGUAGE
+		);
+
+		// #753
+		$regex = '/([-+]?\s*(?:' .
+				// Either numbers like 10,000.99 that start with a digit
+				'\d+(?:\\' . $kiloseparator . '\d\d\d)*(?:\\' . $decseparator . '\d+)?' .
+				// or numbers like .001 that start with the decimal separator
+				'|\\' . $decseparator . '\d+' .
+				')\s*(?:[eE][-+]?\d+)?)/u';
+
+		// #1718 Whether to preserve spaces in unit labels or not (e.g. sq mi, sqmi)
+		$space = $this->isEnabledFeature( SMW_DV_NUMV_USPACE ) ? ' ' : '';
+
+		$parts = preg_split(
+			$regex,
+			trim( str_replace( [ '&nbsp;', '&#160;', '&thinsp;', ' ' ], $space, $value ) ),
+			2,
+			PREG_SPLIT_DELIM_CAPTURE
+		);
 
 		if ( count( $parts ) >= 2 ) {
 			$numstring = str_replace( $kiloseparator, '', preg_replace( '/\s*/u', '', $parts[1] ) ); // simplify
@@ -82,8 +157,9 @@ class SMWNumberValue extends SMWDataValue {
 				$numstring = str_replace( $decseparator, '.', $numstring );
 			}
 			list( $number ) = sscanf( $numstring, "%f" );
-			if ( count( $parts ) >= 3 ) {
-				$unit = self::normalizeUnit( $parts[2] );
+			if ( count( $parts ) >= 3  ) {
+				$asPrefix = $parts[0] !== '';
+				$unit = $this->normalizeUnit( $parts[0] !== '' ? $parts[0] : $parts[2] );
 			}
 		}
 
@@ -96,6 +172,9 @@ class SMWNumberValue extends SMWDataValue {
 		}
 	}
 
+	/**
+	 * @see DataValue::parseUserValue
+	 */
 	protected function parseUserValue( $value ) {
 		// Set caption
 		if ( $this->m_caption === false ) {
@@ -103,23 +182,25 @@ class SMWNumberValue extends SMWDataValue {
 		}
 
 		if ( $value !== '' && $value{0} === ':' ) {
-			$this->addError( wfMessage( 'smw-datavalue-invalid-number', $value )->inContentLanguage()->text() );
+			$this->addErrorMsg( [ 'smw-datavalue-invalid-number', $value ] );
 			return;
 		}
 
 		$this->m_unitin = false;
 		$this->m_unitvalues = false;
 		$number = $unit = '';
-		$error = self::parseNumberValue( $value, $number, $unit );
+		$error = $this->parseNumberValue( $value, $number, $unit );
 
 		if ( $error == 1 ) { // no number found
-			$this->addError( wfMessage( 'smw_nofloat', $value )->inContentLanguage()->text() );
+			$this->addErrorMsg( [ 'smw_nofloat', $value ] );
 		} elseif ( $error == 2 ) { // number is too large for this platform
-			$this->addError( wfMessage( 'smw_infinite', $value )->inContentLanguage()->text() );
+			$this->addErrorMsg( [ 'smw_infinite', $value ] );
 		} elseif ( $this->getTypeID() === '_num' && $unit !== '' ) {
-			$this->addError( wfMessage( 'smw-datavalue-number-textnotallowed', $unit, $number )->inContentLanguage()->text() );
+			$this->addErrorMsg( [ 'smw-datavalue-number-textnotallowed', $unit, $number ] );
+		} elseif ( $number === null ) {
+			$this->addErrorMsg( [ 'smw-datavalue-number-nullnotallowed', $value ] ); // #1628
 		} elseif ( $this->convertToMainUnit( $number, $unit ) === false ) { // so far so good: now convert unit and check if it is allowed
-			$this->addError( wfMessage( 'smw_unitnotallowed', $unit )->inContentLanguage()->text() );
+			$this->addErrorMsg( [ 'smw_unitnotallowed', $unit ] );
 		} // note that convertToMainUnit() also sets m_dataitem if valid
 	}
 
@@ -129,113 +210,195 @@ class SMWNumberValue extends SMWDataValue {
 	 * @return boolean
 	 */
 	protected function loadDataItem( SMWDataItem $dataItem ) {
-		if ( $dataItem->getDIType() == SMWDataItem::TYPE_NUMBER ) {
-			$this->m_dataitem = $dataItem;
+
+		if ( $dataItem->getDIType() !== SMWDataItem::TYPE_NUMBER ) {
+			return false;
+		}
+
+		$this->m_dataitem = $dataItem;
+		$this->m_caption = false;
+		$this->m_unitin = false;
+		$this->makeUserValue();
+		$this->m_unitvalues = false;
+
+		return true;
+	}
+
+	/**
+	 * @see DataValue::setOutputFormat
+	 *
+	 * @param $string $formatstring
+	 */
+	public function setOutputFormat( $formatstring ) {
+
+		if ( $formatstring == $this->m_outformat ) {
+			return null;
+		}
+
+		// #1591
+		$this->findPreferredLanguageFrom( $formatstring );
+
+		// #1335
+		$this->m_outformat = $this->findPrecisionFrom( $formatstring );
+
+		if ( $this->isValid() ) { // update caption/unitin for this format
 			$this->m_caption = false;
 			$this->m_unitin = false;
 			$this->makeUserValue();
-			$this->m_unitvalues = false;
-			return true;
-		} else {
-			return false;
 		}
 	}
 
-	public function setOutputFormat( $formatstring ) {
-		if ( $formatstring != $this->m_outformat ) {
-			$this->m_outformat = $formatstring;
-			if ( $this->isValid() ) { // update caption/unitin for this format
-				$this->m_caption = false;
-				$this->m_unitin = false;
-				$this->makeUserValue();
-			}
-		}
-	}
-
-	public function getShortWikiText( $linked = null ) {
-		if ( is_null( $linked ) || ( $linked === false ) || ( $this->m_outformat == '-' )
-			|| ( $this->m_outformat == '-u' ) || ( $this->m_outformat == '-n' ) || ( !$this->isValid() ) ) {
-			return $this->m_caption;
-		} else {
-			$this->makeConversionValues();
-			$tooltip = '';
-			$i = 0;
-			$sep = '';
-			foreach ( $this->m_unitvalues as $unit => $value ) {
-				if ( $unit != $this->m_unitin ) {
-					$tooltip .= $sep . NumberFormatter::getInstance()->formatNumberToLocalizedText( $value );
-					if ( $unit !== '' ) {
-						$tooltip .= '&#160;' . $unit;
-					}
-					$sep = ' <br />';
-					$i++;
-					if ( $i >= 5 ) { // limit number of printouts in tooltip
-						break;
-					}
-				}
-			}
-			if ( $tooltip !== '' ) {
-				$highlighter = SMW\Highlighter::factory( SMW\Highlighter::TYPE_QUANTITY );
-				$highlighter->setContent( array (
-					'caption' => $this->m_caption,
-					'content' => $tooltip
-				) );
-
-				return $highlighter->getHtml();
-			} else {
-				return $this->m_caption;
-			}
-		}
-	}
-
-	public function getShortHTMLText( $linker = null ) {
-		return $this->getShortWikiText( $linker );
-	}
-
-	public function getLongWikiText( $linked = null ) {
-		if ( !$this->isValid() ) {
-			return $this->getErrorText();
-		} else {
-			$this->makeConversionValues();
-			$result = '';
-			$i = 0;
-			foreach ( $this->m_unitvalues as $unit => $value ) {
-				if ( $i == 1 ) {
-					$result .= ' (';
-				} elseif ( $i > 1 ) {
-					$result .= ', ';
-				}
-				$result .= ( $this->m_outformat != '-' ? NumberFormatter::getInstance()->formatNumberToLocalizedText( $value ) : $value );
-				if ( $unit !== '' ) {
-					$result .= '&#160;' . $unit;
-				}
-				$i++;
-				if ( $this->m_outformat == '-' ) { // no further conversions for plain output format
-					break;
-				}
-			}
-			if ( $i > 1 ) {
-				$result .= ')';
-			}
-			return $result;
-		}
-	}
-
-	public function getLongHTMLText( $linker = null ) {
-		return $this->getLongWikiText( $linker );
-	}
-
+	/**
+	 * @since 1.6
+	 *
+	 * @return float
+	 */
 	public function getNumber() {
-		return $this->isValid() ? $this->m_dataitem->getNumber() : 32202;
+
+		if ( !$this->isValid() ) {
+			return 999999999999999;
+		}
+
+		return $this->m_dataitem->getNumber();
 	}
 
-	public function getWikiValue() {
-		if ( $this->isValid() ) {
-			$unit = $this->getUnit();
-			return NumberFormatter::getInstance()->formatNumberToLocalizedText( $this->m_dataitem->getSerialization() ) . ( $unit !== '' ? ' ' . $unit : '' );
-		} else {
-			return 'error';
+	/**
+	 * @since 2.4
+	 *
+	 * @return float
+	 */
+	public function getLocalizedFormattedNumber( $value ) {
+		return $this->getNumberFormatter()->format( $value, $this->getPreferredDisplayPrecision() );
+	}
+
+	/**
+	 * @since 2.4
+	 *
+	 * @return float
+	 */
+	public function getNormalizedFormattedNumber( $value ) {
+		return $this->getNumberFormatter()->format( $value, $this->getPreferredDisplayPrecision(), IntlNumberFormatter::VALUE_FORMAT );
+	}
+
+	/**
+	 * @see DataValue::getShortWikiText
+	 *
+	 * @return string
+	 */
+	public function getShortWikiText( $linker = null ) {
+
+		if ( $this->valueFormatter === null ) {
+			$this->valueFormatter = $this->dataValueServiceFactory->getValueFormatter( $this );
 		}
+
+		$this->valueFormatter->setDataValue( $this );
+
+		return $this->valueFormatter->format( DataValueFormatter::WIKI_SHORT, $linker );
+	}
+
+	/**
+	 * @see DataValue::getShortHTMLText
+	 *
+	 * @return string
+	 */
+	public function getShortHTMLText( $linker = null ) {
+
+		if ( $this->valueFormatter === null ) {
+			$this->valueFormatter = $this->dataValueServiceFactory->getValueFormatter( $this );
+		}
+
+		$this->valueFormatter->setDataValue( $this );
+
+		return $this->valueFormatter->format( DataValueFormatter::HTML_SHORT, $linker );
+	}
+
+	/**
+	 * @see DataValue::getLongWikiText
+	 *
+	 * @return string
+	 */
+	public function getLongWikiText( $linker = null ) {
+
+		if ( $this->valueFormatter === null ) {
+			$this->valueFormatter = $this->dataValueServiceFactory->getValueFormatter( $this );
+		}
+
+		$this->valueFormatter->setDataValue( $this );
+
+		return $this->valueFormatter->format( DataValueFormatter::WIKI_LONG, $linker );
+	}
+
+	/**
+	 * @see DataValue::getLongHTMLText
+	 *
+	 * @return string
+	 */
+	public function getLongHTMLText( $linker = null ) {
+
+		if ( $this->valueFormatter === null ) {
+			$this->valueFormatter = $this->dataValueServiceFactory->getValueFormatter( $this );
+		}
+
+		$this->valueFormatter->setDataValue( $this );
+
+		return $this->valueFormatter->format( DataValueFormatter::HTML_LONG, $linker );
+	}
+
+	/**
+	 * @see DataValue::getWikiValue
+	 *
+	 * @return string
+	 */
+	public function getWikiValue() {
+
+		if ( $this->valueFormatter === null ) {
+			$this->valueFormatter = $this->dataValueServiceFactory->getValueFormatter( $this );
+		}
+
+		$this->valueFormatter->setDataValue( $this );
+
+		return $this->valueFormatter->format( DataValueFormatter::VALUE );
+	}
+
+	/**
+	 * @see DataVelue::getInfolinks
+	 *
+	 * @return array
+	 */
+	public function getInfolinks() {
+
+		// When generating an infoLink, use the normalized value without any
+		// precision limitation
+		$this->setOption( self::NO_DISP_PRECISION_LIMIT, true );
+		$this->setOption( self::OPT_CONTENT_LANGUAGE, Message::CONTENT_LANGUAGE );
+
+		$infoLinks = parent::getInfolinks();
+
+		$this->setOption( self::NO_DISP_PRECISION_LIMIT, false );
+
+		return $infoLinks;
+	}
+
+	/**
+	 * @since 2.4
+	 *
+	 * @return string
+	 */
+	public function getCanonicalMainUnit() {
+		return $this->m_unitin;
+	}
+
+	/**
+	 * Returns array of converted unit-value-pairs that can be
+	 * printed.
+	 *
+	 * @since 2.4
+	 *
+	 * @return array
+	 */
+	public function getConvertedUnitValues() {
+		$this->makeConversionValues();
+		return $this->m_unitvalues;
 	}
 
 	/**
@@ -250,6 +413,17 @@ class SMWNumberValue extends SMWDataValue {
 	}
 
 	/**
+	 * @since 2.4
+	 *
+	 * @param string $unit
+	 *
+	 * @return boolean
+	 */
+	public function hasPrefixalUnitPreference( $unit ) {
+		return isset( $this->prefixalUnitPreference[$unit] ) && $this->prefixalUnitPreference[$unit];
+	}
+
+	/**
 	 * Create links to mapping services based on a wiki-editable message.
 	 * The parameters available to the message are:
 	 * $1: string of numerical value in English punctuation
@@ -259,9 +433,9 @@ class SMWNumberValue extends SMWDataValue {
 	 */
 	protected function getServiceLinkParams() {
 		if ( $this->isValid() ) {
-			return array( strval( $this->m_dataitem->getNumber() ), strval( round( $this->m_dataitem->getNumber() ) ) );
+			return [ strval( $this->m_dataitem->getNumber() ), strval( round( $this->m_dataitem->getNumber() ) ) ];
 		} else {
-			return array();
+			return [];
 		}
 	}
 
@@ -270,10 +444,10 @@ class SMWNumberValue extends SMWDataValue {
 	 * so that, e.g., "km²" and "km<sup>2</sup>" do not need to be
 	 * distinguished.
 	 */
-	static protected function normalizeUnit( $unit ) {
-		$unit = str_replace( array( '[[', ']]' ), '', trim( $unit ) ); // allow simple links to be used inside annotations
-		$unit = str_replace( array( '²', '<sup>2</sup>' ), '&sup2;', $unit );
-		$unit = str_replace( array( '³', '<sup>3</sup>' ), '&sup3;', $unit );
+	public function normalizeUnit( $unit ) {
+		$unit = str_replace( [ '[[', ']]' ], '', trim( $unit ) ); // allow simple links to be used inside annotations
+		$unit = str_replace( [ '²', '<sup>2</sup>' ], '&sup2;', $unit );
+		$unit = str_replace( [ '³', '<sup>3</sup>' ], '&sup3;', $unit );
 		return smwfXMLContentEncode( $unit );
 	}
 
@@ -309,7 +483,7 @@ class SMWNumberValue extends SMWDataValue {
 	 * Overwritten by subclasses that support units.
 	 */
 	protected function makeConversionValues() {
-		$this->m_unitvalues = array( '' => $this->m_dataitem->getNumber() );
+		$this->m_unitvalues = [ '' => $this->m_dataitem->getNumber() ];
 	}
 
 	/**
@@ -323,9 +497,18 @@ class SMWNumberValue extends SMWDataValue {
 	 */
 	protected function makeUserValue() {
 		$this->m_caption = '';
-		if ( $this->m_outformat != '-u' ) { // -u is the format for displaying the unit only
-			$this->m_caption .= ( ( $this->m_outformat != '-' ) && ( $this->m_outformat != '-n' ) ? NumberFormatter::getInstance()->formatNumberToLocalizedText( $this->m_dataitem->getNumber() ) : $this->m_dataitem->getNumber() );
+
+		$number = $this->m_dataitem->getNumber();
+
+		// -u is the format for displaying the unit only
+		if ( $this->m_outformat == '-u' ) {
+			$this->m_caption = '';
+		} elseif ( ( $this->m_outformat != '-' ) && ( $this->m_outformat != '-n' ) ) {
+			$this->m_caption = $this->getLocalizedFormattedNumber( $number );
+		} else {
+			$this->m_caption = $this->getNormalizedFormattedNumber( $number );
 		}
+
 		// no unit ever, so nothing to do about this
 		$this->m_unitin = '';
 	}
@@ -337,7 +520,83 @@ class SMWNumberValue extends SMWDataValue {
 	 * Overwritten by subclasses that support units.
 	 */
 	public function getUnitList() {
-		return array( '' );
+		return [ '' ];
+	}
+
+	protected function getPreferredDisplayPrecision() {
+
+		// Don't restrict the value with a display precision
+		if ( $this->getProperty() === null || $this->getOption( self::NO_DISP_PRECISION_LIMIT ) ) {
+			return false;
+		}
+
+		if ( $this->precision === null ) {
+			$this->precision = $this->dataValueServiceFactory->getPropertySpecificationLookup()->getDisplayPrecision(
+				$this->getProperty()
+			);
+		}
+
+		return $this->precision;
+	}
+
+	private function findPrecisionFrom( $formatstring ) {
+
+		if ( strpos( $formatstring, '-' ) === false ) {
+			return $formatstring;
+		}
+
+		$parts = explode( '-', $formatstring );
+
+		// Find precision from annotated -p<number of digits> formatstring which
+		// has priority over a possible _PREC value
+		foreach ( $parts as $key => $value ) {
+			if ( strpos( $value, 'p' ) !== false && is_numeric( substr( $value, 1 ) ) ) {
+				$this->precision = strval( substr( $value, 1 ) );
+				unset( $parts[$key] );
+			}
+		}
+
+		// Rebuild formatstring without a possible p element to ensure other
+		// options can be used in combination such as -n-p2 etc.
+		return implode( '-', $parts );
+	}
+
+	private function getNumberFormatter() {
+
+		$this->intlNumberFormatter->setOption(
+			IntlNumberFormatter::USER_LANGUAGE,
+			$this->getOption( self::OPT_USER_LANGUAGE )
+		);
+
+		$this->intlNumberFormatter->setOption(
+			IntlNumberFormatter::CONTENT_LANGUAGE,
+			$this->getOption( self::OPT_CONTENT_LANGUAGE )
+		);
+
+		$this->intlNumberFormatter->setOption(
+			self::THOUSANDS_SEPARATOR,
+			$this->getOption( self::THOUSANDS_SEPARATOR )
+		);
+
+		$this->intlNumberFormatter->setOption(
+			self::DECIMAL_SEPARATOR,
+			$this->getOption( self::DECIMAL_SEPARATOR )
+		);
+
+		return $this->intlNumberFormatter;
+	}
+
+	private function findPreferredLanguageFrom( &$formatstring ) {
+		// Localized preferred user language
+		if ( strpos( $formatstring, 'LOCL' ) !== false && ( $languageCode = Localizer::getLanguageCodeFrom( $formatstring ) ) !== false ) {
+			$this->intlNumberFormatter->setOption(
+				IntlNumberFormatter::PREFERRED_LANGUAGE,
+				$languageCode
+			);
+		}
+
+		// Remove any remaining
+		$formatstring = str_replace( [ '#LOCL', 'LOCL' ], '', $formatstring );
 	}
 
 }

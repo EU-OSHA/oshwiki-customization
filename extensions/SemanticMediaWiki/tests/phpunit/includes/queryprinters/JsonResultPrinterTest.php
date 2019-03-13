@@ -2,13 +2,10 @@
 
 namespace SMW\Test;
 
-use SMW\Tests\Utils\Mock\MockObjectBuilder;
-use SMW\Tests\Utils\Mock\CoreMockObjectRepository;
-
-use SMW\JsonResultPrinter;
-use SMW\ResultPrinter;
-
 use ReflectionClass;
+use SMW\JsonResultPrinter;
+use SMW\Tests\Utils\Mock\CoreMockObjectRepository;
+use SMW\Tests\Utils\Mock\MockObjectBuilder;
 
 /**
  * @covers \SMW\JsonResultPrinter
@@ -45,7 +42,7 @@ class JsonResultPrinterTest extends QueryPrinterTestCase {
 	 *
 	 * @return JsonResultPrinter
 	 */
-	private function newInstance( $parameters = array() ) {
+	private function newInstance( $parameters = [] ) {
 		return $this->setParameters( new JsonResultPrinter( 'json' ), $parameters );
 	}
 
@@ -76,7 +73,7 @@ class JsonResultPrinterTest extends QueryPrinterTestCase {
 	 */
 	public function testGetFileName( $filename, $expected ) {
 
-		$instance = $this->newInstance( array( 'searchlabel' => $filename ) );
+		$instance = $this->newInstance( [ 'searchlabel' => $filename ] );
 
 		$this->assertEquals(
 			$expected,
@@ -89,11 +86,11 @@ class JsonResultPrinterTest extends QueryPrinterTestCase {
 	 */
 	public function filenameDataProvider() {
 
-		$provider = array();
+		$provider = [];
 
-		$provider[] = array( 'Lala', 'Lala.json' );
-		$provider[] = array( 'Lala Lilu', 'Lala_Lilu.json' );
-		$provider[] = array( '' , 'result.json');
+		$provider[] = [ 'Lala', 'Lala.json' ];
+		$provider[] = [ 'Lala Lilu', 'Lala_Lilu.json' ];
+		$provider[] = [ '' , 'result.json'];
 
 		return $provider;
 	}
@@ -103,23 +100,23 @@ class JsonResultPrinterTest extends QueryPrinterTestCase {
 	 */
 	public function testGetResultText() {
 
-		$result = array(
+		$result = [
 			'lala' => __METHOD__,
 			'lula' => 999388383838
-		);
+		];
 
-		$expected = array_merge( $result, array( 'rows' => count( $result ) ) );
+		$expected = array_merge( $result, [ 'rows' => count( $result ) ] );
 
-		$instance = $this->newInstance( array( 'prettyprint' => false ) );
+		$instance = $this->newInstance( [ 'prettyprint' => false, 'unescape' => false ] );
 
 		$reflector = new ReflectionClass( '\SMW\JsonResultPrinter' );
 		$getResultText = $reflector->getMethod( 'getResultText' );
 		$getResultText->setAccessible( true );
 
-		$queryResult = $this->mockBuilder->newObject( 'QueryResult', array(
+		$queryResult = $this->mockBuilder->newObject( 'QueryResult', [
 			'serializeToArray' => $result,
 			'getCount'         => count( $result )
-		) );
+		] );
 
 		$results = $getResultText->invoke( $instance, $queryResult, SMW_OUTPUT_FILE );
 

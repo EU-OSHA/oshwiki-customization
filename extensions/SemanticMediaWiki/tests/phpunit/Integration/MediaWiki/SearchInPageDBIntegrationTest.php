@@ -2,12 +2,10 @@
 
 namespace SMW\Tests\Integration\MediaWiki;
 
+use SMW\MediaWiki\Search\Search;
+use SMW\Tests\MwDBaseUnitTestCase;
 use SMW\Tests\Utils\PageCreator;
 use SMW\Tests\Utils\PageDeleter;
-use SMW\Tests\MwDBaseUnitTestCase;
-
-use SMW\MediaWiki\Search\Search;
-
 use Title;
 
 /**
@@ -41,15 +39,20 @@ class SearchInPageDBIntegrationTest extends MwDBaseUnitTestCase {
 			->createPage( $targetPage )
 			->doEdit( '[[Has some page value::Foo]]' );
 
+		$this->testEnvironment->executePendingDeferredUpdates();
+
 		$search = new Search();
-		$results = $search->searchTitle( '[[Has some page value::Foo]]' );
+		$results = $search->searchText( '[[Has some page value::Foo]]' );
 
 		$this->assertInstanceOf(
 			'\SMW\MediaWiki\Search\SearchResultSet',
 			$results
 		);
 
-		$this->assertEquals( 1, $results->getTotalHits() );
+		$this->assertEquals(
+			1,
+			$results->getTotalHits()
+		);
 
 		$pageDeleter = new PageDeleter();
 		$pageDeleter->deletePage( $targetPage );
@@ -75,8 +78,10 @@ class SearchInPageDBIntegrationTest extends MwDBaseUnitTestCase {
 			->createPage( $targetPage )
 			->doEdit( "[[Has coordinates::52°31'N, 13°24'E]]" );
 
+		$this->testEnvironment->executePendingDeferredUpdates();
+
 		$search = new Search();
-		$results = $search->searchTitle( "[[Has coordinates::52°31'N, 13°24'E]]" );
+		$results = $search->searchText( "[[Has coordinates::52°31'N, 13°24'E]]" );
 
 		$this->assertInstanceOf(
 			'\SMW\MediaWiki\Search\SearchResultSet',
@@ -86,6 +91,8 @@ class SearchInPageDBIntegrationTest extends MwDBaseUnitTestCase {
 		if ( is_a( $this->getStore(), '\SMW\SPARQLStore\SPARQLStore' ) ) {
 			$this->markTestIncomplete( "Test was marked as incomplete because the SPARQLStore doesn't support the Geo data type" );
 		}
+
+		$this->testEnvironment->executePendingDeferredUpdates();
 
 		$this->assertEquals(
 			1,

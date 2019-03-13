@@ -2,9 +2,9 @@
 
 namespace SMW\Tests\Utils\Fixtures\Properties;
 
+use SMW\DataValueFactory;
 use SMW\DIProperty;
 use SMW\DIWiKiPage;
-use SMW\DataValueFactory;
 
 /**
  * @license GNU GPL v2+
@@ -50,7 +50,7 @@ class CountryCategory {
 	 * @return DataValue
 	 */
 	public function getCategoryValue() {
-		return DataValueFactory::getInstance()->newDataItemValue(
+		return DataValueFactory::getInstance()->newDataValueByItem(
 			$this->asSubject(),
 			$this->getProperty()
 		);

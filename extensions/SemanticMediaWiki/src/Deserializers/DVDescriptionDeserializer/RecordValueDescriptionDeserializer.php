@@ -2,13 +2,13 @@
 
 namespace SMW\Deserializers\DVDescriptionDeserializer;
 
-use SMWRecordValue as RecordValue;
-use SMW\Query\Language\ThingDescription;
+use InvalidArgumentException;
+use SMW\DataValueFactory;
+use SMW\DataValues\ReferenceValue;
 use SMW\Query\Language\Conjunction;
 use SMW\Query\Language\SomeProperty;
-use SMW\DataValueFactory;
-use SMW\DIProperty;
-use InvalidArgumentException;
+use SMW\Query\Language\ThingDescription;
+use SMWRecordValue as RecordValue;
 
 /**
  * @private
@@ -26,7 +26,7 @@ class RecordValueDescriptionDeserializer extends DescriptionDeserializer {
 	 * {@inheritDoc}
 	 */
 	public function isDeserializerFor( $serialization ) {
-		return $serialization instanceof RecordValue;
+		return $serialization instanceof RecordValue || $serialization instanceof ReferenceValue;
 	}
 
 	/**
@@ -48,7 +48,7 @@ class RecordValueDescriptionDeserializer extends DescriptionDeserializer {
 			return new ThingDescription();
 		}
 
-		$subdescriptions = array();
+		$subdescriptions = [];
 		$values = $this->dataValue->getValuesFromString( $value );
 
 		$valueIndex = 0; // index in value array
@@ -75,7 +75,7 @@ class RecordValueDescriptionDeserializer extends DescriptionDeserializer {
 			++$propertyIndex;
 		}
 
-		if ( $subdescriptions === array() ) {
+		if ( $subdescriptions === [] ) {
 			$this->addError( wfMessage( 'smw_novalues' )->text() );
 		}
 
@@ -109,9 +109,11 @@ class RecordValueDescriptionDeserializer extends DescriptionDeserializer {
 			return $description;
 		}
 
-		$dataValue = DataValueFactory::getInstance()->newPropertyObjectValue(
+		$dataValue = DataValueFactory::getInstance()->newDataValueByProperty(
 			$diProperty,
-			$values[$valueIndex]
+			$values[$valueIndex],
+			false,
+			$this->dataValue->getContextPage()
 		);
 
 		if ( $dataValue->isValid() ) { // valid DV: keep

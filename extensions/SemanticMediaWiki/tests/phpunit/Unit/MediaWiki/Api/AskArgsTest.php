@@ -2,10 +2,9 @@
 
 namespace SMW\Tests\MediaWiki\Api;
 
-use SMW\Tests\Utils\MwApiFactory;
-
-use SMW\MediaWiki\Api\AskArgs;
 use SMW\ApplicationFactory;
+use SMW\MediaWiki\Api\AskArgs;
+use SMW\Tests\Utils\MwApiFactory;
 
 /**
  * @covers \SMW\MediaWiki\Api\AskArgs
@@ -16,7 +15,7 @@ use SMW\ApplicationFactory;
  *
  * @author mwjames
  */
-class AskArgsTest extends \PHPUnit_Framework_TestCase  {
+class AskArgsTest extends \PHPUnit_Framework_TestCase {
 
 	private $apiFactory;
 	private $applicationFactory;
@@ -37,7 +36,7 @@ class AskArgsTest extends \PHPUnit_Framework_TestCase  {
 	public function testCanConstruct() {
 
 		$instance = new AskArgs(
-			$this->apiFactory->newApiMain( array() ),
+			$this->apiFactory->newApiMain( [] ),
 			'askargs'
 		);
 
@@ -52,12 +51,12 @@ class AskArgsTest extends \PHPUnit_Framework_TestCase  {
 	 */
 	public function testExecuteOnStore( array $query, array $expected ) {
 
-		$results = $this->apiFactory->doApiRequest( array(
+		$results = $this->apiFactory->doApiRequest( [
 			'action'     => 'askargs',
 			'conditions' => $query['conditions'],
 			'printouts'  => $query['printouts'],
 			'parameters' => $query['parameters'],
-		) );
+		] );
 
 		$this->assertInternalType( 'array', $results );
 
@@ -73,24 +72,24 @@ class AskArgsTest extends \PHPUnit_Framework_TestCase  {
 
 	public function testExecuteOnMockStore() {
 
-		$requestParameters = array(
+		$requestParameters = [
 			'conditions' => 'Foo::+',
 			'printouts'  => 'Bar',
 			'parameters' => 'sort=asc'
-		);
+		];
 
-		$expected = array(
+		$expected = [
 			'query-continue-offset' => 10,
-			'query' => array(
-				'results' => array(
-					'Foo' => array(
-						'printouts' => array( 'lula' => array( 'lila' ) )
-					)
-				),
-				'printrequests' => array( 'Bar' ),
-				'meta' => array( 'count' => 5, 'offset' => 5 )
-			)
-		);
+			'query' => [
+				'results' => [
+					'Foo' => [
+						'printouts' => [ 'lula' => [ 'lila' ] ]
+					]
+				],
+				'printrequests' => [ 'Bar' ],
+				'meta' => [ 'count' => 5, 'offset' => 5 ]
+			]
+		];
 
 		$store = $this->getMockBuilder( '\SMW\Store' )
 			->disableOriginalConstructor()
@@ -98,7 +97,7 @@ class AskArgsTest extends \PHPUnit_Framework_TestCase  {
 
 		$store->expects( $this->atLeastOnce() )
 			->method( 'getQueryResult' )
-			->will( $this->returnCallback( array( $this, 'mockStoreQueryResultCallback' ) ) );
+			->will( $this->returnCallback( [ $this, 'mockStoreQueryResultCallback' ] ) );
 
 		$this->applicationFactory->registerObject( 'Store', $store );
 
@@ -124,15 +123,15 @@ class AskArgsTest extends \PHPUnit_Framework_TestCase  {
 		$result = '';
 
 		if ( $query->getQueryString() === '[[Foo::+]]' ) {
-			$result = array(
-				'results' => array(
-					'Foo' => array(
-						'printouts' => array( 'lula' => array( 'lila' ) )
-					)
-				),
-				'printrequests' => array( 'Bar' ),
-				'meta' => array( 'count' => 5, 'offset' => 5 )
-			);
+			$result = [
+				'results' => [
+					'Foo' => [
+						'printouts' => [ 'lula' => [ 'lila' ] ]
+					]
+				],
+				'printrequests' => [ 'Bar' ],
+				'meta' => [ 'count' => 5, 'offset' => 5 ]
+			];
 		}
 
 		$queryResult = $this->getMockBuilder( '\SMWQueryResult' )
@@ -149,112 +148,122 @@ class AskArgsTest extends \PHPUnit_Framework_TestCase  {
 
 		$queryResult->expects( $this->atLeastOnce() )
 			->method( 'getErrors' )
-			->will( $this->returnValue( array() ) );
+			->will( $this->returnValue( [] ) );
 
 		return $queryResult;
 	}
 
 	public function queryDataProvider() {
-		return array(
+		return [
 
 			// #0 Query producing an error result
-			array(
-				array(
+			[
+				[
 					'conditions' => '[[Modification date::+]]',
 					'printouts'  => null,
 					'parameters' => null
-				),
-				array(
+				],
+				[
 					'error'      => true
-				)
-			),
+				]
+			],
 
 			// #1 Query producing an error result
-			array(
-				array(
+			[
+				[
 					'conditions' => '[[Modification date::+]]',
 					'printouts'  => null,
 					'parameters' => 'limit=10'
-				),
-				array(
+				],
+				[
 					'error'      => true
-				)
-			),
+				]
+			],
 
 			// #2 Query producing an error result
-			array(
-				array(
+			[
+				[
 					'conditions' => '[[Modification date::+]]',
 					'printouts'  => 'Modification date',
 					'parameters' => 'limit=10'
-				),
-				array(
+				],
+				[
 					'error'      => true
-				)
-			),
+				]
+			],
 
 			// #3 Query producing a return result
-			array(
-				array(
+			[
+				[
 					'conditions' => 'Modification date::+',
 					'printouts'  => null,
 					'parameters' => null
-				),
-				array(
-					array(
+				],
+				[
+					[
 						'label'=> '',
 						'typeid' => '_wpg',
 						'mode' => 2,
-						'format' => false
-					)
-				)
-			),
+						'format' => false,
+						'key' => '',
+						'redi' => ''
+					]
+				]
+			],
 
 			// #4 Query producing a return result
-			array(
-				array(
+			[
+				[
 					'conditions' => 'Modification date::+',
 					'printouts'  => 'Modification date',
 					'parameters' => null
-				),
-				array(
-					array(
+				],
+				[
+					[
 						'label'=> '',
 						'typeid' => '_wpg',
 						'mode' => 2,
-						'format' => false
-					),
-					array(
+						'format' => false,
+						'key' => '',
+						'redi' => ''
+					],
+					[
 						'label'=> 'Modification date',
 						'typeid' => '_dat',
 						'mode' => 1,
-						'format' => ''
-					)
-				)
-			),
+						'format' => '',
+						'key' => '_MDAT',
+						'redi' => ''
+					]
+				]
+			],
 
 			// #5 Query producing a return result
-			array(
-				array(
+			[
+				[
 					'conditions' => 'Modification date::+',
 					'printouts'  => 'Modification date',
 					'parameters' => 'limit=1'
-				),
-				array(
-					array(
+				],
+				[
+					[
 						'label'=> '',
 						'typeid' => '_wpg',
 						'mode' => 2,
-						'format' => false
-					),
-					array(
+						'format' => false,
+						'key' => '',
+						'redi' => ''
+					],
+					[
 						'label'=> 'Modification date',
 						'typeid' => '_dat',
 						'mode' => 1,
-						'format' => ''
-					)
-				)
-			),
-		);
+						'format' => '',
+						'key' => '_MDAT',
+						'redi' => ''
+					]
+				]
+			],
+		];
 	}
 }

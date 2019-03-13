@@ -3,7 +3,6 @@
 namespace SMW\Tests;
 
 use SMW\DIWikiPage;
-
 use SMWQueryResult as QueryResult;
 
 /**
@@ -29,8 +28,8 @@ class QueryResultTest extends \PHPUnit_Framework_TestCase {
 			->disableOriginalConstructor()
 			->getMockForAbstractClass();
 
-		$printRequests = array();
-		$results = array();
+		$printRequests = [];
+		$results = [];
 
 		$this->assertInstanceOf(
 			'\SMWQueryResult',
@@ -48,12 +47,12 @@ class QueryResultTest extends \PHPUnit_Framework_TestCase {
 			->disableOriginalConstructor()
 			->getMockForAbstractClass();
 
-		$printRequests = array();
+		$printRequests = [];
 
-		$results = array(
+		$results = [
 			new DIWikiPage( 'Foo', 0 ),
 			new DIWikiPage( 'Bar', 0 )
-		);
+		];
 
 		$instance = new QueryResult( $printRequests, $query, $results, $store );
 
@@ -69,6 +68,63 @@ class QueryResultTest extends \PHPUnit_Framework_TestCase {
 		$this->assertInternalType(
 			'array',
 			$instance->getNext()
+		);
+	}
+
+	public function testIsFromCache() {
+
+		$query = $this->getMockBuilder( '\SMWQuery' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$store = $this->getMockBuilder( '\SMW\Store' )
+			->disableOriginalConstructor()
+			->getMockForAbstractClass();
+
+		$printRequests = [];
+		$results = [];
+
+		$instance = new QueryResult(
+			$printRequests,
+			$query,
+			$results,
+			$store
+		);
+
+		$this->assertFalse(
+			$instance->isFromCache()
+		);
+
+		$instance->setFromCache( true );
+
+		$this->assertTrue(
+			$instance->isFromCache()
+		);
+	}
+
+	public function testGetHash() {
+
+		$query = $this->getMockBuilder( '\SMWQuery' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$store = $this->getMockBuilder( '\SMW\Store' )
+			->disableOriginalConstructor()
+			->getMockForAbstractClass();
+
+		$printRequests = [];
+		$results = [];
+
+		$instance = new QueryResult(
+			$printRequests,
+			$query,
+			$results,
+			$store
+		);
+
+		$this->assertNotSame(
+			$instance->getHash( 'quick' ),
+			$instance->getHash()
 		);
 	}
 

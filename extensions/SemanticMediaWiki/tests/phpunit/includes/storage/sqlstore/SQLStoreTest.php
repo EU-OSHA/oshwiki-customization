@@ -2,9 +2,8 @@
 
 namespace SMW\Test\SQLStore;
 
-use SMWSQLStore3;
-use SMW\Settings;
 use SMW\ApplicationFactory;
+use SMWSQLStore3;
 
 /**
  * @covers \SMWSQLStore3
@@ -25,10 +24,10 @@ class SQLStoreTest extends \PHPUnit_Framework_TestCase {
 
 		$this->store = new SMWSQLStore3();
 
-		$settings = array(
-			'smwgFixedProperties' => array(),
-			'smwgPageSpecialProperties' => array()
-		);
+		$settings = [
+			'smwgFixedProperties' => [],
+			'smwgPageSpecialProperties' => []
+		];
 
 		foreach ( $settings as $key => $value ) {
 			ApplicationFactory::getInstance()->getSettings()->set( $key, $value );
@@ -82,10 +81,10 @@ class SQLStoreTest extends \PHPUnit_Framework_TestCase {
 
 		$defaultPropertyTableCount = count( $this->store->getPropertyTables() );
 
-		$settings = array(
-			'smwgFixedProperties' => array(),
-			'smwgPageSpecialProperties' => array( '_MDAT' )
-		);
+		$settings = [
+			'smwgFixedProperties' => [],
+			'smwgPageSpecialProperties' => [ '_MDAT' ]
+		];
 
 		foreach ( $settings as $key => $value ) {
 			ApplicationFactory::getInstance()->getSettings()->set( $key, $value );
@@ -106,10 +105,10 @@ class SQLStoreTest extends \PHPUnit_Framework_TestCase {
 
 		$defaultPropertyTableCount = count( $this->store->getPropertyTables() );
 
-		$settings = array(
-			'smwgFixedProperties' => array(),
-			'smwgPageSpecialProperties' => array( '_MDAT', 'Foo' )
-		);
+		$settings = [
+			'smwgFixedProperties' => [],
+			'smwgPageSpecialProperties' => [ '_MDAT', 'Foo' ]
+		];
 
 		foreach ( $settings as $key => $value ) {
 			ApplicationFactory::getInstance()->getSettings()->set( $key, $value );
@@ -130,10 +129,10 @@ class SQLStoreTest extends \PHPUnit_Framework_TestCase {
 
 		$defaultPropertyTableCount = count( $this->store->getPropertyTables() );
 
-		$settings = array(
-			'smwgFixedProperties' => array(),
-			'smwgPageSpecialProperties' => array( '_MDAT', '_MEDIA' )
-		);
+		$settings = [
+			'smwgFixedProperties' => [],
+			'smwgPageSpecialProperties' => [ '_MDAT', '_MEDIA' ]
+		];
 
 		foreach ( $settings as $key => $value ) {
 			ApplicationFactory::getInstance()->getSettings()->set( $key, $value );

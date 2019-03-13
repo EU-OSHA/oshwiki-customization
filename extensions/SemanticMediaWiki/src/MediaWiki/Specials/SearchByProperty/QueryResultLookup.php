@@ -3,11 +3,11 @@
 namespace SMW\MediaWiki\Specials\SearchByProperty;
 
 use SMW\DataValueFactory;
-use SMW\Query\Language\SomeProperty;
-use SMW\Query\Language\ThingDescription;
-use SMW\Query\Language\ValueDescription;
-use SMW\Store;
+use SMW\DIWikiPage;
+use SMW\Query\DescriptionFactory;
 use SMW\Query\PrintRequest as PrintRequest;
+use SMW\SQLStore\QueryDependencyLinksStoreFactory;
+use SMW\Store;
 use SMWQuery as Query;
 use SMWRequestOptions as RequestOptions;
 
@@ -35,6 +35,45 @@ class QueryResultLookup {
 	}
 
 	/**
+	 * @since 2.5
+	 *
+	 * @param QueryOptions $pageRequestOptions
+	 *
+	 * @return array
+	 */
+	public function doQueryLinksReferences( PageRequestOptions $pageRequestOptions ) {
+
+		$requestOptions = new RequestOptions();
+		$requestOptions->setLimit( $pageRequestOptions->limit + 1 );
+		$requestOptions->setOffset( $pageRequestOptions->offset );
+		$requestOptions->sort = true;
+
+		$queryDependencyLinksStoreFactory = new QueryDependencyLinksStoreFactory();
+
+		$queryReferenceLinks = $queryDependencyLinksStoreFactory->newQueryReferenceBacklinks(
+			$this->store
+		);
+
+		$queryBacklinks = $queryReferenceLinks->findReferenceLinks(
+			$pageRequestOptions->value->getDataItem(),
+			$requestOptions
+		);
+
+		$results = [];
+
+		$dataValueFactory = DataValueFactory::getInstance();
+
+		foreach ( $queryBacklinks as $result ) {
+			$results[] = [
+				$dataValueFactory->newDataValueByItem( DIWikiPage::doUnserialize( $result ), null ),
+				$pageRequestOptions->value
+			];
+		}
+
+		return $results;
+	}
+
+	/**
 	 * @since 2.1
 	 *
 	 * @param  QueryOptions $pageRequestOptions
@@ -55,15 +94,15 @@ class QueryResultLookup {
 			$res = $this->doQueryForExactValue( $pageRequestOptions, $requestOptions );
 		}
 
-		$results = array();
+		$results = [];
 
 		$dataValueFactory = DataValueFactory::getInstance();
 
 		foreach ( $res as $result ) {
-			$results[] = array(
-				$dataValueFactory->newDataItemValue( $result, null ),
+			$results[] = [
+				$dataValueFactory->newDataValueByItem( $result, null ),
 				$pageRequestOptions->value
-			);
+			];
 		}
 
 		return $results;
@@ -90,47 +129,49 @@ class QueryResultLookup {
 			$comparator = SMW_CMP_LIKE;
 		}
 
+		$descriptionFactory = new DescriptionFactory();
+
 		if ( $pageRequestOptions->valueString === '' || $pageRequestOptions->valueString === null ) {
-			$description = new ThingDescription();
+			$description = $descriptionFactory->newThingDescription();
 		} else {
-			$description = new ValueDescription(
+			$description = $descriptionFactory->newValueDescription(
 				$pageRequestOptions->value->getDataItem(),
 				$pageRequestOptions->property->getDataItem(),
 				$comparator
 			);
+
+			$description = $descriptionFactory->newSomeProperty(
+				$pageRequestOptions->property->getDataItem(),
+				$description
+			);
 		}
 
-		$someProperty = new SomeProperty(
-			$pageRequestOptions->property->getDataItem(),
-			$description
-		);
-
-		$query = new Query( $someProperty );
+		$query = new Query( $description );
 
 		$query->setLimit( $pageRequestOptions->limit );
 		$query->setOffset( $pageRequestOptions->offset );
 		$query->sort = true;
-		$query->sortkeys = array(
+		$query->sortkeys = [
 			$pageRequestOptions->property->getDataItem()->getKey() => $sortOrder
-		);
+		];
 
 		// Note: printrequests change the caption of properties they
 		// get (they expect properties to be given to them).
 		// Since we want to continue using the property for our
 		// purposes, we give a clone to the print request.
-		$printouts = array(
+		$printouts = [
 			new PrintRequest( PrintRequest::PRINT_THIS, '' ),
 			new PrintRequest( PrintRequest::PRINT_PROP, '', clone $pageRequestOptions->property )
-		);
+		];
 
 		$query->setExtraPrintouts( $printouts );
 
 		$queryResults = $this->store->getQueryResult( $query );
 
-		$result = array();
+		$result = [];
 
 		while ( $resultArrays = $queryResults->getNext() ) {
-			$r = array();
+			$r = [];
 
 			foreach ( $resultArrays as $resultArray ) {
 				$r[] = $resultArray->getNextDataValue();
@@ -158,6 +199,9 @@ class QueryResultLookup {
 	}
 
 	private function doQueryForExactValue( PageRequestOptions $pageRequestOptions, RequestOptions $requestOptions ) {
+
+		$pageRequestOptions->value->setOption( 'is.search', true );
+
 		return $this->store->getPropertySubjects(
 			$pageRequestOptions->property->getDataItem(),
 			$pageRequestOptions->value->getDataItem(),

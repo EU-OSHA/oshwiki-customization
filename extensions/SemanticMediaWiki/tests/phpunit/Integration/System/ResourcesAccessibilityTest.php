@@ -2,11 +2,9 @@
 
 namespace SMW\Tests\System;
 
-use SMW\ApplicationFactory;
-
 use ResourceLoader;
-use ResourceLoaderModule;
 use ResourceLoaderContext;
+use ResourceLoaderModule;
 
 /**
  * @group semantic-mediawiki
@@ -34,7 +32,7 @@ class ResourcesAccessibilityTest extends \PHPUnit_Framework_TestCase {
 	/**
 	 * @dataProvider moduleDataProvider
 	 */
-	public function testModulesStylesFilesAreAccessible( $modules, ResourceLoader $resourceLoader, $context  ) {
+	public function testModulesStylesFilesAreAccessible( $modules, ResourceLoader $resourceLoader, $context ) {
 
 		foreach ( array_keys( $modules ) as $name ) {
 
@@ -50,17 +48,16 @@ class ResourcesAccessibilityTest extends \PHPUnit_Framework_TestCase {
 
 		$resourceLoader = new ResourceLoader();
 		$context = ResourceLoaderContext::newDummyContext();
-		$modules = $this->includeResourceDefinitionsFromFile();
 
-		return array( array(
-			$modules,
-			$resourceLoader,
-			$context
-		) );
-	}
+		foreach ( $GLOBALS['smwgResourceLoaderDefFiles'] as $key => $file ) {
+			$providers[] = [
+				include $file,
+				$resourceLoader,
+				$context
+			];
+		}
 
-	private function includeResourceDefinitionsFromFile() {
-		return include ApplicationFactory::getInstance()->getSettings()->get( 'smwgIP' ) . '/res/Resources.php';
+		return $providers;
 	}
 
 }

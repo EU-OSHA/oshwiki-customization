@@ -2,6 +2,7 @@
 
 namespace SMW\SPARQLStore\QueryEngine;
 
+use SMW\Exporter\Element\ExpElement;
 use SMW\Store;
 use SMWExporter as Exporter;
 use SMWQuery as Query;
@@ -42,7 +43,7 @@ class QueryResultFactory {
 		return new QueryResult(
 			$query->getDescription()->getPrintrequests(),
 			$query,
-			array(),
+			[],
 			$this->store,
 			$hasFurtherResults
 		);
@@ -76,7 +77,7 @@ class QueryResultFactory {
 		$queryResult = new QueryResult(
 			$query->getDescription()->getPrintrequests(),
 			$query,
-			array(),
+			[],
 			$this->store,
 			false
 		);
@@ -84,7 +85,7 @@ class QueryResultFactory {
 		if ( $repositoryResult->getErrorCode() === RepositoryResult::ERROR_NOERROR ) {
 			$queryResult->setCountValue( $repositoryResult->getNumericValue() );
 		} else {
-			$queryResult->addErrors( array( wfMessage( 'smw_db_sparqlqueryproblem' )->inContentLanguage()->text() ) );
+			$queryResult->addErrors( [ wfMessage( 'smw_db_sparqlqueryproblem' )->inContentLanguage()->text() ] );
 		}
 
 		return $queryResult;
@@ -92,10 +93,11 @@ class QueryResultFactory {
 
 	private function makeQueryResultForInstance( RepositoryResult $repositoryResult, Query $query ) {
 
-		$resultDataItems = array();
+		$resultDataItems = [];
 
 		foreach ( $repositoryResult as $resultRow ) {
-			if ( count( $resultRow ) > 0 ) {
+
+			if ( count( $resultRow ) > 0 && $resultRow[0] instanceof ExpElement ) {
 				$dataItem = Exporter::getInstance()->findDataItemForExpElement( $resultRow[0] );
 
 				if ( !is_null( $dataItem ) ) {
@@ -105,7 +107,9 @@ class QueryResultFactory {
 		}
 
 		if ( $repositoryResult->numRows() > $query->getLimit() ) {
-			array_pop( $resultDataItems );
+			if ( count( $resultDataItems) > 1 ) {
+				array_pop( $resultDataItems );
+			}
 			$hasFurtherResults = true;
 		} else {
 			$hasFurtherResults = false;
@@ -123,10 +127,10 @@ class QueryResultFactory {
 			case RepositoryResult::ERROR_NOERROR:
 			break;
 			case RepositoryResult::ERROR_INCOMPLETE:
-				$result->addErrors( array( wfMessage( 'smw_db_sparqlqueryincomplete' )->inContentLanguage()->text() ) );
+				$result->addErrors( [ wfMessage( 'smw_db_sparqlqueryincomplete' )->inContentLanguage()->text() ] );
 			break;
 			default:
-				$result->addErrors( array( wfMessage( 'smw_db_sparqlqueryproblem' )->inContentLanguage()->text() ) );
+				$result->addErrors( [ wfMessage( 'smw_db_sparqlqueryproblem' )->inContentLanguage()->text() ] );
 			break;
 		}
 

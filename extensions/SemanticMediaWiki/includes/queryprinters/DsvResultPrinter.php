@@ -2,10 +2,8 @@
 
 namespace SMW;
 
-use SMWQueryResult;
-use SMWQueryProcessor;
-use SMWQuery;
 use Sanitizer;
+use SMWQueryResult;
 
 /**
  * Result printer to print results in UNIX-style DSV (deliminter separated value) format.
@@ -65,10 +63,6 @@ class DsvResultPrinter extends FileExportPrinter {
 		return $this->fileName;
 	}
 
-	public function getQueryMode( $context ) {
-		return $context == SMWQueryProcessor::SPECIAL_PAGE ? SMWQuery::MODE_INSTANCES : SMWQuery::MODE_NONE;
-	}
-
 	public function getName() {
 		return wfMessage( 'smw_printername_dsv' )->text();
 	}
@@ -92,10 +86,10 @@ class DsvResultPrinter extends FileExportPrinter {
 	 * @return string
 	 */
 	protected function getResultFileContents( SMWQueryResult $queryResult ) {
-		$lines = array();
+		$lines = [];
 
 		if ( $this->mShowHeaders ) {
-			$headerItems = array();
+			$headerItems = [];
 
 			foreach ( $queryResult->getPrintRequests() as $printRequest ) {
 				$headerItems[] = $printRequest->getLabel();
@@ -106,14 +100,14 @@ class DsvResultPrinter extends FileExportPrinter {
 
 		// Loop over the result objects (pages).
 		while ( $row = $queryResult->getNext() ) {
-			$rowItems = array();
+			$rowItems = [];
 
 			/**
 			 * Loop over their fields (properties).
 			 * @var SMWResultArray $field
 			 */
 			foreach ( $row as $field ) {
-				$itemSegments = array();
+				$itemSegments = [];
 
 				// Loop over all values for the property.
 				while ( ( $object = $field->getNextDataValue() ) !== false ) {
@@ -140,7 +134,7 @@ class DsvResultPrinter extends FileExportPrinter {
 	 * @return string
 	 */
 	protected function getDSVLine( array $fields ) {
-		return implode( $this->separator, array_map( array( $this, 'encodeDSV' ), $fields ) );
+		return implode( $this->separator, array_map( [ $this, 'encodeDSV' ], $fields ) );
 	}
 
 	/**
@@ -159,8 +153,8 @@ class DsvResultPrinter extends FileExportPrinter {
 		// \dnnn for the character with decimal value nnn
 		// \unnnn for a hexadecimal Unicode literal.
 		return str_replace(
-			array( '\n', '\r', '\t', '\b', '\f', '\\', $this->separator ),
-			array( "\n", "\r", "\t", "\b", "\f", '\\\\', "\\$this->separator" ),
+			[ '\n', '\r', '\t', '\b', '\f', '\\', $this->separator ],
+			[ "\n", "\r", "\t", "\b", "\f", '\\\\', "\\$this->separator" ],
 			$value
 		);
 	}
@@ -197,18 +191,18 @@ class DsvResultPrinter extends FileExportPrinter {
 
 		$params['limit']->setDefault( 100 );
 
-		$params[] = array(
+		$params[] = [
 			'name' => 'separator',
 			'message' => 'smw-paramdesc-dsv-separator',
 			'default' => $this->separator,
 			'aliases' => 'sep',
-		);
+		];
 
-		$params[] = array(
+		$params[] = [
 			'name' => 'filename',
 			'message' => 'smw-paramdesc-dsv-filename',
 			'default' => $this->fileName,
-		);
+		];
 
 		return $params;
 	}

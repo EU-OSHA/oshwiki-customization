@@ -2,9 +2,10 @@
 
 namespace SMW;
 
-use ParserHooks\HookDefinition;
-use ParserHooks\HookRegistrant;
+use Hooks;
+use SMW\Connection\ConnectionManager;
 use SMW\MediaWiki\Hooks\HookRegistry;
+use SMW\SQLStore\Installer;
 
 /**
  * Extension setup and registration
@@ -22,286 +23,419 @@ final class Setup {
 	private $applicationFactory;
 
 	/**
-	 * @var array
+	 * @since 1.9
+	 *
+	 * @param ApplicationFactory $applicationFactory
 	 */
-	private $globalVars;
+	public function __construct( ApplicationFactory $applicationFactory ) {
+		$this->applicationFactory = $applicationFactory;
+	}
 
 	/**
-	 * @var string
+	 * Runs at the earliest possible event to initialize functions or hooks that
+	 * are otherwise too late for the hook system to be recognized.
+	 *
+	 * @since 3.0
 	 */
-	private $directory;
+	public static function initExtension( &$vars ) {
+
+		/**
+		 * @see https://www.mediawiki.org/wiki/Localisation#Localising_namespaces_and_special_page_aliases
+		 */
+		$vars['wgMessagesDirs']['SemanticMediaWiki'] = $vars['smwgIP'] . 'i18n';
+		$vars['wgExtensionMessagesFiles']['SemanticMediaWikiAlias'] = $vars['smwgIP'] . 'i18n/extra/SemanticMediaWiki.alias.php';
+		$vars['wgExtensionMessagesFiles']['SemanticMediaWikiMagic'] = $vars['smwgIP'] . 'i18n/extra/SemanticMediaWiki.magic.php';
+
+		HookRegistry::initExtension( $vars );
+	}
+
+	/**
+	 * @see HookRegistry::initExtension
+	 */
+	public static function getAPIModules() {
+
+		if ( !ApplicationFactory::getInstance()->getSettings()->get( 'smwgSemanticsEnabled' ) ) {
+			return [];
+		}
+
+		return [
+			'smwinfo' => '\SMW\MediaWiki\Api\Info',
+			'smwtask' => '\SMW\MediaWiki\Api\Task',
+			'smwbrowse' => '\SMW\MediaWiki\Api\Browse',
+			'ask' => '\SMW\MediaWiki\Api\Ask',
+			'askargs' => '\SMW\MediaWiki\Api\AskArgs',
+			'browsebysubject' => '\SMW\MediaWiki\Api\BrowseBySubject',
+			'browsebyproperty' => '\SMW\MediaWiki\Api\BrowseByProperty'
+		];
+	}
+
+	/**
+	 * @see HookRegistry::initExtension
+	 */
+	public static function initSpecialPageList( array &$specialPages ) {
+
+		if ( !ApplicationFactory::getInstance()->getSettings()->get( 'smwgSemanticsEnabled' ) ) {
+			return;
+		}
+
+		$specials = [
+			'Ask' => [
+				'page' => 'SMW\MediaWiki\Specials\SpecialAsk'
+			],
+			'Browse' => [
+				'page' =>  'SMW\MediaWiki\Specials\SpecialBrowse'
+			],
+			'PageProperty' => [
+				'page' =>  'SMW\MediaWiki\Specials\SpecialPageProperty'
+			],
+			'SearchByProperty' => [
+				'page' => 'SMW\MediaWiki\Specials\SpecialSearchByProperty'
+			],
+			'ProcessingErrorList' => [
+				'page' => 'SMW\MediaWiki\Specials\SpecialProcessingErrorList'
+			],
+			'PropertyLabelSimilarity' => [
+				'page' => 'SMW\MediaWiki\Specials\SpecialPropertyLabelSimilarity'
+			],
+			'SMWAdmin' => [
+				'page' => 'SMW\MediaWiki\Specials\SpecialAdmin'
+			],
+			'Concepts' => [
+				'page' => 'SMW\SpecialConcepts'
+			],
+			'ExportRDF' => [
+				'page' => 'SMWSpecialOWLExport'
+			],
+			'Types' => [
+				'page' => 'SMWSpecialTypes'
+			],
+			'URIResolver' => [
+				'page' => 'SMW\MediaWiki\Specials\SpecialURIResolver'
+			],
+			'Properties' => [
+				'page' => 'SMW\SpecialProperties'
+			],
+			'UnusedProperties' => [
+				'page' => 'SMW\SpecialUnusedProperties'
+			],
+			'WantedProperties' => [
+				'page' => 'SMW\SpecialWantedProperties'
+			],
+			'DeferredRequestDispatcher' => [
+				'page' => 'SMW\MediaWiki\Specials\SpecialDeferredRequestDispatcher'
+			],
+		];
+
+		// Register data
+		foreach ( $specials as $special => $page ) {
+			$specialPages[$special] = $page['page'];
+		}
+	}
+
+	/**
+	 * @since 3.0
+	 */
+	public static function isEnabled() {
+		return defined( 'SMW_VERSION' ) && $GLOBALS['smwgSemanticsEnabled'];
+	}
+
+	/**
+	 * @since 3.0
+	 */
+	public static function isValid( $isCli = false ) {
+		return Installer::isGoodSchema( $isCli );
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @param array &$vars
+	 */
+	public function loadSchema( &$vars ) {
+		Installer::loadSchema( $vars );
+	}
 
 	/**
 	 * @since 1.9
 	 *
-	 * @param ApplicationFactory $applicationFactory
-	 * @param array &$globals
+	 * @param array &$vars
 	 * @param string $directory
 	 */
-	public function __construct( ApplicationFactory $applicationFactory, &$globals, $directory ) {
-		$this->applicationFactory = $applicationFactory;
-		$this->globalVars =& $globals;
-		$this->directory = $directory;
-	}
+	public function init( &$vars, $directory ) {
 
-	/**
-	 * @since 1.9
-	 */
-	public function run() {
-		$this->addSomeDefaultConfigurations();
-		$this->registerSettings();
+		$this->initMessageCallbackHandler();
 
-		$this->registerConnectionProviders();
-
-		$this->registerI18n();
-		$this->registerWebApi();
-		$this->registerJobClasses();
-		$this->registerSpecialPages();
-		$this->registerPermissions();
-		$this->registerParamDefinitions();
-		try {
-			$this->registerFooterIcon();
-		} catch (Exception $e)  {
-			xdebug_break();
-		}
-		$this->registerHooks();
-
-	}
-
-	private function addSomeDefaultConfigurations() {
-
-		$this->globalVars['smwgMasterStore'] = null;
-		$this->globalVars['smwgIQRunningNumber'] = 0;
-
-		if ( !isset( $this->globalVars['smwgNamespace'] ) ) {
-			$this->globalVars['smwgNamespace'] = parse_url( $this->globalVars['wgServer'], PHP_URL_HOST );
+		if ( $this->isValid() === false ) {
+			smwfAbort(
+				Message::get( [ 'smw-upgrade-error', $vars['smwgUpgradeKey'] ], Message::PARSE ) .
+				'<h3>' . Message::get( 'smw-upgrade-error-why-title' ) . '</h3>' .
+				Message::get( 'smw-upgrade-error-why-explain', Message::PARSE ) .
+				'<h3>' . Message::get( 'smw-upgrade-error-how-title' ) . '</h3>' .
+				Message::get( 'smw-upgrade-error-how-explain', Message::PARSE )
+			);
 		}
 
-		if ( !isset( $this->globalVars['smwgScriptPath'] ) ) {
-			$this->globalVars['smwgScriptPath'] = ( $this->globalVars['wgExtensionAssetsPath'] === false ? $this->globalVars['wgScriptPath'] . '/extensions' : $this->globalVars['wgExtensionAssetsPath'] ) . '/SemanticMediaWiki';
+		$this->addDefaultConfigurations( $vars );
+
+		if ( CompatibilityMode::extensionNotEnabled() ) {
+			CompatibilityMode::disableSemantics();
 		}
 
-		if ( is_file( $this->directory . "/res/Resources.php" ) ) {
-			$this->globalVars['wgResourceModules'] = array_merge( $this->globalVars['wgResourceModules'], include ( $this->directory . "/res/Resources.php" ) );
+		$this->initConnectionProviders( );
+
+		$this->registerJobClasses( $vars );
+		$this->registerPermissions( $vars );
+
+		$this->registerParamDefinitions( $vars );
+		$this->registerFooterIcon( $vars, $directory );
+		$this->registerHooks( $vars, $directory );
+
+		Hooks::run( 'SMW::Setup::AfterInitializationComplete', [ &$vars ] );
+	}
+
+	private function addDefaultConfigurations( &$vars ) {
+
+		$vars['wgLogTypes'][] = 'smw';
+		$vars['wgFilterLogTypes']['smw'] = true;
+
+		$vars['smwgMasterStore'] = null;
+		$vars['smwgIQRunningNumber'] = 0;
+
+		if ( !isset( $vars['smwgNamespace'] ) ) {
+			$vars['smwgNamespace'] = parse_url( $vars['wgServer'], PHP_URL_HOST );
+		}
+
+		foreach ( $vars['smwgResourceLoaderDefFiles'] as $key => $file ) {
+			if ( is_readable( $file ) ) {
+				$vars['wgResourceModules'] = array_merge( $vars['wgResourceModules'], include ( $file ) );
+			}
 		}
 	}
 
-	private function registerSettings() {
-		$this->applicationFactory->registerObject(
-			'Settings',
-			Settings::newFromGlobals( $this->globalVars )
-		);
-	}
-
-	private function registerConnectionProviders() {
+	private function initConnectionProviders() {
 
 		$mwCollaboratorFactory = $this->applicationFactory->newMwCollaboratorFactory();
-
-		$connectionManager = new ConnectionManager();
+		$connectionManager = $this->applicationFactory->getConnectionManager();
 
 		$connectionManager->registerConnectionProvider(
 			DB_MASTER,
-			$mwCollaboratorFactory->newLazyDBConnectionProvider( DB_MASTER )
+			$mwCollaboratorFactory->newLoadBalancerConnectionProvider( DB_MASTER )
 		);
 
 		$connectionManager->registerConnectionProvider(
 			DB_SLAVE,
-			$mwCollaboratorFactory->newLazyDBConnectionProvider( DB_SLAVE )
+			$mwCollaboratorFactory->newLoadBalancerConnectionProvider( DB_SLAVE )
 		);
 
 		$connectionManager->registerConnectionProvider(
 			'mw.db',
-			$mwCollaboratorFactory->newMediaWikiDatabaseConnectionProvider()
+			$mwCollaboratorFactory->newConnectionProvider( 'mw.db' )
+		);
+
+		// Connection can be used to redirect queries to another DB cluster
+		$connectionManager->registerConnectionProvider(
+			'mw.db.queryengine',
+			$mwCollaboratorFactory->newConnectionProvider( 'mw.db.queryengine' )
+		);
+
+		$connectionManager->registerConnectionProvider(
+			'elastic',
+			$this->applicationFactory->singleton( 'ElasticFactory' )->newConnectionProvider()
 		);
 	}
 
-	/**
-	 * @see https://www.mediawiki.org/wiki/Manual:$wgExtensionMessagesFiles
-	 */
-	private function registerI18n() {
+	private function initMessageCallbackHandler() {
 
-		$smwgIP = $this->applicationFactory->getSettings()->get( 'smwgIP' );
+		Message::registerCallbackHandler( Message::TEXT, function( $arguments, $language ) {
 
-		$this->globalVars['wgMessagesDirs']['SemanticMediaWiki'] = $smwgIP . 'i18n';
-		$this->globalVars['wgExtensionMessagesFiles']['SemanticMediaWiki'] = $smwgIP . 'languages/SMW_Messages.php';
-		$this->globalVars['wgExtensionMessagesFiles']['SemanticMediaWikiAlias'] = $smwgIP . 'languages/SMW_Aliases.php';
-		$this->globalVars['wgExtensionMessagesFiles']['SemanticMediaWikiMagic'] = $smwgIP . 'languages/SMW_Magic.php';
-		$this->globalVars['wgExtensionMessagesFiles']['SemanticMediaWikiNamespaces'] = $smwgIP . 'languages/SemanticMediaWiki.namespaces.php';
-	}
+			if ( $language === Message::CONTENT_LANGUAGE ) {
+				$language = Localizer::getInstance()->getContentLanguage();
+			}
 
-	/**
-	 * @see https://www.mediawiki.org/wiki/Manual:$wgAPIModules
-	 */
-	private function registerWebApi() {
-		$this->globalVars['wgAPIModules']['smwinfo'] = '\SMW\MediaWiki\Api\Info';
-		$this->globalVars['wgAPIModules']['ask']	 = '\SMW\MediaWiki\Api\Ask';
-		$this->globalVars['wgAPIModules']['askargs'] = '\SMW\MediaWiki\Api\AskArgs';
-		$this->globalVars['wgAPIModules']['browsebysubject']  = '\SMW\MediaWiki\Api\BrowseBySubject';
+			if ( $language === Message::USER_LANGUAGE ) {
+				$language = Localizer::getInstance()->getUserLanguage();
+			}
+
+			return call_user_func_array( 'wfMessage', $arguments )->inLanguage( $language )->text();
+		} );
+
+		Message::registerCallbackHandler( Message::ESCAPED, function( $arguments, $language ) {
+
+			if ( $language === Message::CONTENT_LANGUAGE ) {
+				$language = Localizer::getInstance()->getContentLanguage();
+			}
+
+			if ( $language === Message::USER_LANGUAGE ) {
+				$language = Localizer::getInstance()->getUserLanguage();
+			}
+
+			return call_user_func_array( 'wfMessage', $arguments )->inLanguage( $language )->escaped();
+		} );
+
+		Message::registerCallbackHandler( Message::PARSE, function( $arguments, $language ) {
+
+			if ( $language === Message::CONTENT_LANGUAGE ) {
+				$language = Localizer::getInstance()->getContentLanguage();
+			}
+
+			if ( $language === Message::USER_LANGUAGE ) {
+				$language = Localizer::getInstance()->getUserLanguage();
+			}
+
+			$message = call_user_func_array( 'wfMessage', $arguments )->inLanguage( $language );
+
+			// 1.27+
+			// [GlobalTitleFail] MessageCache::parse called by ...
+			// Message::parseText/MessageCache::parse with no title set.
+			//
+			// Message::setInterfaceMessageFlag "... used to restore the flag
+			// after setting a language"
+			return $message->setInterfaceMessageFlag( true )->title( $GLOBALS['wgTitle'] )->parse();
+		} );
 	}
 
 	/**
 	 * @see https://www.mediawiki.org/wiki/Manual:$wgJobClasses
 	 */
-	private function registerJobClasses() {
-		$this->globalVars['wgJobClasses']['SMW\UpdateJob']	= 'SMW\MediaWiki\Jobs\UpdateJob';
-		$this->globalVars['wgJobClasses']['SMW\RefreshJob'] = 'SMW\MediaWiki\Jobs\RefreshJob';
-		$this->globalVars['wgJobClasses']['SMW\UpdateDispatcherJob'] = 'SMW\MediaWiki\Jobs\UpdateDispatcherJob';
-		$this->globalVars['wgJobClasses']['SMW\DeleteSubjectJob'] = 'SMW\MediaWiki\Jobs\DeleteSubjectJob';
-		$this->globalVars['wgJobClasses']['SMW\ParserCachePurgeJob'] = 'SMW\MediaWiki\Jobs\ParserCachePurgeJob';
+	private function registerJobClasses( &$vars ) {
 
-		// Legacy definition to be removed with 1.10
-		$this->globalVars['wgJobClasses']['SMWUpdateJob']  = 'SMW\MediaWiki\Jobs\UpdateJob';
-		$this->globalVars['wgJobClasses']['SMWRefreshJob'] = 'SMW\MediaWiki\Jobs\RefreshJob';
+		$jobClasses = [
+
+			'smw.update' => 'SMW\MediaWiki\Jobs\UpdateJob',
+			'smw.refresh' => 'SMW\MediaWiki\Jobs\RefreshJob',
+			'smw.updateDispatcher' => 'SMW\MediaWiki\Jobs\UpdateDispatcherJob',
+			'smw.parserCachePurge' => 'SMW\MediaWiki\Jobs\ParserCachePurgeJob',
+			'smw.fulltextSearchTableUpdate' => 'SMW\MediaWiki\Jobs\FulltextSearchTableUpdateJob',
+			'smw.entityIdDisposer' => 'SMW\MediaWiki\Jobs\EntityIdDisposerJob',
+			'smw.propertyStatisticsRebuild' => 'SMW\MediaWiki\Jobs\PropertyStatisticsRebuildJob',
+			'smw.fulltextSearchTableRebuild' => 'SMW\MediaWiki\Jobs\FulltextSearchTableRebuildJob',
+			'smw.changePropagationDispatch' => 'SMW\MediaWiki\Jobs\ChangePropagationDispatchJob',
+			'smw.changePropagationUpdate' => 'SMW\MediaWiki\Jobs\ChangePropagationUpdateJob',
+			'smw.changePropagationClassUpdate' => 'SMW\MediaWiki\Jobs\ChangePropagationClassUpdateJob',
+			'smw.elasticIndexerRecovery' => 'SMW\Elastic\Indexer\IndexerRecoveryJob',
+			'smw.elasticFileIngest' => 'SMW\Elastic\Indexer\FileIngestJob',
+
+			// Legacy 3.0-
+			'SMW\UpdateJob' => 'SMW\MediaWiki\Jobs\UpdateJob',
+			'SMW\RefreshJob' => 'SMW\MediaWiki\Jobs\RefreshJob',
+			'SMW\UpdateDispatcherJob' => 'SMW\MediaWiki\Jobs\UpdateDispatcherJob',
+			'SMW\ParserCachePurgeJob' => 'SMW\MediaWiki\Jobs\ParserCachePurgeJob',
+			'SMW\FulltextSearchTableUpdateJob' => 'SMW\MediaWiki\Jobs\FulltextSearchTableUpdateJob',
+			'SMW\EntityIdDisposerJob' => 'SMW\MediaWiki\Jobs\EntityIdDisposerJob',
+			'SMW\PropertyStatisticsRebuildJob' => 'SMW\MediaWiki\Jobs\PropertyStatisticsRebuildJob',
+			'SMW\FulltextSearchTableRebuildJob' => 'SMW\MediaWiki\Jobs\FulltextSearchTableRebuildJob',
+			'SMW\ChangePropagationDispatchJob' => 'SMW\MediaWiki\Jobs\ChangePropagationDispatchJob',
+			'SMW\ChangePropagationUpdateJob' => 'SMW\MediaWiki\Jobs\ChangePropagationUpdateJob',
+			'SMW\ChangePropagationClassUpdateJob' => 'SMW\MediaWiki\Jobs\ChangePropagationClassUpdateJob',
+
+			// Legacy 2.0-
+			'SMWUpdateJob'  => 'SMW\MediaWiki\Jobs\UpdateJob',
+			'SMWRefreshJob' => 'SMW\MediaWiki\Jobs\RefreshJob'
+		];
+
+		foreach ( $jobClasses as $job => $class ) {
+			$vars['wgJobClasses'][$job] = $class;
+		}
 	}
 
 	/**
 	 * @see https://www.mediawiki.org/wiki/Manual:$wgAvailableRights
 	 * @see https://www.mediawiki.org/wiki/Manual:$wgGroupPermissions
 	 */
-	private function registerPermissions() {
+	private function registerPermissions( &$vars ) {
 
-		// Rights
-		$this->globalVars['wgAvailableRights'][] = 'smw-admin';
-
-		// User group rights
-		if ( !isset( $this->globalVars['wgGroupPermissions']['sysop']['smw-admin'] ) ) {
-			$this->globalVars['wgGroupPermissions']['sysop']['smw-admin'] = true;
+		if ( !$this->applicationFactory->getSettings()->get( 'smwgSemanticsEnabled' ) ) {
+			return;
 		}
 
-		if ( !isset( $this->globalVars['wgGroupPermissions']['smwadministrator']['smw-admin'] ) ) {
-			$this->globalVars['wgGroupPermissions']['smwadministrator']['smw-admin'] = true;
-		}
-	}
+		$rights = [
+			'smw-admin' => [
+				'sysop',
+				'smwadministrator'
+			],
+			'smw-patternedit' => [
+				'smwcurator'
+			],
+			'smw-schemaedit' => [
+				'smwcurator'
+			],
+			'smw-pageedit' => [
+				'smwcurator'
+			],
+		//	'smw-watchlist' => [
+		//		'smwcurator'
+		//	],
+		];
 
-	/**
-	 * @see https://www.mediawiki.org/wiki/Manual:$wgSpecialPages
-	 */
-	private function registerSpecialPages() {
+		foreach ( $rights as $right => $roles ) {
 
-		$specials = array(
-			'Ask' => array(
-				'page' => 'SMWAskPage',
-				'group' => 'smw_group'
-			),
-			'Browse' => array(
-				'page' =>  'SMWSpecialBrowse',
-				'group' => 'smw_group'
-			),
-			'PageProperty' => array(
-				'page' =>  'SMWPageProperty',
-				'group' => 'smw_group'
-			),
-			'SearchByProperty' => array(
-				'page' => 'SMW\MediaWiki\Specials\SpecialSearchByProperty',
-				'group' => 'smw_group'
-			),
-			'SMWAdmin' => array(
-				'page' => 'SMWAdmin',
-				'group' => 'smw_group'
-			),
-			'SemanticStatistics' => array(
-				'page' => 'SMW\SpecialSemanticStatistics',
-				'group' => 'wiki'
-			),
-			'Concepts' => array(
-				'page' => 'SMW\SpecialConcepts',
-				'group' => 'pages'
-			),
-			'ExportRDF' => array(
-				'page' => 'SMWSpecialOWLExport',
-				'group' => 'smw_group'
-			),
-			'Types' => array(
-				'page' => 'SMWSpecialTypes',
-				'group' => 'pages'
-			),
-			'URIResolver' => array(
-				'page' => 'SMWURIResolver'
-			),
-			'Properties' => array(
-				'page' => 'SMW\SpecialProperties',
-				'group' => 'pages'
-			),
-			'UnusedProperties' => array(
-				'page' => 'SMW\SpecialUnusedProperties',
-				'group' => 'maintenance'
-			),
-			'WantedProperties' => array(
-				'page' => 'SMW\SpecialWantedProperties',
-				'group' => 'maintenance'
-			),
-			'DeferredRequestDispatcher' => array(
-				'page' => 'SMW\MediaWiki\Specials\SpecialDeferredRequestDispatcher',
-				'group' => 'maintenance'
-			),
-		);
+			// Rights
+			$vars['wgAvailableRights'][] = $right;
 
-		// Register data
-		foreach ( $specials as $special => $page ) {
-			$this->globalVars['wgSpecialPages'][$special] = $page['page'];
-
-			if ( isset( $page['group'] ) ) {
-				$this->globalVars['wgSpecialPageGroups'][$special] = $page['group'];
+			// User group rights
+			foreach ( $roles as $role ) {
+				if ( !isset( $vars['wgGroupPermissions'][$role][$right] ) ) {
+					$vars['wgGroupPermissions'][$role][$right] = true;
+				}
 			}
 		}
+
+		// Add an additional protection level restricting edit/move/etc
+		if ( ( $editProtectionRight = $this->applicationFactory->getSettings()->get( 'smwgEditProtectionRight' ) ) !== false ) {
+			$vars['wgRestrictionLevels'][] = $editProtectionRight;
+		}
 	}
 
-	private function registerParamDefinitions() {
-		$this->globalVars['wgParamDefinitions']['smwformat'] = array(
+	private function registerParamDefinitions( &$vars ) {
+		$vars['wgParamDefinitions']['smwformat'] = [
 			'definition'=> 'SMWParamFormat',
-		);
+		];
 	}
 
 	/**
 	 * @see https://www.mediawiki.org/wiki/Manual:$wgFooterIcons
 	 */
-	private function registerFooterIcon() {
+	private function registerFooterIcon( &$vars, $path ) {
 
-		if( isset( $this->globalVars['wgFooterIcons']['poweredby']['semanticmediawiki'] ) ) {
+		if ( !$this->applicationFactory->getSettings()->get( 'smwgSemanticsEnabled' ) ) {
 			return;
 		}
 
-		$pathParts = ( explode( '/extensions/', str_replace( DIRECTORY_SEPARATOR, '/', __DIR__), 2 ) );
+		if( isset( $vars['wgFooterIcons']['poweredby']['semanticmediawiki'] ) ) {
+			return;
+		}
 
-		$this->globalVars['wgFooterIcons']['poweredby']['semanticmediawiki'] = array(
-			'src' => $this->globalVars['wgScriptPath'] . '/extensions/'
-				. end( $pathParts )
-				. '/../res/images/smw_button.png',
+		$src = '';
+
+		if ( is_file( $path . '/res/DataURI.php' ) && ( $dataURI = include $path . '/res/DataURI.php' ) !== [] ) {
+			$src = $dataURI['footer'];
+		}
+
+		$vars['wgFooterIcons']['poweredby']['semanticmediawiki'] = [
+			'src' => $src,
 			'url' => 'https://www.semantic-mediawiki.org/wiki/Semantic_MediaWiki',
-			'alt' => 'Powered by Semantic MediaWiki',
-		);
+			'alt' => 'Powered by Semantic MediaWiki'
+		];
 	}
 
 	/**
-	 * @see https://www.mediawiki.org/wiki/Manual:$this->globalVars['wgHooks']
+	 * @see https://www.mediawiki.org/wiki/Manual:$wgHooks
 	 *
-	 * @note $this->globalVars['wgHooks'] contains a list of hooks which specifies for every event an
+	 * @note $wgHooks contains a list of hooks which specifies for every event an
 	 * array of functions to be called.
 	 */
-	private function registerHooks() {
+	private function registerHooks( &$vars, $directory ) {
 
-		$hookRegistry = new HookRegistry( $this->globalVars, $this->directory );
+		$hookRegistry = new HookRegistry( $vars, $directory );
 		$hookRegistry->register();
 
+		if ( !$this->applicationFactory->getSettings()->get( 'smwgSemanticsEnabled' ) ) {
+			return;
+		}
+
 		// Old-style registration
-		$this->globalVars['wgHooks']['AdminLinks'][] = 'SMWHooks::addToAdminLinks';
-		$this->globalVars['wgHooks']['PageSchemasRegisterHandlers'][] = 'SMWHooks::onPageSchemasRegistration';
-
-		$this->globalVars['wgHooks']['ParserFirstCallInit'][] = function( \Parser &$parser ) {
-			$hookRegistrant = new HookRegistrant( $parser );
-
-			$infoFunctionDefinition = InfoParserFunction::getHookDefinition();
-			$infoFunctionHandler = new InfoParserFunction();
-			$hookRegistrant->registerFunctionHandler( $infoFunctionDefinition, $infoFunctionHandler );
-			$hookRegistrant->registerHookHandler( $infoFunctionDefinition, $infoFunctionHandler );
-
-			$docsFunctionDefinition = DocumentationParserFunction::getHookDefinition();
-			$docsFunctionHandler = new DocumentationParserFunction();
-			$hookRegistrant->registerFunctionHandler( $docsFunctionDefinition, $docsFunctionHandler );
-			$hookRegistrant->registerHookHandler( $docsFunctionDefinition, $docsFunctionHandler );
-
-			return true;
-		};
+		$vars['wgHooks']['AdminLinks'][] = 'SMWExternalHooks::addToAdminLinks';
+		$vars['wgHooks']['PageSchemasRegisterHandlers'][] = 'SMWExternalHooks::onPageSchemasRegistration';
 	}
 
 }

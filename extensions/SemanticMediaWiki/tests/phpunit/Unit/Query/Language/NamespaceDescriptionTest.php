@@ -2,11 +2,9 @@
 
 namespace SMW\Tests\Query\Language;
 
+use SMW\Localizer;
 use SMW\Query\Language\NamespaceDescription;
 use SMW\Query\Language\ThingDescription;
-
-use SMW\DIWikiPage;
-use SMW\Localizer;
 
 /**
  * @covers \SMW\Query\Language\NamespaceDescription
@@ -47,7 +45,7 @@ class NamespaceDescriptionTest extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals( " <q>[[:+]]</q> ", $instance->getQueryString( true ) );
 
 		$this->assertEquals( false, $instance->isSingleton() );
-		$this->assertEquals( array(), $instance->getPrintRequests() );
+		$this->assertEquals( [], $instance->getPrintRequests() );
 
 		$this->assertEquals( 1, $instance->getSize() );
 		$this->assertEquals( 0, $instance->getDepth() );
@@ -78,7 +76,7 @@ class NamespaceDescriptionTest extends \PHPUnit_Framework_TestCase {
 
 		$maxsize  = 1;
 		$maxDepth = 1;
-		$log      = array();
+		$log      = [];
 
 		$this->assertEquals(
 			$instance,
@@ -87,7 +85,7 @@ class NamespaceDescriptionTest extends \PHPUnit_Framework_TestCase {
 
 		$maxsize  = 0;
 		$maxDepth = 1;
-		$log      = array();
+		$log      = [];
 
 		$this->assertEquals(
 			new ThingDescription(),

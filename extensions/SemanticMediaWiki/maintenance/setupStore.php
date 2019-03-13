@@ -4,6 +4,11 @@ namespace SMW\Maintenance;
 
 use SMW\Store;
 use SMW\StoreFactory;
+use Onoi\MessageReporter\MessageReporterFactory;
+use Onoi\MessageReporter\MessageReporter;
+use SMW\ApplicationFactory;
+use SMW\SQLStore\Installer;
+use SMW\Setup;
 
 $basePath = getenv( 'MW_INSTALL_PATH' ) !== false ? getenv( 'MW_INSTALL_PATH' ) : __DIR__ . '/../../..';
 
@@ -12,11 +17,11 @@ require_once $basePath . '/maintenance/Maintenance.php';
 /**
  * Sets up the storage backend currently selected in LocalSettings.php
  * (or the default MySQL store if no other store was selected). This
- * is equivalent to clicking the respective button on the page
+ * is equivalent to clicking the respective button on the special page
  * Special:SMWAdmin. However, the latter may timeout if the setup involves
  * migrating a lot of existing data.
  *
- * Note: if SMW is not installed in its standard path under ./extensions
+ * Note: If SMW is not installed in its standard path under ./extensions
  *       then the MW_INSTALL_PATH environment variable must be set.
  *       See README in the maintenance directory.
  *
@@ -31,13 +36,17 @@ require_once $basePath . '/maintenance/Maintenance.php';
  *
  * --delete   Delete all SMW data, uninstall the selected storage backend. This is useful
  *            when moving to a new storage engine, and in the rare case of unsinstalling
- *            SMW. Deleted data can be recreated using this script (setup) and
- *            SMW_refreshData.php but this may take some time.
+ *            SMW. Deleted data can be recreated using this script (setup) followed by the
+ *            use of the rebuildhData.php script which may take some time.
  *
- * --backend  The backend to use. For instance SMWSQLStore3 or SMWSQLStore2.
+ * --backend  The backend to use, e.g. SMWSQLStore3.
  *
- * --nochecks When specied, no prompts are provided. Deletion will thus happen
- *            without the need to provide any confomration.
+ * --skip-optimize Skips the table optimization process.
+ *
+ * --skip-import Skips the import process.
+ *
+ * --nochecks When specified, no prompts are provided. Deletion will thus happen
+ *            without the need to provide any confirmation.
  *
  * @author Markus Krötzsch
  * @author Jeroen De Dauw < jeroendedauw@gmail.com >
@@ -53,16 +62,32 @@ class SetupStore extends \Maintenance {
 	protected $originalStore;
 
 	/**
+	 * @var MessageReporter
+	 */
+	protected $messageReporter;
+
+	/**
 	 * @since 2.0
 	 */
 	public function __construct() {
 		parent::__construct();
+	}
+
+	/**
+	 * @see Maintenance::addDefaultParams
+	 *
+	 * @since 2.0
+	 */
+	protected function addDefaultParams() {
+		parent::addDefaultParams();
 
 		$this->mDescription = 'Sets up the SMW storage backend currently selected in LocalSettings.php.';
 
 		$this->addOption( 'backend', 'Execute the operation for the storage backend of the given name.', false, true, 'b' );
 
 		$this->addOption( 'delete', 'Delete all SMW data, uninstall the selected storage backend.' );
+		$this->addOption( 'skip-optimize', 'Skipping the table optimization process (not recommended).', false );
+		$this->addOption( 'skip-import', 'Skipping the import process.', false );
 
 		$this->addOption(
 			'nochecks',
@@ -71,25 +96,87 @@ class SetupStore extends \Maintenance {
 	}
 
 	/**
+	 * @since 3.0
+	 *
+	 * @param MessageReporter $messageReporter
+	 */
+	public function setMessageReporter( MessageReporter $messageReporter ) {
+		$this->messageReporter = $messageReporter;
+	}
+
+	/**
+	 * @see Maintenance::getDbType
+	 *
+	 * @since 3.0
+	 */
+	public function getDbType() {
+		return \Maintenance::DB_ADMIN;
+	}
+
+	/**
+	 * @since 3.0
+	 */
+	public function getConnection() {
+		return $this->getDB( DB_MASTER );
+	}
+
+	/**
+	 * @see Maintenance::execute
+	 *
 	 * @since 2.0
 	 */
 	public function execute() {
-		// TODO It would be good if this script would work with SMW not being enable (yet).
-		// Then one could setup the store without first enabling SMW (which will break the wiki until the store is setup).
-		if ( !defined( 'SMW_VERSION' ) ) {
-			$this->output( "You need to have SMW enabled in order to use this maintenance script!\n\n" );
+
+		if ( !Setup::isEnabled() ) {
+			$this->reportMessage( "\nYou need to have SMW enabled in order to run the maintenance script!\n" );
 			exit;
 		}
 
-		$this->loadGlobalFunctions();
+		StoreFactory::clear();
 
+		$this->loadGlobalFunctions();
 		$store = $this->getStore();
+
+		$connectionManager = ApplicationFactory::getInstance()->getConnectionManager();
+
+		// #2963 Use the Maintenance DB connection instead and the DB_ADMIN request
+		// to allow to use the admin user/pass, if set
+		$connectionManager->registerCallbackConnection( DB_MASTER, [ $this, 'getConnection' ] );
+
+		$store->setConnectionManager(
+			$connectionManager
+		);
+
+		$store->setMessageReporter(
+			$this->getMessageReporter()
+		);
+
+		$store->setOption( Installer::OPT_TABLE_OPTIMIZE, !$this->hasOption( 'skip-optimize' ) );
+		$store->setOption( Installer::OPT_IMPORT, !$this->hasOption( 'skip-import' ) );
+		$store->setOption( Installer::OPT_SUPPLEMENT_JOBS, true );
 
 		if ( $this->hasOption( 'delete' ) ) {
 			$this->dropStore( $store );
 		} else {
-			Store::setupStore( !$this->isQuiet() );
+			$store->setup();
 		}
+
+		// Avoid holding a reference
+		StoreFactory::clear();
+	}
+
+	protected function getMessageReporter() {
+
+		$messageReporterFactory = MessageReporterFactory::getInstance();
+
+		if ( $this->messageReporter === null && $this->getOption( 'quiet' ) ) {
+			$this->messageReporter = $messageReporterFactory->newNullMessageReporter();
+		} elseif( $this->messageReporter === null ) {
+			$this->messageReporter = $messageReporterFactory->newObservableMessageReporter();
+			$this->messageReporter->registerReporterCallback( [ $this, 'reportMessage' ] );
+		}
+
+		return $this->messageReporter;
 	}
 
 	protected function loadGlobalFunctions() {
@@ -99,7 +186,7 @@ class SetupStore extends \Maintenance {
 			$smwgIP = dirname( __FILE__ ) . '/../';
 		}
 
-		require_once ( $smwgIP . 'includes/GlobalFunctions.php' );
+		require_once ( $smwgIP . 'src/GlobalFunctions.php' );
 	}
 
 	protected function getStore() {
@@ -114,9 +201,7 @@ class SetupStore extends \Maintenance {
 			$this->error( "\nError: There is no backend class \"$storeClass\". Aborting.", 1 );
 		}
 
-		$this->output( "\nSelected storage \"$smwgDefaultStore\" for update!\n\n" );
-
-		return StoreFactory::getStore();
+		return StoreFactory::getStore( $storeClass );
 	}
 
 	protected function dropStore( Store $store ) {
@@ -130,16 +215,13 @@ class SetupStore extends \Maintenance {
 
 		$store->drop( !$this->isQuiet() );
 
-		// TODO: this hook should be run on all calls to SMWStore::drop
-		wfRunHooks( 'smwDropTables' );
-
 		// be sure to have some buffer, otherwise some PHPs complain
 		while ( ob_get_level() > 0 ) {
 			ob_end_flush();
 		}
 
-		$this->output( "\nAll storage structures for $storeName have been deleted." );
-		$this->output( "You can recreate them with this script, and then use SMW_refreshData.php to rebuild their contents.\n\n");
+		$this->output( "\nYou can recreate them with this script followed by the use\n");
+		$this->output( "of the rebuildData.php script to rebuild their contents.\n");
 	}
 
 	/**
@@ -166,6 +248,15 @@ class SetupStore extends \Maintenance {
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @param string $message
+	 */
+	public function reportMessage( $message ) {
+		$this->output( $message );
 	}
 
 }

@@ -2,14 +2,13 @@
 
 namespace SMW\Tests\Integration\Query;
 
-use SMW\DIWikiPage;
 use SMW\ApplicationFactory;
-
-use SMWQuery as Query;
-use SMW\Query\Language\ValueDescription;
+use SMW\DIWikiPage;
 use SMW\Query\Language\Conjunction;
 use SMW\Query\Language\Disjunction;
 use SMW\Query\Language\NamespaceDescription;
+use SMW\Query\Language\ValueDescription;
+use SMWQuery as Query;
 
 /**
  * @group SMW
@@ -44,10 +43,10 @@ class NullQueryResultTest extends \PHPUnit_Framework_TestCase {
 		$namespacesDisjunction = new Disjunction(
 			array_map( function ( $ns ) {
 				return new NamespaceDescription( $ns );
-			}, array( NS_MAIN ) )
+			}, [ NS_MAIN ] )
 		);
 
-		$description = new Conjunction( array( $description, $namespacesDisjunction ) );
+		$description = new Conjunction( [ $description, $namespacesDisjunction ] );
 
 		$query->setDescription( $description );
 

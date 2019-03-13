@@ -2,25 +2,19 @@
 
 namespace SMW\Tests\Integration\Query;
 
+use SMW\DataValueFactory;
+use SMW\DIProperty;
+use SMW\DIWikiPage;
+use SMW\Query\Language\SomeProperty;
+use SMW\Query\Language\ThingDescription;
+use SMW\Query\PrintRequest as PrintRequest;
+use SMW\Subobject;
 use SMW\Tests\MwDBaseUnitTestCase;
 use SMW\Tests\Utils\UtilityFactory;
-
-use SMW\Query\Language\ThingDescription;
-use SMW\Query\Language\SomeProperty;
-
-use SMW\DIWikiPage;
-use SMW\DIProperty;
-use SMW\DataValueFactory;
-use SMW\Subobject;
-
 use SMWDIBlob as DIBlob;
 use SMWDINumber as DINumber;
-use SMWQuery as Query;
-use SMWQueryResult as QueryResult;
-use SMWDataValue as DataValue;
-use SMWDataItem as DataItem;
-use SMW\Query\PrintRequest as PrintRequest;
 use SMWPropertyValue as PropertyValue;
+use SMWQuery as Query;
 
 /**
  * @group SMW
@@ -39,7 +33,7 @@ use SMWPropertyValue as PropertyValue;
  */
 class SpecialCharactersQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 
-	private $subjectsToBeCleared = array();
+	private $subjectsToBeCleared = [];
 	private $semanticDataFactory;
 
 	private $dataValueFactory;
@@ -72,7 +66,7 @@ class SpecialCharactersQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 	 */
 	public function testSpecialCharactersInQuery( $subject, $subobjectId, $property, $dataItem ) {
 
-		$dataValue = $this->dataValueFactory->newDataItemValue(
+		$dataValue = $this->dataValueFactory->newDataValueByItem(
 			$dataItem,
 			$property
 		);
@@ -109,9 +103,9 @@ class SpecialCharactersQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 		$query->querymode = Query::MODE_INSTANCES;
 
 		$this->queryResultValidator->assertThatQueryResultHasSubjects(
-			array(
+			[
 				$semanticData->getSubject(),
-				$subobject->getSubject() ),
+				$subobject->getSubject() ],
 			$this->getStore()->getQueryResult( $query )
 		);
 
@@ -120,49 +114,49 @@ class SpecialCharactersQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 			$this->getStore()->getQueryResult( $query )
 		);
 
-		$this->subjectsToBeCleared = array(
+		$this->subjectsToBeCleared = [
 			$semanticData->getSubject(),
 			$subobject->getSubject(),
 			$property->getDIWikiPage()
-		);
+		];
 	}
 
 	public function specialCharactersNameProvider() {
 
-		$provider[] = array(
+		$provider[] = [
 			'特殊文字',
 			'Nuñez',
 			DIProperty::newFromUserLabel( '特殊文字' )->setPropertyTypeId( '_txt' ),
 			new DIBlob( 'Nuñez' )
-		);
+		];
 
-		$provider[] = array(
+		$provider[] = [
 			'特殊字符',
 			'^[0-9]*$',
 			DIProperty::newFromUserLabel( '特殊字符' )->setPropertyTypeId( '_txt' ),
 			new DIBlob( '^[0-9]*$' )
-		);
+		];
 
-		$provider[] = array(
+		$provider[] = [
 			'Caractères spéciaux',
-			'Caractères spéciaux',
+			'Caractères_spéciaux',
 			DIProperty::newFromUserLabel( 'Caractères spéciaux' )->setPropertyTypeId( '_wpg' ),
 			new DIWikiPage( 'âêîôûëïçé', NS_MAIN )
-		);
+		];
 
-		$provider[] = array(
+		$provider[] = [
 			'áéíóúñÑü¡¿',
 			'áéíóúñÑü¡¿',
 			DIProperty::newFromUserLabel( 'áéíóúñÑü¡¿' )->setPropertyTypeId( '_num' ),
 			new DINumber( 8888 )
-		);
+		];
 
-		$provider[] = array(
+		$provider[] = [
 			'Foo',
 			'{({[[&,,;-]]})}',
 			DIProperty::newFromUserLabel( '{({[[&,,;-]]})}' )->setPropertyTypeId( '_wpg' ),
 			new DIWikiPage( '{({[[&,,;-]]})}', NS_MAIN )
-		);
+		];
 
 		return $provider;
 	}

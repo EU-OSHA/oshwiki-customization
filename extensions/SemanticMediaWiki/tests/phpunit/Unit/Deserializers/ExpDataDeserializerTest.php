@@ -3,12 +3,12 @@
 namespace SMW\Tests\Deserializers;
 
 use SMW\Deserializers\ExpDataDeserializer;
-use SMW\Serializers\ExpDataSerializer;
-use SMW\Exporter\Element\ExpResource;
-use SMW\Exporter\Element\ExpNsResource;
 use SMW\Exporter\Element\ExpLiteral;
-use SMWExpData as ExpData;
+use SMW\Exporter\Element\ExpNsResource;
+use SMW\Serializers\ExpDataSerializer;
 use SMWDIBlob as DIBlob;
+use SMWExpData as ExpData;
+use SMW\Tests\PHPUnitCompat;
 
 /**
  * @covers \SMW\Deserializers\ExpDataDeserializer
@@ -20,6 +20,8 @@ use SMWDIBlob as DIBlob;
  * @author mwjames
  */
 class ExpDataDeserializerTest extends \PHPUnit_Framework_TestCase {
+
+	use PHPUnitCompat;
 
 	public function testCanConstructor() {
 
@@ -42,7 +44,7 @@ class ExpDataDeserializerTest extends \PHPUnit_Framework_TestCase {
 		$instance = new ExpDataDeserializer();
 
 		$this->setExpectedException( 'OutOfBoundsException' );
-		$instance->deserialize( array( 'version' => 0.2 ) );
+		$instance->deserialize( [ 'version' => 0.2 ] );
 	}
 
 	/**
@@ -80,10 +82,10 @@ class ExpDataDeserializerTest extends \PHPUnit_Framework_TestCase {
 			new ExpNsResource( 'Foo', 'Bar', 'Mo', null )
 		);
 
-		$provider[] = array(
+		$provider[] = [
 			$serializier->serialize( $expData ),
 			$expData
-		);
+		];
 
 		#1
 		$expData = new ExpData(
@@ -95,10 +97,10 @@ class ExpDataDeserializerTest extends \PHPUnit_Framework_TestCase {
 			new ExpLiteral( 'Foo', 'Bar' )
 		);
 
-		$provider[] = array(
+		$provider[] = [
 			$serializier->serialize( $expData ),
 			$expData
-		);
+		];
 
 		#2 Nested
 		$expData = new ExpData(
@@ -115,10 +117,10 @@ class ExpDataDeserializerTest extends \PHPUnit_Framework_TestCase {
 			new ExpData( new ExpNsResource( 'Foo', 'Bar', 'Mo', new DIBlob( 'SomeOtherText' ) ) )
 		);
 
-		$provider[] = array(
+		$provider[] = [
 			$serializier->serialize( $expData ),
 			$expData
-		);
+		];
 
 		#2 Nested level 2+3
 
@@ -150,10 +152,10 @@ class ExpDataDeserializerTest extends \PHPUnit_Framework_TestCase {
 			$expDataLevel2
 		);
 
-		$provider[] = array(
+		$provider[] = [
 			$serializier->serialize( $expData ),
 			$expData
-		);
+		];
 
 		return $provider;
 	}

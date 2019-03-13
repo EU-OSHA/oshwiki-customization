@@ -2,10 +2,11 @@
 
 namespace SMW\Tests;
 
-use SMW\HashBuilder;
-use SMW\DIWikiPage;
+use SMW\DataModel\ContainerSemanticData;
 use SMW\DIProperty;
-
+use SMW\DIWikiPage;
+use SMW\HashBuilder;
+use SMW\SemanticData;
 use Title;
 
 /**
@@ -73,7 +74,7 @@ class HashBuilderTest extends \PHPUnit_Framework_TestCase {
 
 	public function testContentHashId() {
 
-		$hash = HashBuilder::createHashIdForContent( 'Foo' );
+		$hash = HashBuilder::createFromContent( 'Foo' );
 
 		$this->assertInternalType(
 			'string',
@@ -82,20 +83,62 @@ class HashBuilderTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertSame(
 			$hash,
-			HashBuilder::createHashIdForContent( array( 'Foo' ) )
+			HashBuilder::createFromContent( [ 'Foo' ] )
 		);
 
 		$this->assertContains(
 			'Bar',
-			HashBuilder::createHashIdForContent( array( 'Foo' ), 'Bar' )
+			HashBuilder::createFromContent( [ 'Foo' ], 'Bar' )
+		);
+	}
+
+	public function testCreateFromSemanticData() {
+
+		$semanticData = new SemanticData(
+			DIWikiPage::newFromText( __METHOD__ )
+		);
+
+		$this->assertInternalType(
+			'string',
+			HashBuilder::createFromSemanticData( $semanticData )
+		);
+	}
+
+	public function testCreateFromSemanticDataWithSubSemanticDataAndPHPSerialization() {
+
+		$semanticData = new SemanticData(
+			DIWikiPage::newFromText( __METHOD__ )
+		);
+
+		$containerSemanticData = new ContainerSemanticData(
+			new DIWikiPage( __METHOD__, NS_MAIN, '', 'Foo' )
+		);
+
+		$containerSemanticData->addSubSemanticData(
+			new ContainerSemanticData( new DIWikiPage( __METHOD__, NS_MAIN, '', 'Foo2' ) )
+		);
+
+		$semanticData->addSubSemanticData(
+			$containerSemanticData
+		);
+
+		$semanticData->addSubSemanticData(
+			new ContainerSemanticData( new DIWikiPage( __METHOD__, NS_MAIN, '', 'Bar' ) )
+		);
+
+		$sem = serialize( $semanticData );
+
+		$this->assertInternalType(
+			'string',
+			HashBuilder::createFromSemanticData( unserialize( $sem ) )
 		);
 	}
 
 	public function segmentProvider() {
 
-		$provider[] = array( NS_FILE, 'ichi', '', '' );
-		$provider[] = array( NS_HELP, 'ichi', 'ni', '' );
-		$provider[] = array( NS_MAIN, 'ichi maru', 'ni', 'san' );
+		$provider[] = [ NS_FILE, 'ichi', '', '' ];
+		$provider[] = [ NS_HELP, 'ichi', 'ni', '' ];
+		$provider[] = [ NS_MAIN, 'ichi maru', 'ni', 'san' ];
 
 		return $provider;
 	}

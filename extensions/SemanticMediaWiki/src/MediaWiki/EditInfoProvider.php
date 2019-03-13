@@ -3,6 +3,7 @@
 namespace SMW\MediaWiki;
 
 use Revision;
+use SMW\ParserData;
 use User;
 use WikiPage;
 
@@ -57,6 +58,22 @@ class EditInfoProvider {
 	}
 
 	/**
+	 * @since 2.5
+	 *
+	 * @return SemanticData|null
+	 */
+	public function fetchSemanticData() {
+
+		$parserOutput = $this->fetchEditInfo()->getOutput();
+
+		if ( $parserOutput === null ) {
+			return null;
+		}
+
+		return $parserOutput->getExtensionData( ParserData::DATA_ID );
+	}
+
+	/**
 	 * @since 2.0
 	 *
 	 * @return EditInfoProvider
@@ -78,7 +95,12 @@ class EditInfoProvider {
 	}
 
 	private function prepareContentForEdit() {
-		$content  = $this->revision->getContent();
+
+		if ( !$this->revision instanceof Revision ) {
+			return null;
+		}
+
+		$content = $this->revision->getContent();
 
 		return $this->wikiPage->prepareContentForEdit(
 			$content,
@@ -89,8 +111,17 @@ class EditInfoProvider {
 	}
 
 	private function prepareTextForEdit() {
+		// keep backwards compatibility with MediaWiki 1.19 by deciding, if the
+		// newer Revision::getContent() method (MW 1.20 and above) or the bc
+		// method Revision::getRawText() is used.
+		if ( method_exists( $this->revision, 'getContent' ) ) {
+			$text = $this->revision->getContent( Revision::RAW );
+		} else {
+			// FIXME: Isn't needed after drop of support for MW 1.19
+			$text = $this->revision->getRawText();
+		}
 		return $this->wikiPage->prepareTextForEdit(
-			$this->revision->getRawText(),
+			$text,
 			null,
 			$this->user
 		);

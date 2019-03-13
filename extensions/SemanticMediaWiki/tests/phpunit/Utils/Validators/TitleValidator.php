@@ -29,7 +29,7 @@ class TitleValidator extends \PHPUnit_Framework_Assert {
 	private function assertTitleExists( $isExpected, $titles ) {
 
 		if ( !is_array( $titles ) ) {
-			$titles = array( $titles );
+			$titles = [ $titles ];
 		}
 
 		foreach ( $titles as $title ) {
@@ -38,7 +38,7 @@ class TitleValidator extends \PHPUnit_Framework_Assert {
 				$title = Title::newFromText( $title );
 			}
 
-			$this->assertEquals( $isExpected, $title->exists() );
+			$this->assertEquals( $isExpected, $title->exists(), $title->getPrefixedText() );
 		}
 	}
 

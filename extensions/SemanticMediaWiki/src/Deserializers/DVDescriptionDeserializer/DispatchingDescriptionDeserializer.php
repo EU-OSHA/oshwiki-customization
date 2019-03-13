@@ -2,8 +2,8 @@
 
 namespace SMW\Deserializers\DVDescriptionDeserializer;
 
-use SMWDataValue as DataValue;
 use RuntimeException;
+use SMWDataValue as DataValue;
 
 /**
  * @private
@@ -18,7 +18,7 @@ class DispatchingDescriptionDeserializer {
 	/**
 	 * @var DescriptionDeserializer[]
 	 */
-	private $descriptionDeserializers = array();
+	private $descriptionDeserializers = [];
 
 	/**
 	 * @var DescriptionDeserializer
@@ -51,7 +51,7 @@ class DispatchingDescriptionDeserializer {
 	 * @return DescriptionDeserializer
 	 * @throws RuntimeException
 	 */
-	public function getDescriptionDeserializerFor( DataValue $dataValue ) {
+	public function getDescriptionDeserializerBy( DataValue $dataValue ) {
 
 		foreach ( $this->descriptionDeserializers as $descriptionDeserializer ) {
 			if ( $descriptionDeserializer->isDeserializerFor( $dataValue ) ) {

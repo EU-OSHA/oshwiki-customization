@@ -41,13 +41,13 @@ class MediaWikiNsContentReader {
 		}
 
 		if ( $content === '' ) {
-			$content = $this->tryReadFromDatabase( $name );
+			$content = $this->readFromDatabase( $name );
 		}
 
 		return $content;
 	}
 
-	private function tryReadFromDatabase( $name ) {
+	private function readFromDatabase( $name ) {
 
 		$title = Title::makeTitleSafe( NS_MEDIAWIKI, ucfirst( $name ) );
 
@@ -66,6 +66,10 @@ class MediaWikiNsContentReader {
 
 		if ( class_exists( 'WikitextContent' ) ) {
 			return $revision->getContent()->getNativeData();
+		}
+
+		if ( method_exists( $revision, 'getContent') ) {
+			return $revision->getContent( Revision::RAW );
 		}
 
 		return $revision->getRawText();

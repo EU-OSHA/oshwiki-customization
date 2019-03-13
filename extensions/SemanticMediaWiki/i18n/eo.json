@@ -2,7 +2,8 @@
 	"@metadata": {
 		"authors": [
 			"Michawiki",
-			"Yekrats"
+			"Yekrats",
+			"Robin van der Vliet"
 		]
 	},
 	"smw_viewasrdf": "RDF-fonto",
@@ -52,11 +53,11 @@
 	"smw_purge": "Refreŝigi",
 	"types": "Datumtipoj",
 	"smw_types_docu": "Jen listo de ĉiuj datentipoj kiu povas esti asignitaj al atributoj.\nĈiu datentipo havas paĝon kie plua informo povas esti aldonita.",
-	"semanticstatistics": "Semantikaj Statistikoj",
+
 	"ask": "Semantika serĉo",
 	"smw_ask_sortby": "Ordigi laŭ kolumnoj (nedevige)",
 	"smw_ask_submit": "Trovi rezultojn",
-	"smw_ask_editquery": "[Redakti serĉomendon]",
+	"smw_ask_editquery": "Redakti serĉomendon",
 	"smw_add_sortcondition": "[Aldoni ordigan kondiĉon]",
 	"smw_ask_hidequery": "Kaŝi serĉmendon",
 	"smw_ask_help": "Helpo pri serĉomendoj",
@@ -97,6 +98,7 @@
 	"smw_smwadmin_support": "Teni subtenon",
 	"smw_smwadmin_mediazilla": "Cimoj povas esti raportitaj al <a href=\"https://github.com/SemanticMediaWiki/SemanticMediaWiki/issues\">GitHub</a>.",
 	"smw_adminlinks_datastructure": "Datumstrukturo",
+	"smw-property-page-indicator-type-info": "{{PLURAL:$1|Uzanto|Sistemo}}",
 	"smw-createproperty-isproperty": "Ĉi tiu estas atributo de speco $1.",
 	"smw-createproperty-allowedvals": "La {{PLURAL:$1|permesita valoro por ĉi tiu atributo|permesitaj valoroj por ĉi tiuj atributoj}} estas:",
 	"smw_unknowntype": "Nesubtenita datumtipo \"$1\" difinita por atributo.",

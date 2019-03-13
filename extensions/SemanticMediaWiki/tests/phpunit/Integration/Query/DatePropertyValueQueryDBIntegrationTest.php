@@ -2,25 +2,17 @@
 
 namespace SMW\Tests\Integration\Query;
 
-use SMW\Tests\MwDBaseUnitTestCase;
-use SMW\Tests\Utils\UtilityFactory;
-
-use SMW\DIWikiPage;
-use SMW\DIProperty;
 use SMW\DataValueFactory;
-
+use SMW\DIProperty;
 use SMW\Query\Language\SomeProperty;
 use SMW\Query\Language\ThingDescription;
 use SMW\Query\Language\ValueDescription;
-
-use SMWDIBlob as DIBlob;
-use SMWQuery as Query;
-use SMWQueryResult as QueryResult;
-use SMWDataValue as DataValue;
-use SMWDataItem as DataItem;
 use SMW\Query\PrintRequest as PrintRequest;
-use SMWPropertyValue as PropertyValue;
+use SMW\Tests\MwDBaseUnitTestCase;
+use SMW\Tests\Utils\UtilityFactory;
 use SMWExporter as Exporter;
+use SMWPropertyValue as PropertyValue;
+use SMWQuery as Query;
 
 /**
  * @group SMW
@@ -39,7 +31,7 @@ use SMWExporter as Exporter;
  */
 class DatePropertyValueQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 
-	private $subjectsToBeCleared = array();
+	private $subjectsToBeCleared = [];
 	private $semanticDataFactory;
 	private $dataValueFactory;
 	private $queryResultValidator;
@@ -72,7 +64,7 @@ class DatePropertyValueQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 		$property = new DIProperty( 'SomeDateProperty' );
 		$property->setPropertyTypeId( '_dat' );
 
-		$dataValue = $this->dataValueFactory->newPropertyObjectValue(
+		$dataValue = $this->dataValueFactory->newDataValueByProperty(
 			$property,
 			'1 January 1970'
 		);
@@ -155,9 +147,9 @@ class DatePropertyValueQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 
 		$query->querymode = Query::MODE_INSTANCES;
 
-		$query->sortkeys = array(
+		$query->sortkeys = [
 			$foundedValue->getProperty()->getLabel() => 'ASC'
-		);
+		];
 
 		// Be aware of
 		// Virtuoso 22023 Error SR353: Sorted TOP clause specifies more then
@@ -165,10 +157,10 @@ class DatePropertyValueQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 		// offset and/or row count or use a scrollable cursor
 		$query->setLimit( 100 );
 
-		$query->setExtraPrintouts( array(
+		$query->setExtraPrintouts( [
 			new PrintRequest( PrintRequest::PRINT_THIS, '' ),
 			new PrintRequest( PrintRequest::PRINT_PROP, null, $propertyValue )
-		) );
+		] );
 
 		$queryResult = $this->getStore()->getQueryResult( $query );
 

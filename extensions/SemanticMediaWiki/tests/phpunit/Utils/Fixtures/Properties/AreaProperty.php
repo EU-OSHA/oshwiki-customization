@@ -3,8 +3,8 @@
 namespace SMW\Tests\Utils\Fixtures\Properties;
 
 use SMW\DataValueFactory;
-use SMW\SemanticData;
 use SMW\DIProperty;
+use SMW\SemanticData;
 
 /**
  * @license GNU GPL v2+
@@ -17,13 +17,13 @@ class AreaProperty extends FixtureProperty {
 	/**
 	 * @var array
 	 */
-	private $conversionValues = array(
+	private $conversionValues = [
 		'1 km²',
 		'0.38610 sq mi',
 		'1000 m²',
 		'247.1054 acre',
 		'988.4215 rood'
-	);
+	];
 
 	/**
 	 * @since 2.1
@@ -46,7 +46,7 @@ class AreaProperty extends FixtureProperty {
 
 		foreach( $this->conversionValues as $conversionValue ) {
 			$semanticData->addDataValue(
-				$dataValueFactory->newPropertyObjectValue(
+				$dataValueFactory->newDataValueByProperty(
 					new DIProperty( '_CONV' ),
 					$conversionValue
 				)

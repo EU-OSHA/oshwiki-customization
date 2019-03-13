@@ -2,10 +2,9 @@
 
 namespace SMW\Tests\MediaWiki\Specials;
 
-use SMW\Tests\Utils\UtilityFactory;
-use SMW\MediaWiki\Specials\SpecialSearchByProperty;
-
 use SMW\ApplicationFactory;
+use SMW\MediaWiki\Specials\SpecialSearchByProperty;
+use SMW\Tests\Utils\UtilityFactory;
 use Title;
 
 /**
@@ -27,13 +26,26 @@ class SpecialSearchByPropertyTest extends \PHPUnit_Framework_TestCase {
 
 		$this->applicationFactory = ApplicationFactory::getInstance();
 
-		$store = $this->getMockBuilder( '\SMW\Store' )
+		$propertyTableIdReferenceFinder = $this->getMockBuilder( '\SMW\SQLStore\PropertyTableIdReferenceFinder' )
 			->disableOriginalConstructor()
-			->getMockForAbstractClass();
+			->getMock();
+
+		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
+			->disableOriginalConstructor()
+			->setMethods( [ 'getPropertyTableIdReferenceFinder', 'getPropertyValues', 'getPropertySubjects' ] )
+			->getMock();
+
+		$store->expects( $this->any() )
+			->method( 'getPropertyValues' )
+			->will( $this->returnValue( [] ) );
 
 		$store->expects( $this->any() )
 			->method( 'getPropertySubjects' )
-			->will( $this->returnValue( array() ) );
+			->will( $this->returnValue( [] ) );
+
+		$store->expects( $this->any() )
+			->method( 'getPropertyTableIdReferenceFinder' )
+			->will( $this->returnValue( $propertyTableIdReferenceFinder ) );
 
 		$this->applicationFactory->registerObject( 'Store', $store );
 
@@ -72,13 +84,13 @@ class SpecialSearchByPropertyTest extends \PHPUnit_Framework_TestCase {
 
 	public function testXRequestParameter() {
 
-		$request = array(
-			'x' => 'Has-20subobject/Foo-23%7B%7D'
-		);
+		$request = [
+			'x' => ':Has-20subobject/Foo-23%7B%7D'
+		];
 
-		$expected = array(
-			'property=Has+subobject', 'value=Foo%23%7B%7D'
-		);
+		$expected = [
+			'property=Has+subobject', 'value=Foo%23%257B%257D'
+		];
 
 		$instance = new SpecialSearchByProperty();
 		$instance->getContext()->setTitle( Title::newFromText( 'SearchByProperty' ) );
@@ -95,22 +107,16 @@ class SpecialSearchByPropertyTest extends \PHPUnit_Framework_TestCase {
 	public function queryParameterProvider() {
 
 		#0
-		$provider[] = array(
-			'',
-			array( 'value=""' )
-		);
+		$provider[] = [
+			'Foo/Bar',
+			[ 'property=Foo', 'value=Bar' ]
+		];
 
 		#1
-		$provider[] = array(
-			'Foo/Bar',
-			array( 'property=Foo', 'value=Bar' )
-		);
-
-		#2
-		$provider[] = array(
-			'Has-20foo/http:-2F-2Fexample.org-2Fid-2FCurly-2520Brackets-257B-257D',
-			array( 'property=Has+foo', 'value=http%3A-2F-2Fexample.org-2Fid-2FCurly%2520Brackets%257B%257D' )
-		);
+		$provider[] = [
+			':Has-20foo/http:-2F-2Fexample.org-2Fid-2FCurly-2520Brackets-257B-257D',
+			[ 'property=Has+foo', 'value=http%3A%2F%2Fexample.org%2Fid%2FCurly%2520Brackets%257B%257D' ]
+		];
 
 		return $provider;
 	}

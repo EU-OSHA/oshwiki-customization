@@ -2,12 +2,6 @@
 
 namespace SMW\Tests\Utils\Validators;
 
-use SMW\DIWikiPage;
-
-use SMWDataValue as DataValue;
-use SMWDataItem as DataItem;
-use SMWQueryResult as QueryResult;
-
 use SMWExpData as ExpData;
 use SMWExpResource as ExpResource;
 
@@ -31,7 +25,7 @@ class ExportDataValidator extends \PHPUnit_Framework_Assert {
 
 		$this->assertNotEmpty( $expProperties );
 
-		$expectedProperties = is_array( $expectedProperties ) ? $expectedProperties : array( $expectedProperties );
+		$expectedProperties = is_array( $expectedProperties ) ? $expectedProperties : [ $expectedProperties ];
 		$expectedToCount  = count( $expectedProperties );
 		$actualComparedToCount = 0;
 
@@ -39,7 +33,7 @@ class ExportDataValidator extends \PHPUnit_Framework_Assert {
 
 		foreach ( $expProperties as $expProperty ) {
 			foreach ( $expectedProperties as $expectedProperty ) {
-				if ( $expectedProperty == $expProperty ) {
+				if ( $expectedProperty->getHash() === $expProperty->getHash() ) {
 					$actualComparedToCount++;
 					$assertThatExportDataContainsProperty = true;
 				}
@@ -67,7 +61,7 @@ class ExportDataValidator extends \PHPUnit_Framework_Assert {
 
 		$this->assertNotEmpty( $expElements );
 
-		$expectedResources = is_array( $expectedResources ) ? $expectedResources : array( $expectedResources );
+		$expectedResources = is_array( $expectedResources ) ? $expectedResources : [ $expectedResources ];
 		$expectedToCount  = count( $expectedResources );
 		$actualComparedToCount = 0;
 
@@ -75,7 +69,7 @@ class ExportDataValidator extends \PHPUnit_Framework_Assert {
 
 		foreach ( $expElements as $expElement ) {
 			foreach ( $expectedResources as $expectedResource ) {
-				if ( $expectedResource == $expElement ) {
+				if ( $expectedResource->getHash() === $expElement->getHash() ) {
 					$actualComparedToCount++;
 					$assertThatExportDataContainsResource = true;
 				}

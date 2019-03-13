@@ -3,17 +3,16 @@
 namespace SMW\Deserializers;
 
 use Deserializers\Deserializer;
-use SMW\SemanticData;
+use OutOfBoundsException;
+use RuntimeException;
 use SMW\DataTypeRegistry;
 use SMW\DIProperty;
 use SMW\DIWikiPage;
-
+use SMW\SemanticData;
 use SMWContainerSemanticData;
-use SMWDIContainer as DIContainer;
 use SMWDataItem as DataItem;
+use SMWDIContainer as DIContainer;
 use SMWErrorValue as ErrorValue;
-
-use OutOfBoundsException;
 
 /**
  * @license GNU GPL v2+
@@ -26,7 +25,7 @@ class SemanticDataDeserializer implements Deserializer {
 	/**
 	 * @var array
 	 */
-	private $dataItemTypeIdCache = array();
+	private $dataItemTypeIdCache = [];
 
 	/**
 	 * @see Deserializers::deserialize
@@ -35,12 +34,13 @@ class SemanticDataDeserializer implements Deserializer {
 	 *
 	 * @return SemanticData
 	 * @throws OutOfBoundsException
+	 * @throws RuntimeException
 	 */
 	public function deserialize( $data ) {
 
 		$semanticData = null;
 
-		if ( isset( $data['version'] ) && $data['version'] !== 0.1 ) {
+		if ( isset( $data['version'] ) && $data['version'] !== 0.1 && $data['version'] !== 2 ) {
 			throw new OutOfBoundsException( 'Serializer/Unserializer version does not match, please update your data' );
 		}
 
@@ -49,7 +49,7 @@ class SemanticDataDeserializer implements Deserializer {
 		}
 
 		if ( !$semanticData instanceof SemanticData ) {
-			throw new OutOfBoundsException( 'SemanticData could not be created probably due to a missing subject' );
+			throw new RuntimeException( 'SemanticData could not be created probably due to a missing subject' );
 		}
 
 		$this->doDeserialize( $data, $semanticData );
@@ -118,16 +118,16 @@ class SemanticDataDeserializer implements Deserializer {
 			$dataItem = $property->getDiWikiPage();
 			$property = new DIProperty( DIProperty::TYPE_ERROR );
 
-			$semanticData->addError( array(
+			$semanticData->addError( [
 				new ErrorValue( $type, 'type mismatch', $property->getLabel() )
-			) );
+			] );
 
 		}
 
 		// Check whether the current dataItem has a subobject reference
 		if ( $dataItem->getDIType() === DataItem::TYPE_WIKIPAGE && $dataItem->getSubobjectName() !== '' ) {
 
-			$dataItem = $this->unserializeSubobject(
+			$dataItem = $this->doDeserializeSubSemanticData(
 				$data,
 				$value['item'],
 				new SMWContainerSemanticData( $dataItem )
@@ -156,18 +156,16 @@ class SemanticDataDeserializer implements Deserializer {
 	 *
 	 * @return DIContainer|null
 	 */
-	private function unserializeSubobject( $data, $id, $semanticData ) {
+	private function doDeserializeSubSemanticData( $data, $id, $semanticData ) {
 
 		if ( !isset( $data['sobj'] ) ) {
-			return null;
+			return new DIContainer( $semanticData );;
 		}
 
 		foreach ( $data['sobj'] as $subobject ) {
-
-			if ( isset( $subobject['subject'] ) && $subobject['subject'] === $id ) {
+			if ( isset( $subobject['subject'] ) && $subobject['subject'] === $id && isset( $subobject['data'] ) ) {
 				$this->doDeserialize( $subobject, $semanticData );
 			}
-
 		}
 
 		return new DIContainer( $semanticData );

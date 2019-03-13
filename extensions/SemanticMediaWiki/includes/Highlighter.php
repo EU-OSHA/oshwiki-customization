@@ -2,56 +2,73 @@
 
 namespace SMW;
 
-use SMWOutputs;
-use IContextSource;
-use ContextSource;
 use Html;
+use SMWOutputs;
 
 /**
  * Highlighter utility function for Semantic MediaWiki
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
- *
  *
  * @license GNU GPL v2+
  * @since   1.9
  *
  * @author mwjames
- *
- * @ingroup SMW
  */
-class Highlighter extends ContextSource {
+class Highlighter {
 
-	// Highlighter ID for no types
-	const TYPE_NOTYPE    = 0;
-	// Highlighter ID for properties
-	const TYPE_PROPERTY  = 1;
-	// Highlighter ID for text
-	const TYPE_TEXT      = 2;
-	// Highlighter ID for quantities
-	const TYPE_QUANTITY  = 3;
-	//  Highlighter ID for warnings
-	const TYPE_WARNING   = 4;
-	//  Highlighter ID for informations
-	const TYPE_INFO      = 5;
-	//  Highlighter ID for help
-	const TYPE_HELP      = 6;
-	//  Highlighter ID for notes
-	const TYPE_NOTE      = 7;
-	//  Highlighter ID for service links
-	const TYPE_SERVICE   = 8;
+	/**
+	 * Highlighter ID for no types
+	 */
+	const TYPE_NOTYPE = 0;
+
+	/**
+	 * Highlighter ID for properties
+	 */
+	const TYPE_PROPERTY = 1;
+
+	/**
+	 * Highlighter ID for text
+	 */
+	const TYPE_TEXT = 2;
+
+	/**
+	 * Highlighter ID for quantities
+	 */
+	const TYPE_QUANTITY = 3;
+
+	/**
+	 * Highlighter ID for warnings
+	 */
+	const TYPE_WARNING = 4;
+
+	/**
+	 * Highlighter ID for error
+	 */
+	const TYPE_ERROR = 5;
+
+	/**
+	 * Highlighter ID for information
+	 */
+	const TYPE_INFO = 6;
+
+	/**
+	 * Highlighter ID for help
+	 */
+	const TYPE_HELP = 7;
+
+	/**
+	 * Highlighter ID for notes
+	 */
+	const TYPE_NOTE = 8;
+
+	/**
+	 * Highlighter ID for service links
+	 */
+	const TYPE_SERVICE = 9;
+
+	/**
+	 * Highlighter ID for reference links
+	 */
+	const TYPE_REFERENCE = 10;
 
 	/**
 	 * @var array $options
@@ -64,37 +81,72 @@ class Highlighter extends ContextSource {
 	private $type;
 
 	/**
-	 * Constructor
-	 *
+	 * @var string|null
+	 */
+	private $language = null;
+
+	/**
 	 * @since 1.9
 	 *
 	 * @param int $type
-	 * @param \IContextSource|null $context
+	 * @param string|null $language
 	 */
-	public function __construct( $type, IContextSource $context = null ) {
-		if ( !$context ) {
-			$context = \RequestContext::getMain();
-		}
-		$this->setContext( $context );
+	public function __construct( $type, $language = null ) {
 		$this->type = $type;
+		$this->language = $language;
 	}
 
 	/**
-	 * Factory method
-	 *
 	 * @since 1.9
 	 *
 	 * @param string|int $type
-	 * @param \IContextSource|null $context
+	 * @param string|null $language
 	 *
 	 * @return Highlighter
 	 */
-	public static function factory( $type, IContextSource $context = null ) {
+	public static function factory( $type, $language = null ) {
 		if ( $type === '' || !is_int( $type ) ) {
 			$type = self::getTypeId( $type );
 		}
 
-		return new Highlighter( $type, $context );
+		return new Highlighter( $type, $language );
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @param string $text
+	 * @param string|null $type
+	 *
+	 * @return booelan
+	 */
+	public static function hasHighlighterClass( $text, $type = null ) {
+
+		if ( strpos( $text, 'smw-highlighter' ) === false ) {
+			return false;
+		}
+
+		if ( $type !== null ) {
+			return strpos( $text, 'data-type="' . self::getTypeId( $type ) . '"' ) !== false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * @since 3.0
+	 *
+	 * @param string $text
+	 *
+	 * @return string
+	 */
+	public static function decode( $text ) {
+		// #2347, '[' is handled by the MediaWiki parser/sanitizer itself
+		return str_replace(
+			[ '&amp;', '&lt;', '&gt;', '&#160;', '<nowiki>', '</nowiki>' ],
+			[ '&', '<', '>', ' ', '', '' ],
+			$text
+		);
 	}
 
 	/**
@@ -105,9 +157,7 @@ class Highlighter extends ContextSource {
 	 * @return string
 	 */
 	public function getHtml() {
-		//@todo Introduce temporary fix, for more information see bug 43205
 		SMWOutputs::requireResource( 'ext.smw.tooltips' );
-		// $this->getOutput()->addModules( 'ext.smw.tooltips' );
 		return $this->getContainer();
 	}
 
@@ -152,6 +202,8 @@ class Highlighter extends ContextSource {
 			return self::TYPE_QUANTITY;
 			case 'warning':
 			return self::TYPE_WARNING;
+			case 'error':
+			return self::TYPE_ERROR;
 			case 'info':
 			return self::TYPE_INFO;
 			case 'help':
@@ -160,6 +212,8 @@ class Highlighter extends ContextSource {
 			return self::TYPE_NOTE;
 			case 'service':
 			return self::TYPE_SERVICE;
+			case 'reference':
+			return self::TYPE_REFERENCE;
 			default:
 			return self::TYPE_NOTYPE;
 		}
@@ -176,29 +230,59 @@ class Highlighter extends ContextSource {
 	 * @return string
 	 */
 	private function getContainer() {
-		return Html::rawElement(
+
+		$captionclass = $this->options['captionclass'];
+
+		// 2.4+ can display context for user-defined properties, here we ensure
+		// to keep the style otherwise it displays italic which is by convention
+		// reserved for predefined properties
+		if ( $this->type === self::TYPE_PROPERTY && isset( $this->options['userDefined'] ) ) {
+			$captionclass = $this->options['userDefined'] ? 'smwtext' : $captionclass;
+		}
+
+		$language = is_string( $this->language ) ? $this->language : Message::USER_LANGUAGE;
+		$style = [];
+
+		if ( isset( $this->options['style'] ) ) {
+			$style = [ 'style' => $this->options['style'] ];
+		}
+
+		// #1875
+		// title attribute contains stripped content to allow for a display in
+		// no-js environments, the tooltip will remove the element once it is
+		// loaded
+		$title = $this->title( $this->options['content'], $language );
+
+		$html = Html::rawElement(
 			'span',
-			array(
-				'class'      => 'smw-highlighter',
-				'data-type'  => $this->options['type'],
-				'data-state' => $this->options['state'],
-				'data-title' => $this->msg( $this->options['title'] )->text(),
-			), Html::rawElement(
-					'span',
-					array(
-						'class' => $this->options['captionclass']
-					), $this->options['caption']
-				) . Html::rawElement(
-					'div',
-					array(
-						'class' => 'smwttcontent'
-					), $this->options['content']
-				)
-			);
+			[
+				'class'        => 'smw-highlighter',
+				'data-type'    => $this->options['type'],
+				'data-content' => isset( $this->options['data-content'] ) ? $this->options['data-content'] : null,
+				'data-state'   => $this->options['state'],
+				'data-title'   => Message::get( $this->options['title'], Message::TEXT, $language ),
+				'title'        => $title
+			] + $style,
+			Html::rawElement(
+				'span',
+				[
+					'class' => $captionclass
+				],
+				$this->options['caption']
+			) . Html::rawElement(
+				'span',
+				[
+					'class' => 'smwttcontent'
+				],
+				htmlspecialchars_decode( $this->options['content'] )
+			)
+		);
+
+		return $html;
 	}
 
 	/**
-	 * Returns initial configuation settings
+	 * Returns initial configuration settings
 	 *
 	 * @note You could create a class per entity type but does this
 	 * really make sense just to get some configuration parameters?
@@ -210,7 +294,7 @@ class Highlighter extends ContextSource {
 	 * @return array
 	 */
 	private function getTypeConfiguration( $type ) {
-		$settings = array();
+		$settings = [];
 		$settings['type'] = $type;
 		$settings['caption'] = '';
 		$settings['content'] = '';
@@ -241,10 +325,20 @@ class Highlighter extends ContextSource {
 				$settings['title'] = 'smw-ui-tooltip-title-warning';
 				$settings['captionclass'] = 'smwtticon warning';
 				break;
+			case self::TYPE_ERROR:
+				$settings['state'] = 'inline';
+				$settings['title'] = 'smw-ui-tooltip-title-error';
+				$settings['captionclass'] = 'smwtticon error';
+				break;
 			case self::TYPE_SERVICE:
 				$settings['state'] = 'persistent';
 				$settings['title'] = 'smw-ui-tooltip-title-service';
 				$settings['captionclass'] = 'smwtticon service';
+				break;
+			case self::TYPE_REFERENCE:
+				$settings['state'] = 'persistent';
+				$settings['title'] = 'smw-ui-tooltip-title-reference';
+				$settings['captionclass'] = 'smwtext';
 				break;
 			case self::TYPE_HELP:
 			case self::TYPE_INFO:
@@ -261,4 +355,16 @@ class Highlighter extends ContextSource {
 
 		return $settings;
 	}
+
+	private function title( $content, $language ) {
+
+		// Pre-process the content when used as title to avoid breaking elements
+		// (URLs etc.)
+		if ( strpos( $content, '[' ) !== false || strpos( $content, '//' ) !== false ) {
+			$content = Message::get( [ 'smw-parse', $content ], Message::PARSE, $language );
+		}
+
+		return strip_tags( htmlspecialchars_decode( str_replace( [ "[", '&#160;' ], [ "&#91;", ' ' ], $content ) ) );
+	}
+
 }

@@ -2,23 +2,20 @@
 
 namespace SMW\Tests\Utils\Fixtures\Facts;
 
-use SMW\Tests\Utils\UtilityFactory;
-use SMW\Tests\Utils\Fixtures\Properties\AreaProperty;
-use SMW\Tests\Utils\Fixtures\Properties\TemperatureProperty;
-use SMW\Tests\Utils\Fixtures\Properties\PopulationProperty;
-use SMW\Tests\Utils\Fixtures\Properties\YearProperty;
-use SMW\Tests\Utils\Fixtures\Properties\PopulationDensityProperty;
-use SMW\Tests\Utils\Fixtures\Properties\CityCategory;
-use SMW\Tests\Utils\Fixtures\Properties\LocatedInProperty;
-use SMW\Tests\Utils\Fixtures\Properties\FoundedProperty;
-
-use SMW\DIWikiPage;
-use SMW\DIProperty;
-use SMW\DataValueFactory;
-use SMW\Subobject;
-use SMW\SemanticData;
-
 use RuntimeException;
+use SMW\DataValueFactory;
+use SMW\DIWikiPage;
+use SMW\SemanticData;
+use SMW\Subobject;
+use SMW\Tests\Utils\Fixtures\Properties\AreaProperty;
+use SMW\Tests\Utils\Fixtures\Properties\CityCategory;
+use SMW\Tests\Utils\Fixtures\Properties\FoundedProperty;
+use SMW\Tests\Utils\Fixtures\Properties\LocatedInProperty;
+use SMW\Tests\Utils\Fixtures\Properties\PopulationDensityProperty;
+use SMW\Tests\Utils\Fixtures\Properties\PopulationProperty;
+use SMW\Tests\Utils\Fixtures\Properties\TemperatureProperty;
+use SMW\Tests\Utils\Fixtures\Properties\YearProperty;
+use SMW\Tests\Utils\UtilityFactory;
 
 /**
  * @license GNU GPL v2+
@@ -103,7 +100,7 @@ class BerlinFactsheet {
 
 		$locatedInProperty = new LocatedInProperty();
 
-		return $this->dataValueFactory->newDataItemValue(
+		return $this->dataValueFactory->newDataValueByItem(
 			new DIWikiPage( 'Germany', NS_MAIN ),
 			$locatedInProperty->getProperty()
 		);
@@ -120,7 +117,7 @@ class BerlinFactsheet {
 
 		$areaProperty = new AreaProperty();
 
-		return $this->dataValueFactory->newPropertyObjectValue(
+		return $this->dataValueFactory->newDataValueByProperty(
 			$areaProperty->getProperty(),
 			'891.85 km²'
 		);
@@ -137,7 +134,7 @@ class BerlinFactsheet {
 
 		$foundedProperty = new FoundedProperty();
 
-		return $this->dataValueFactory->newPropertyObjectValue(
+		return $this->dataValueFactory->newDataValueByProperty(
 			$foundedProperty->getProperty(),
 			'1237'
 		);
@@ -154,7 +151,7 @@ class BerlinFactsheet {
 
 		$temperatureProperty = new TemperatureProperty();
 
-		return $this->dataValueFactory->newPropertyObjectValue(
+		return $this->dataValueFactory->newDataValueByProperty(
 			$temperatureProperty->getProperty(),
 			'13.4 °C',
 			'Average high temperature'
@@ -172,7 +169,7 @@ class BerlinFactsheet {
 
 		$populationProperty = new PopulationProperty();
 
-		return $this->dataValueFactory->newPropertyObjectValue(
+		return $this->dataValueFactory->newDataValueByProperty(
 			$populationProperty->getProperty(),
 			'3517424'
 		);
@@ -193,7 +190,7 @@ class BerlinFactsheet {
 
 		$populationDensityProperty = new PopulationDensityProperty();
 
-		return $this->dataValueFactory->newPropertyObjectValue(
+		return $this->dataValueFactory->newDataValueByProperty(
 			$populationDensityProperty->getProperty(),
 			'3900;1 km²',
 			'Population density',
@@ -219,7 +216,7 @@ class BerlinFactsheet {
 
 		$yearProperty = new YearProperty();
 
-		$yearDataValue = $this->dataValueFactory->newPropertyObjectValue(
+		$yearDataValue = $this->dataValueFactory->newDataValueByProperty(
 			$yearProperty->getProperty(),
 			'2013'
 		);
@@ -237,7 +234,7 @@ class BerlinFactsheet {
 	 */
 	public function purge() {
 
-		$subjects = array();
+		$subjects = [];
 
 		$subjects[] = $this->asSubject();
 		$subjects[] = $this->targetSubject;

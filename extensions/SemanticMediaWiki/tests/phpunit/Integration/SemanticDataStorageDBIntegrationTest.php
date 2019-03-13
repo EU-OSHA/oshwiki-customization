@@ -2,18 +2,16 @@
 
 namespace SMW\Tests\Integration;
 
+use SMW\ApplicationFactory;
+use SMW\DataValueFactory;
+use SMW\DIProperty;
+use SMW\DIWikiPage;
+use SMW\SemanticData;
+use SMW\Subobject;
 use SMW\Tests\MwDBaseUnitTestCase;
 use SMW\Tests\Utils\UtilityFactory;
-
-use SMW\ApplicationFactory;
-use SMW\DIWikiPage;
-use SMW\DIProperty;
-use SMW\SemanticData;
-use SMW\DataValueFactory;
-use SMW\Subobject;
-
 use SMWDIBlob as DIBlob;
-
+use SMWDITime as DITime;
 use Title;
 
 /**
@@ -36,7 +34,7 @@ class SemanticDataStorageDBIntegrationTest extends MwDBaseUnitTestCase {
 	private $mwHooksHandler;
 
 	private $semanticDataValidator;
-	private $subjects = array();
+	private $subjects = [];
 
 	private $pageDeleter;
 	private $pageCreator;
@@ -70,7 +68,7 @@ class SemanticDataStorageDBIntegrationTest extends MwDBaseUnitTestCase {
 		parent::tearDown();
 	}
 
-	public function testAddUserDefinedPagePropertyAsObjectToSemanticDataForStorage() {
+	public function testUserDefined_PageProperty_ToSemanticDataForStorage() {
 
 		$property = new DIProperty( 'SomePageProperty' );
 
@@ -87,6 +85,48 @@ class SemanticDataStorageDBIntegrationTest extends MwDBaseUnitTestCase {
 		$this->assertArrayHasKey(
 			$property->getKey(),
 			$this->getStore()->getSemanticData( $subject )->getProperties()
+		);
+
+		foreach ( $this->getStore()->getProperties( $subject ) as $prop ) {
+			$this->assertTrue( $prop->equals( $property ) );
+		}
+	}
+
+	public function testFixedProperty_MDAT_ToSemanticDataForStorage() {
+
+		$property = new DIProperty( '_MDAT' );
+
+		$this->subjects[] = $subject = DIWikiPage::newFromTitle( Title::newFromText( __METHOD__ ) );
+		$semanticData = new SemanticData( $subject );
+
+		$semanticData->addPropertyObjectValue(
+			$property,
+			new DITime( 1, '1970', '1', '1' )
+		);
+
+		$this->getStore()->updateData( $semanticData );
+
+		$this->assertArrayHasKey(
+			$property->getKey(),
+			$this->getStore()->getSemanticData( $subject )->getProperties()
+		);
+
+		foreach ( $this->getStore()->getProperties( $subject ) as $prop ) {
+			$this->assertTrue( $prop->equals( $property ) );
+		}
+	}
+
+	public function testFixedProperty_ASK_NotForStorage() {
+
+		$property = new DIProperty( '_ASK' );
+
+		$this->subjects[] = $subject = DIWikiPage::newFromTitle( Title::newFromText( __METHOD__ ) );
+		$semanticData = new SemanticData( $subject );
+
+		$this->getStore()->updateData( $semanticData );
+
+		$this->assertEmpty(
+			$this->getStore()->getProperties( $subject )
 		);
 	}
 
@@ -118,7 +158,7 @@ class SemanticDataStorageDBIntegrationTest extends MwDBaseUnitTestCase {
 		$this->subjects[] = $subject = DIWikiPage::newFromTitle( Title::newFromText( __METHOD__ ) );
 		$semanticData = new SemanticData( $subject );
 
-		$dataValue = DataValueFactory::getInstance()->newPropertyValue(
+		$dataValue = DataValueFactory::getInstance()->newDataValueByText(
 			$propertyAsString,
 			'Foo',
 			false,
@@ -144,7 +184,7 @@ class SemanticDataStorageDBIntegrationTest extends MwDBaseUnitTestCase {
 		$subobject->setEmptyContainerForId( 'SomeSubobject' );
 
 		$subobject->getSemanticData()->addDataValue(
-			DataValueFactory::getInstance()->newPropertyValue( 'Foo', 'Bar' )
+			DataValueFactory::getInstance()->newDataValueByText( 'Foo', 'Bar' )
 		);
 
 		$semanticData->addPropertyObjectValue(
@@ -154,14 +194,14 @@ class SemanticDataStorageDBIntegrationTest extends MwDBaseUnitTestCase {
 
 		$this->getStore()->updateData( $semanticData );
 
-		$expected = array(
+		$expected = [
 			'propertyCount'  => 2,
-			'properties' => array(
+			'properties' => [
 				new DIProperty( 'Foo' ),
 				new DIProperty( '_SKEY' )
-			),
-			'propertyValues' => array( 'Bar', __METHOD__ )
-		);
+			],
+			'propertyValues' => [ 'Bar', __METHOD__ . '#SomeSubobject' ]
+		];
 
 		$this->semanticDataValidator->assertThatPropertiesAreSet(
 			$expected,
@@ -183,20 +223,20 @@ class SemanticDataStorageDBIntegrationTest extends MwDBaseUnitTestCase {
 			->createPage( $subject->getTitle() )
 			->doEdit( '[[HasNoDisplayRedirectInconsistencyFor::Foo-B]]' );
 
-		$expected = array(
+		$expected = [
 			'propertyCount' => 3,
-			'propertyKeys'  => array( '_SKEY', '_MDAT', 'HasNoDisplayRedirectInconsistencyFor' )
-		);
+			'propertyKeys'  => [ '_SKEY', '_MDAT', 'HasNoDisplayRedirectInconsistencyFor' ]
+		];
 
 		$this->semanticDataValidator->assertThatPropertiesAreSet(
 			$expected,
 			$this->getStore()->getSemanticData( $subject )
 		);
 
-		$this->subjects = array(
+		$this->subjects = [
 			$subject,
 			Title::newFromText( 'Foo-B' )
-		);
+		];
 	}
 
 	public function testFetchSemanticDataForPreExistingDoubleRedirect() {
@@ -219,21 +259,21 @@ class SemanticDataStorageDBIntegrationTest extends MwDBaseUnitTestCase {
 			->createPage( Title::newFromText( 'Foo-C' ) )
 			->doEdit( '[[Has page::{{PAGENAME}}' );
 
-		$expected = array(
+		$expected = [
 			'propertyCount' => 3,
-			'propertyKeys'  => array( '_SKEY', '_MDAT', 'HasNoDisplayRedirectInconsistencyFor' )
-		);
+			'propertyKeys'  => [ '_SKEY', '_MDAT', 'HasNoDisplayRedirectInconsistencyFor' ]
+		];
 
 		$this->semanticDataValidator->assertThatPropertiesAreSet(
 			$expected,
 			$this->getStore()->getSemanticData( $subject )
 		);
 
-		$this->subjects = array(
+		$this->subjects = [
 			$subject,
 			Title::newFromText( 'Foo-B' ),
 			Title::newFromText( 'Foo-C' )
-		);
+		];
 	}
 
 	/**
@@ -278,10 +318,10 @@ class SemanticDataStorageDBIntegrationTest extends MwDBaseUnitTestCase {
 			$this->getStore()->getSemanticData( $target )->findSubSemanticData( 'test' )
 		);
 
-		$this->subjects = array(
+		$this->subjects = [
 			$redirect,
 			$target
-		);
+		];
 	}
 
 }

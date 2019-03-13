@@ -2,14 +2,14 @@
 
 namespace SMW\Tests\Integration;
 
-use SMW\Deserializers\SemanticDataDeserializer;
-use SMW\Serializers\SemanticDataSerializer;
-
-use SMW\DataValueFactory;
-use SMw\SemanticData;
-use SMW\DIWikiPage;
-use SMW\Subobject;
 use ReflectionClass;
+use SMW\ApplicationFactory;
+use SMW\DataValueFactory;
+use SMW\Deserializers\SemanticDataDeserializer;
+use SMW\DIWikiPage;
+use SMW\SemanticData;
+use SMW\Serializers\SemanticDataSerializer;
+use SMW\Subobject;
 
 /**
  * @group semantic-mediawiki
@@ -75,7 +75,7 @@ class SemanticDataSerializerDeserializerRoundtripTest extends \PHPUnit_Framework
 		$reflector = new ReflectionClass( '\SMW\Deserializers\SemanticDataDeserializer' );
 		$property  = $reflector->getProperty( 'dataItemTypeIdCache' );
 		$property->setAccessible( true );
-		$property->setValue( $deserializer, array( $type => 2 ) );
+		$property->setValue( $deserializer, [ $type => 2 ] );
 
 		$deserialized = $deserializer->deserialize( $serialized );
 
@@ -91,46 +91,48 @@ class SemanticDataSerializerDeserializerRoundtripTest extends \PHPUnit_Framework
 
 	public function semanticDataProvider() {
 
-		$provider = array();
+		ApplicationFactory::clear();
+
+		$provider = [];
 		$title = \Title::newFromText( __METHOD__ );
 
 		// #0 Empty container
 		$foo = new SemanticData( DIWikiPage::newFromTitle( $title ) );
-		$provider[] = array( $foo );
+		$provider[] = [ $foo ];
 
 		// #1 Single entry
 		$foo = new SemanticData( DIWikiPage::newFromTitle( $title ) );
-		$foo->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has fooQuex', 'Bar' ) );
-		$provider[] = array( $foo );
+		$foo->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has fooQuex', 'Bar' ) );
+		$provider[] = [ $foo ];
 
 		// #2 Single + single subobject entry
 		$foo = new SemanticData( DIWikiPage::newFromTitle( $title ) );
-		$foo->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has fooQuex', 'Bar' ) );
+		$foo->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has fooQuex', 'Bar' ) );
 
 		$subobject = new Subobject( $title );
 		$subobject->setSemanticData( 'Foo' );
-		$subobject->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has subobjects', 'Bam' ) );
+		$subobject->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has subobjects', 'Bam' ) );
 
 		$foo->addPropertyObjectValue( $subobject->getProperty(), $subobject->getContainer() );
 
-		$provider[] = array( $foo );
+		$provider[] = [ $foo ];
 
 		// #3 Multiple entries
 		$foo = new SemanticData( DIWikiPage::newFromTitle( $title ) );
-		$foo->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has fooQuex', 'Bar' ) );
-		$foo->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has queez', 'Xeey' ) );
+		$foo->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has fooQuex', 'Bar' ) );
+		$foo->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has queez', 'Xeey' ) );
 
 		$subobject = new Subobject( $title );
 		$subobject->setSemanticData( 'Foo' );
-		$subobject->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has subobjects', 'Bam' ) );
-		$subobject->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has fooQuex', 'Fuz' ) );
+		$subobject->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has subobjects', 'Bam' ) );
+		$subobject->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has fooQuex', 'Fuz' ) );
 
 		$subobject->setSemanticData( 'Bar' );
-		$subobject->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has fooQuex', 'Fuz' ) );
+		$subobject->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has fooQuex', 'Fuz' ) );
 
 		$foo->addPropertyObjectValue( $subobject->getProperty(), $subobject->getContainer() );
 
-		$provider[] = array( $foo );
+		$provider[] = [ $foo ];
 
 		return $provider;
 	}
@@ -140,7 +142,7 @@ class SemanticDataSerializerDeserializerRoundtripTest extends \PHPUnit_Framework
 	 */
 	public function incompleteSubobjectDataProvider() {
 
-		$provider = array();
+		$provider = [];
 
 		$title = \Title::newFromText( __METHOD__ );
 
@@ -148,10 +150,10 @@ class SemanticDataSerializerDeserializerRoundtripTest extends \PHPUnit_Framework
 		$subobject->setSemanticData( 'Foo' );
 
 		$foo = new SemanticData( DIWikiPage::newFromTitle( $title ) );
-		$foo->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has fooQuex', 'Bar' ) );
+		$foo->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has fooQuex', 'Bar' ) );
 		$foo->addPropertyObjectValue( $subobject->getProperty(), $subobject->getSemanticData()->getSubject() );
 
-		$provider[] = array( $foo );
+		$provider[] = [ $foo ];
 
 		return $provider;
 	}
@@ -161,32 +163,32 @@ class SemanticDataSerializerDeserializerRoundtripTest extends \PHPUnit_Framework
 	 */
 	public function typeChangeSemanticDataProvider() {
 
-		$provider = array();
+		$provider = [];
 		$title = \Title::newFromText( __METHOD__ );
 
 		// #0 Single entry
 		$foo = new SemanticData( DIWikiPage::newFromTitle( $title ) );
-		$foo->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has fooQuex', 'Bar' ) );
+		$foo->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has fooQuex', 'Bar' ) );
 
-		$provider[] = array( $foo, 'Has_fooQuex' );
+		$provider[] = [ $foo, 'Has_fooQuex' ];
 
 		// #1 Single subobject entry
 		$foo = new SemanticData( DIWikiPage::newFromTitle( $title ) );
 
 		$subobject = new Subobject( $title );
 		$subobject->setSemanticData( 'Foo' );
-		$subobject->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has fomQuex', 'Bam' ) );
+		$subobject->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has fomQuex', 'Bam' ) );
 
 		$foo->addPropertyObjectValue( $subobject->getProperty(), $subobject->getContainer() );
 
-		$provider[] = array( $foo, 'Has_fomQuex' );
+		$provider[] = [ $foo, 'Has_fomQuex' ];
 
 		// #2 Combined
 		$foo = new SemanticData( DIWikiPage::newFromTitle( $title ) );
-		$foo->addDataValue( DataValueFactory::getInstance()->newPropertyValue( 'Has fooQuex', 'Bar' ) );
+		$foo->addDataValue( DataValueFactory::getInstance()->newDataValueByText( 'Has fooQuex', 'Bar' ) );
 		$foo->addPropertyObjectValue( $subobject->getProperty(), $subobject->getContainer() );
 
-		$provider[] = array( $foo, 'Has_fomQuex' );
+		$provider[] = [ $foo, 'Has_fomQuex' ];
 
 		return $provider;
 	}

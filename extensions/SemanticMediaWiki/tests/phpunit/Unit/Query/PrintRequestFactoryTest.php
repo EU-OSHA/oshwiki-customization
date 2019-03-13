@@ -2,8 +2,9 @@
 
 namespace SMW\Tests\Query;
 
-use SMW\Query\PrintRequestFactory;
 use SMW\DIProperty;
+use SMW\Query\PrintRequest;
+use SMW\Query\PrintRequestFactory;
 
 /**
  * @covers \SMW\Query\PrintRequestFactory
@@ -24,10 +25,13 @@ class PrintRequestFactoryTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
-	public function testPropertyPrintRequest() {
+	public function testCanConstructPrintRequestFromProperty() {
 
 		$instance = new PrintRequestFactory();
-		$printRequest = $instance->newPropertyPrintRequest( new DIProperty( 'Foo' ) );
+
+		$printRequest = $instance->newFromProperty(
+			new DIProperty( 'Foo' )
+		);
 
 		$this->assertInstanceOf(
 			'\SMW\Query\PrintRequest',
@@ -37,6 +41,47 @@ class PrintRequestFactoryTest extends \PHPUnit_Framework_TestCase {
 		$this->assertEquals(
 			'Foo',
 			$printRequest->getLabel()
+		);
+	}
+
+	public function testCanConstructPrintRequestFromText() {
+
+		$instance = new PrintRequestFactory();
+
+		$printRequest = $instance->newFromText(
+			'Foo'
+		);
+
+		$this->assertInstanceOf(
+			'\SMW\Query\PrintRequest',
+			$printRequest
+		);
+	}
+
+	public function testPrintRequestFromTextToReturnNullOnInvalidText() {
+
+		$instance = new PrintRequestFactory();
+
+		$printRequest = $instance->newFromText(
+			'--[[Foo',
+			false
+		);
+
+		$this->assertNull(
+			$printRequest
+		);
+	}
+
+	public function testCanConstructThisPrintRequest() {
+
+		$instance = new PrintRequestFactory();
+
+		$printRequest = $instance->newThisPrintRequest(
+			'Foo'
+		);
+
+		$this->assertTrue(
+			$printRequest->isMode( PrintRequest::PRINT_THIS )
 		);
 	}
 

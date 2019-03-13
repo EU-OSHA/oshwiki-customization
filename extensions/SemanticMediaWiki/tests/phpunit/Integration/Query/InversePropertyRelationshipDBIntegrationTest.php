@@ -2,28 +2,15 @@
 
 namespace SMW\Tests\Integration\Query;
 
+use SMW\ApplicationFactory;
+use SMW\DataValueFactory;
+use SMW\DIProperty;
+use SMW\DIWikiPage;
+use SMW\Query\Language\SomeProperty;
+use SMW\Query\Language\ValueDescription;
 use SMW\Tests\MwDBaseUnitTestCase;
 use SMW\Tests\Utils\UtilityFactory;
-
-use SMW\Query\Language\ThingDescription;
-use SMW\Query\Language\ValueDescription;
-use SMW\Query\Language\SomeProperty;
-
-use SMW\DIWikiPage;
-use SMW\DIProperty;
-use SMW\SemanticData;
-use SMW\DataValueFactory;
-use SMW\Subobject;
-
-use SMWQueryParser as QueryParser;
-use SMWDIBlob as DIBlob;
-use SMWDINumber as DINumber;
 use SMWQuery as Query;
-use SMWQueryResult as QueryResult;
-use SMWDataValue as DataValue;
-use SMWDataItem as DataItem;
-use SMW\Query\PrintRequest as PrintRequest;
-use SMWPropertyValue as PropertyValue;
 
 /**
  * @see http://semantic-mediawiki.org/wiki/Inverse_Properties
@@ -44,7 +31,7 @@ use SMWPropertyValue as PropertyValue;
  */
 class InversePropertyRelationshipDBIntegrationTest extends MwDBaseUnitTestCase {
 
-	private $subjectsToBeCleared = array();
+	private $subjectsToBeCleared = [];
 
 	private $semanticDataFactory;
 	private $dataValueFactory;
@@ -59,7 +46,7 @@ class InversePropertyRelationshipDBIntegrationTest extends MwDBaseUnitTestCase {
 		$this->semanticDataFactory = UtilityFactory::getInstance()->newSemanticDataFactory();
 
 		$this->dataValueFactory = DataValueFactory::getInstance();
-		$this->queryParser = new QueryParser();
+		$this->queryParser = ApplicationFactory::getInstance()->getQueryFactory()->newQueryParser();
 	}
 
 	protected function tearDown() {
@@ -115,18 +102,18 @@ class InversePropertyRelationshipDBIntegrationTest extends MwDBaseUnitTestCase {
 			$queryResult->getCount()
 		);
 
-		$expectedSubjects = array(
+		$expectedSubjects = [
 			new DIWikiPage( 'Carol', NS_MAIN, '' )
-		);
+		];
 
 		$this->queryResultValidator->assertThatQueryResultHasSubjects(
 			$expectedSubjects,
 			$queryResult
 		);
 
-		$this->subjectsToBeCleared = array(
+		$this->subjectsToBeCleared = [
 			$semanticData->getSubject()
-		);
+		];
 	}
 
 	private function newDataValueForPagePropertyValue( $property, $value ) {
@@ -136,7 +123,7 @@ class InversePropertyRelationshipDBIntegrationTest extends MwDBaseUnitTestCase {
 
 		$dataItem = new DIWikiPage( $value, NS_MAIN, '' );
 
-		return $this->dataValueFactory->newDataItemValue(
+		return $this->dataValueFactory->newDataValueByItem(
 			$dataItem,
 			$property
 		);

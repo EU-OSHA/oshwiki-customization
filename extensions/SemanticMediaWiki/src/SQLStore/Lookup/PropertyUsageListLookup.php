@@ -2,14 +2,14 @@
 
 namespace SMW\SQLStore\Lookup;
 
-use SMW\Store;
-use SMW\Store\PropertyStatisticsStore;
-use SMW\SQLStore\Lookup\ListLookup;
+use RuntimeException;
 use SMW\DIProperty;
+use SMW\Exception\PropertyLabelNotResolvedException;
+use SMW\SQLStore\PropertyStatisticsStore;
+use SMW\SQLStore\SQLStore;
+use SMW\Store;
 use SMWDIError as DIError;
 use SMWRequestOptions as RequestOptions;
-use SMW\InvalidPropertyException;
-use RuntimeException;
 
 /**
  * @license GNU GPL v2+
@@ -59,7 +59,7 @@ class PropertyUsageListLookup implements ListLookup {
 			throw new RuntimeException( "Missing requestOptions" );
 		}
 
-		return $this->buildPropertyList( $this->selectPropertiesFromTable() );
+		return $this->getPropertyList( $this->doQueryPropertyTable() );
 	}
 
 	/**
@@ -67,7 +67,7 @@ class PropertyUsageListLookup implements ListLookup {
 	 *
 	 * @return boolean
 	 */
-	public function isCached() {
+	public function isFromCache() {
 		return false;
 	}
 
@@ -85,73 +85,66 @@ class PropertyUsageListLookup implements ListLookup {
 	 *
 	 * @return string
 	 */
-	public function getLookupIdentifier() {
-		return 'smwgPropertiesCache#' . json_encode( (array)$this->requestOptions );
+	public function getHash() {
+		return __METHOD__ . '#' . ( $this->requestOptions !== null ? $this->requestOptions->getHash() : '' );
 	}
 
-	private function selectPropertiesFromTable() {
+	private function doQueryPropertyTable() {
 
 		// the query needs to do the filtering of internal properties, else LIMIT is wrong
-		$options = array( 'ORDER BY' => 'smw_sortkey' );
+		$options = [ 'ORDER BY' => 'smw_sort' ];
+		$search_field = 'smw_sortkey';
 
-		$conditions = array(
+		$conditions = [
 			'smw_namespace' => SMW_NS_PROPERTY,
 			'smw_iw' => '',
-		);
+			'smw_subobject' => ''
+		];
 
 		if ( $this->requestOptions->limit > 0 ) {
 			$options['LIMIT'] = $this->requestOptions->limit;
 			$options['OFFSET'] = max( $this->requestOptions->offset, 0 );
 		}
 
-		if ( $this->requestOptions->getStringConditions() ) {
-			$conditions[] = $this->store->getSQLConditions( $this->requestOptions, '', 'smw_title', false );
+		if ( $this->requestOptions->getOption( RequestOptions::SEARCH_FIELD ) ) {
+			$search_field = $this->requestOptions->getOption( RequestOptions::SEARCH_FIELD );
 		}
 
-		$res = $this->store->getConnection( 'mw.db' )->select(
-			$this->store->getObjectIds()->getIdTable(),
-			array(
-				'smw_id',
-				'smw_title'
-			),
+		if ( $this->requestOptions->getStringConditions() ) {
+			$conditions[] = $this->store->getSQLConditions( $this->requestOptions, '', $search_field, false );
+		}
+
+		$db = $this->store->getConnection( 'mw.db' );
+
+		$res = $db->select(
+			[ $db->tableName( SQLStore::ID_TABLE ), $db->tableName( SQLStore::PROPERTY_STATISTICS_TABLE ) ],
+			[ 'smw_id', 'smw_title', 'usage_count' ],
 			$conditions,
 			__METHOD__,
-			$options
+			$options,
+			[ $db->tableName( SQLStore::ID_TABLE ) => [ 'INNER JOIN', [ 'smw_id=p_id' ] ] ]
 		);
 
 		return $res;
 	}
 
-	private function buildPropertyList( $res ) {
+	private function getPropertyList( $res ) {
 
-		$result = array();
-		$propertyIds = array();
-
-		foreach ( $res as $row ) {
-			$propertyIds[] = (int)$row->smw_id;
-		}
-
-		$usageCounts = $this->propertyStatisticsStore->getUsageCounts( $propertyIds );
+		$result = [];
 
 		foreach ( $res as $row ) {
-			$result[] = $this->addPropertyRowToList( $row, $usageCounts );
+
+			try {
+				$property = new DIProperty( str_replace( ' ', '_', $row->smw_title ) );
+			} catch ( PropertyLabelNotResolvedException $e ) {
+				$property = new DIError( new \Message( 'smw_noproperty', [ $row->smw_title ] ) );
+			}
+
+			$property->id = isset( $row->smw_id ) ? $row->smw_id : -1;
+			$result[] = [ $property, (int)$row->usage_count ];
 		}
 
 		return $result;
-	}
-
-	private function addPropertyRowToList( $row, $usageCounts ) {
-
-		try {
-			$property = new DIProperty( $row->smw_title );
-		} catch ( InvalidPropertyException $e ) {
-			$property = new DIError( new \Message( 'smw_noproperty', array( $row->smw_title ) ) );
-		}
-
-		// If there is no key entry in the usageCount table for that
-		// particular property it is to be counted with usage 0
-		$count = array_key_exists( (int)$row->smw_id, $usageCounts ) ? $usageCounts[(int)$row->smw_id] : 0;
-		return array( $property, $count );
 	}
 
 }

@@ -60,12 +60,130 @@ class QueryComparatorTest extends \PHPUnit_Framework_TestCase {
 		);
 	}
 
+	/**
+	 * @dataProvider extractStringComparatorProvider
+	 */
+	public function testExtractComparatorFromString( $string, $expectedString, $expectedComparator ) {
+
+		$comparatorList = '';
+
+		$instance = new QueryComparator( $comparatorList, true );
+
+		$this->assertEquals(
+			$expectedComparator,
+			$instance->extractComparatorFromString( $string )
+		);
+
+		$this->assertEquals(
+			$expectedString,
+			$string
+		);
+	}
+
+	/**
+	 * @dataProvider containsComparatorProvider
+	 */
+	public function testContainsComparator( $string, $comparator, $expected ) {
+
+		$comparatorList = '';
+
+		$instance = new QueryComparator( $comparatorList, true );
+
+		$this->assertEquals(
+			$expected,
+			$instance->containsComparator( $string, $comparator )
+		);
+	}
+
 	public function stringComparatorProvider() {
 
-		$provider[] = array(
+		$provider[] = [
 			'!~',
 			SMW_CMP_NLKE
-		);
+		];
+
+		return $provider;
+	}
+
+	public function extractStringComparatorProvider() {
+
+		$provider[] = [
+			'!~Foo',
+			'Foo',
+			SMW_CMP_NLKE
+		];
+
+		$provider[] = [
+			'<Foo',
+			'Foo',
+			SMW_CMP_LESS
+		];
+
+		$provider[] = [
+			'like:Foo',
+			'Foo',
+			SMW_CMP_PRIM_LIKE
+		];
+
+		$provider[] = [
+			'nlike:Foo',
+			'Foo',
+			SMW_CMP_PRIM_NLKE
+		];
+
+		return $provider;
+	}
+
+	public function containsComparatorProvider() {
+
+		$provider[] = [
+			'~someThing',
+			SMW_CMP_EQ,
+			false
+		];
+
+		$provider[] = [
+			'someThing',
+			SMW_CMP_EQ,
+			true
+		];
+
+		$provider[] = [
+			'!~someThing',
+			SMW_CMP_NLKE,
+			true
+		];
+
+		$provider[] = [
+			'!~someThing',
+			SMW_CMP_LIKE,
+			false
+		];
+
+		$provider[] = [
+			'>>someThing',
+			SMW_CMP_LESS,
+			false
+		];
+
+		$provider[] = [
+			'<<someThing',
+			SMW_CMP_LESS,
+			true
+		];
+
+
+		$provider[] = [
+			'like:someThing',
+			SMW_CMP_PRIM_LIKE,
+			true
+		];
+
+		$provider[] = [
+			'nlike:someThing',
+			SMW_CMP_PRIM_NLKE,
+			true
+		];
 
 		return $provider;
 	}

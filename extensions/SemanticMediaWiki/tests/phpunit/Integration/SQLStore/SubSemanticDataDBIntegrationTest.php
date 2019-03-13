@@ -2,14 +2,12 @@
 
 namespace SMW\Tests\Integration\SQLStore;
 
+use SMW\DIProperty;
+use SMW\DIWikiPage;
 use SMW\Tests\MwDBaseUnitTestCase;
 use SMW\Tests\Utils\PageCreator;
 use SMW\Tests\Utils\PageDeleter;
 use SMW\Tests\Utils\Validators\SemanticDataValidator;
-
-use SMW\DIProperty;
-use SMW\DIWikiPage;
-
 use Title;
 
 /**
@@ -56,19 +54,19 @@ class SubSemanticDataDBIntegrationTest extends MwDBaseUnitTestCase {
 			$semanticData->findSubSemanticData( 'namedSubobject' )
 		);
 
-		$expected = array(
+		$expected = [
 			'propertyCount'  => 2,
-			'properties' => array(
+			'properties' => [
 				new DIProperty( 'AA' ),
 				new DIProperty( 'BB' ),
 				new DIProperty( '_SKEY' )
-			),
-			'propertyValues' => array(
+			],
+			'propertyValues' => [
 				'Test1',
 				'Test2',
 				'Z'
-			)
-		);
+			]
+		];
 
 		$semanticDataValidator = new SemanticDataValidator();
 

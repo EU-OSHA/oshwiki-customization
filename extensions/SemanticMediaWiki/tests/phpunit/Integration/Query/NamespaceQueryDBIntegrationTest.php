@@ -2,14 +2,12 @@
 
 namespace SMW\Tests\Integration\Query;
 
-use SMW\Tests\MwDBaseUnitTestCase;
-use SMW\Tests\Utils\UtilityFactory;
-
-use SMW\Query\Language\NamespaceDescription;
 use SMW\Query\Language\Conjunction;
+use SMW\Query\Language\NamespaceDescription;
 use SMW\Query\Language\SomeProperty;
 use SMW\Query\Language\ValueDescription;
-
+use SMW\Tests\MwDBaseUnitTestCase;
+use SMW\Tests\Utils\UtilityFactory;
 use SMWQuery as Query;
 
 /**
@@ -33,7 +31,7 @@ class NamespaceQueryDBIntegrationTest extends MwDBaseUnitTestCase {
 	private $semanticDataFactory;
 
 	private $queryResultValidator;
-	private $subjects = array();
+	private $subjects = [];
 
 	protected function setUp() {
 		parent::setUp();

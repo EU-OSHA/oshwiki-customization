@@ -3,8 +3,8 @@
 namespace SMW\Tests\MediaWiki;
 
 use SMW\MediaWiki\TitleLookup;
-
 use Title;
+use SMW\Tests\PHPUnitCompat;
 
 /**
  * @covers \SMW\MediaWiki\TitleLookup
@@ -16,6 +16,8 @@ use Title;
  * @author mwjames
  */
 class TitleLookupTest extends \PHPUnit_Framework_TestCase {
+
+	use PHPUnitCompat;
 
 	public function testCanConstruct() {
 
@@ -45,7 +47,7 @@ class TitleLookupTest extends \PHPUnit_Framework_TestCase {
 				$this->anything(),
 				$this->anything(),
 				$this->anything() )
-			->will( $this->returnValue( array( $row ) ) );
+			->will( $this->returnValue( [ $row ] ) );
 
 		$instance = new TitleLookup( $database );
 
@@ -68,10 +70,10 @@ class TitleLookupTest extends \PHPUnit_Framework_TestCase {
 			->method( 'select' )
 			->with( $this->anything(),
 				$this->anything(),
-				$this->equalTo( array( 'page_namespace' => NS_MAIN ) ),
+				$this->equalTo( [ 'page_namespace' => NS_MAIN ] ),
 				$this->anything(),
 				$this->anything() )
-			->will( $this->returnValue( array( $row ) ) );
+			->will( $this->returnValue( [ $row ] ) );
 
 		$instance = new TitleLookup( $database );
 
@@ -93,10 +95,10 @@ class TitleLookupTest extends \PHPUnit_Framework_TestCase {
 			->method( 'select' )
 			->with( $this->stringContains( 'category' ),
 				$this->anything(),
-				$this->equalTo( array( "cat_id BETWEEN 1 AND 5" ) ),
+				$this->equalTo( [ "cat_id BETWEEN 1 AND 5" ] ),
 				$this->anything(),
 				$this->anything() )
-			->will( $this->returnValue( array( $row ) ) );
+			->will( $this->returnValue( [ $row ] ) );
 
 		$instance = new TitleLookup( $database );
 
@@ -119,10 +121,10 @@ class TitleLookupTest extends \PHPUnit_Framework_TestCase {
 			->method( 'select' )
 			->with( $this->anything(),
 				$this->anything(),
-				$this->equalTo( array( "page_id BETWEEN 6 AND 10", 'page_namespace' => NS_MAIN ) ),
+				$this->equalTo( [ "page_id BETWEEN 6 AND 10", 'page_namespace' => NS_MAIN ] ),
 				$this->anything(),
 				$this->anything() )
-			->will( $this->returnValue( array( $row ) ) );
+			->will( $this->returnValue( [ $row ] ) );
 
 		$instance = new TitleLookup( $database );
 
@@ -141,7 +143,7 @@ class TitleLookupTest extends \PHPUnit_Framework_TestCase {
 			->method( 'select' )
 			->with( $this->anything(),
 				$this->anything(),
-				$this->equalTo( array( 'page_namespace' => NS_MAIN ) ),
+				$this->equalTo( [ 'page_namespace' => NS_MAIN ] ),
 				$this->anything(),
 				$this->anything() )
 			->will( $this->returnValue( false ) );
@@ -150,6 +152,29 @@ class TitleLookupTest extends \PHPUnit_Framework_TestCase {
 
 		$this->assertArrayOfTitles(
 			$instance->setNamespace( NS_MAIN )->selectAll()
+		);
+	}
+
+	public function testSelectAllRedirectPages() {
+
+		$database = $this->getMockBuilder( '\SMW\MediaWiki\Database' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$database->expects( $this->any() )
+			->method( 'select' )
+			->with(
+				$this->equalTo( [ 'page', 'redirect' ] ),
+				$this->anything(),
+				$this->anything(),
+				$this->anything(),
+				$this->anything() )
+			->will( $this->returnValue( false ) );
+
+		$instance = new TitleLookup( $database );
+
+		$this->assertArrayOfTitles(
+			$instance->getRedirectPages()
 		);
 	}
 

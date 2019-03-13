@@ -2,11 +2,10 @@
 
 namespace SMW\Test\MediaWiki\Hooks;
 
-use SMW\MediaWiki\Hooks\LinksUpdateConstructed;
-use SMW\ApplicationFactory;
-
-use ParserOutput;
 use LinksUpdate;
+use ParserOutput;
+use SMW\MediaWiki\Hooks\LinksUpdateConstructed;
+use SMW\Tests\TestEnvironment;
 use Title;
 
 /**
@@ -20,66 +19,115 @@ use Title;
  */
 class LinksUpdateConstructedTest extends \PHPUnit_Framework_TestCase {
 
-	private $applicationFactory;
+	private $testEnvironment;
+	private $namespaceExaminer;
 
 	protected function setUp() {
 		parent::setUp();
 
-		$this->applicationFactory = ApplicationFactory::getInstance();
+		$this->testEnvironment = new TestEnvironment();
 
-		$store = $this->getMockBuilder( '\SMW\Store' )
+		$this->namespaceExaminer = $this->getMockBuilder( '\SMW\NamespaceExaminer' )
 			->disableOriginalConstructor()
-			->getMockForAbstractClass();
+			->getMock();
 
-		$this->applicationFactory->registerObject( 'Store', $store );
+		$idTable = $this->getMockBuilder( '\stdClass' )
+			->setMethods( [ 'exists' ] )
+			->getMock();
+
+		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
+			->disableOriginalConstructor()
+			->setMethods( [ 'getObjectIds' ] )
+			->getMock();
+
+		$store->expects( $this->any() )
+			->method( 'getObjectIds' )
+			->will( $this->returnValue( $idTable ) );
+
+		$this->testEnvironment->registerObject( 'Store', $store );
 	}
 
 	protected function tearDown() {
-		$this->applicationFactory->clear();
-
+		$this->testEnvironment->tearDown();
 		parent::tearDown();
 	}
 
 	public function testCanConstruct() {
 
-		$linksUpdate = $this->getMockBuilder( '\LinksUpdate' )
-			->disableOriginalConstructor()
-			->getMock();
-
 		$this->assertInstanceOf(
-			'\SMW\MediaWiki\Hooks\LinksUpdateConstructed',
-			new LinksUpdateConstructed( $linksUpdate )
+			LinksUpdateConstructed::class,
+			new LinksUpdateConstructed( $this->namespaceExaminer )
 		);
 	}
 
 	public function testProcess() {
 
-		$title = Title::newFromText( __METHOD__ );
-		$title->resetArticleID( rand( 1, 1000 ) );
+		$title = $this->getMockBuilder( '\Title' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$title->expects( $this->any() )
+			->method( 'getArticleID' )
+			->will( $this->returnValue( 11001 ) );
+
+		$title->expects( $this->any() )
+			->method( 'getDBKey' )
+			->will( $this->returnValue( __METHOD__ ) );
+
+		$title->expects( $this->any() )
+			->method( 'getPrefixedText' )
+			->will( $this->returnValue( __METHOD__ ) );
+
+		$title->expects( $this->any() )
+			->method( 'getNamespace' )
+			->will( $this->returnValue( NS_MAIN ) );
+
+		$title->expects( $this->any() )
+			->method( 'isSpecialPage' )
+			->will( $this->returnValue( false ) );
 
 		$parserOutput = new ParserOutput();
 		$parserOutput->setTitleText( $title->getPrefixedText() );
 
-		$store = $this->getMockBuilder( '\SMW\Store' )
+		$idTable = $this->getMockBuilder( '\stdClass' )
+			->setMethods( [ 'exists' ] )
+			->getMock();
+
+		$idTable->expects( $this->atLeastOnce() )
+			->method( 'exists' )
+			->will( $this->returnValue( true ) );
+
+		$store = $this->getMockBuilder( '\SMW\SQLStore\SQLStore' )
 			->disableOriginalConstructor()
-			->setMethods( array( 'updateData' ) )
-			->getMockForAbstractClass();
+			->setMethods( [ 'clearData', 'getObjectIds' ] )
+			->getMock();
+
+		$store->expects( $this->any() )
+			->method( 'getObjectIds' )
+			->will( $this->returnValue( $idTable ) );
 
 		$store->expects( $this->atLeastOnce() )
-			->method( 'updateData' );
+			->method( 'clearData' );
 
-		$this->applicationFactory->registerObject( 'Store', $store );
+		$this->testEnvironment->registerObject( 'Store', $store );
 
-		$instance = new LinksUpdateConstructed( new LinksUpdate( $title, $parserOutput ) );
+		$instance = new LinksUpdateConstructed(
+			$this->namespaceExaminer
+		);
 
-		$this->assertTrue( $instance->process() );
+		$instance->setLogger( $this->testEnvironment->newSpyLogger() );
+		$instance->disableDeferredUpdate();
+
+		$this->assertTrue(
+			$instance->process( new LinksUpdate( $title, $parserOutput ) )
+		);
 	}
 
 	public function testNoExtraParsingForNotEnabledNamespace() {
 
-		$this->applicationFactory->getSettings()->set(
+		$this->testEnvironment->addConfiguration(
 			'smwgNamespacesWithSemanticLinks',
-			array( NS_HELP => false )
+			[ NS_HELP => false ]
 		);
 
 		$title = Title::newFromText( __METHOD__, NS_HELP );
@@ -95,7 +143,7 @@ class LinksUpdateConstructedTest extends \PHPUnit_Framework_TestCase {
 		$parserData->expects( $this->once() )
 			->method( 'updateStore' );
 
-		$this->applicationFactory->registerObject( 'ParserData', $parserData );
+		$this->testEnvironment->registerObject( 'ParserData', $parserData );
 
 		$linksUpdate = $this->getMockBuilder( '\LinksUpdate' )
 			->disableOriginalConstructor()
@@ -105,14 +153,85 @@ class LinksUpdateConstructedTest extends \PHPUnit_Framework_TestCase {
 			->method( 'getTitle' )
 			->will( $this->returnValue( $title ) );
 
-		$linksUpdate->expects( $this->once() )
+		$linksUpdate->expects( $this->atLeastOnce() )
 			->method( 'getParserOutput' )
 			->will( $this->returnValue( $parserOutput ) );
 
-		$instance = new LinksUpdateConstructed( $linksUpdate );
+		$instance = new LinksUpdateConstructed(
+			$this->namespaceExaminer
+		);
 
 		$this->assertTrue(
-			$instance->process()
+			$instance->process( $linksUpdate )
+		);
+	}
+
+	public function testTemplateUpdate() {
+
+		$this->testEnvironment->addConfiguration(
+			'smwgNamespacesWithSemanticLinks',
+			[ NS_HELP => false ]
+		);
+
+		$title = Title::newFromText( __METHOD__, NS_HELP );
+		$parserOutput = new ParserOutput();
+
+		$parserData = $this->getMockBuilder( '\SMW\ParserData' )
+			->disableOriginalConstructor()
+			->setMethods( [ 'getSemanticData', 'updateStore', 'markUpdate' ] )
+			->getMock();
+
+		$parserData->expects( $this->never() )
+			->method( 'getSemanticData' );
+
+		$parserData->expects( $this->once() )
+			->method( 'updateStore' );
+
+		$this->testEnvironment->registerObject( 'ParserData', $parserData );
+
+		$linksUpdate = $this->getMockBuilder( '\LinksUpdate' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$linksUpdate->expects( $this->any() )
+			->method( 'getTitle' )
+			->will( $this->returnValue( $title ) );
+
+		$linksUpdate->expects( $this->atLeastOnce() )
+			->method( 'getParserOutput' )
+			->will( $this->returnValue( $parserOutput ) );
+
+		$linksUpdate->mTemplates = [ 'Foo' ];
+		$linksUpdate->mRecursive = false;
+
+		$instance = new LinksUpdateConstructed(
+			$this->namespaceExaminer
+		);
+
+		$instance->process( $linksUpdate );
+
+		$this->assertTrue(
+			$parserData->getOption( $parserData::OPT_FORCED_UPDATE )
+		);
+	}
+
+	public function testIsReadOnly_DoNothing() {
+
+		$linksUpdate = $this->getMockBuilder( '\LinksUpdate' )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$linksUpdate->expects( $this->never() )
+			->method( 'getTitle' );
+
+		$instance = new LinksUpdateConstructed(
+			$this->namespaceExaminer
+		);
+
+		$instance->isReadOnly( true );
+
+		$this->assertFalse(
+			$instance->process( $linksUpdate )
 		);
 	}
 

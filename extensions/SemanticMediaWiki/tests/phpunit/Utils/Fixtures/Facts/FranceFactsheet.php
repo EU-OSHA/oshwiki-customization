@@ -2,17 +2,12 @@
 
 namespace SMW\Tests\Utils\Fixtures\Facts;
 
-use SMW\Tests\Utils\UtilityFactory;
+use SMW\DataValueFactory;
+use SMW\DIWikiPage;
+use SMW\SemanticData;
 use SMW\Tests\Utils\Fixtures\Properties\CountryCategory;
 use SMW\Tests\Utils\Fixtures\Properties\LocatedInProperty;
-
-use SMW\DIWikiPage;
-use SMW\DIProperty;
-use SMW\DataValueFactory;
-use SMW\Subobject;
-use SMW\SemanticData;
-
-use RuntimeException;
+use SMW\Tests\Utils\UtilityFactory;
 
 /**
  * @license GNU GPL v2+
@@ -91,7 +86,7 @@ class FranceFactsheet {
 
 		$locatedInProperty = new LocatedInProperty();
 
-		return $this->dataValueFactory->newDataItemValue(
+		return $this->dataValueFactory->newDataValueByItem(
 			DIWikiPage::newFromText( 'European Union', NS_MAIN ),
 			$locatedInProperty->getProperty(),
 			'EU'
@@ -103,7 +98,7 @@ class FranceFactsheet {
 	 */
 	public function purge() {
 
-		$subjects = array();
+		$subjects = [];
 
 		$subjects[] = $this->asSubject();
 		$subjects[] = $this->targetSubject;
