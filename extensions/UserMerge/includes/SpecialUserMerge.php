@@ -16,7 +16,7 @@
  */
 
 class SpecialUserMerge extends FormSpecialPage {
-	function __construct() {
+	public function __construct() {
 		parent::__construct( 'UserMerge', 'usermerge' );
 	}
 
@@ -24,72 +24,76 @@ class SpecialUserMerge extends FormSpecialPage {
 	 * @return array
 	 */
 	protected function getFormFields() {
-		$us = $this;
-		return array(
-			'olduser' => array(
+		return [
+			'olduser' => [
 				'type' => 'text',
 				'label-message' => 'usermerge-olduser',
 				'required' => true,
-				'validation-callback' => function( $val ) use ( $us ) {
+				'validation-callback' => function ( $val ) {
 					// only pass strings to User::newFromName
-					if ( !is_string( $val ) ) { return true; }
+					if ( !is_string( $val ) ) {
+						return true;
+					}
 
-					$key = $us->validateOldUser( $val );
+					$key = $this->validateOldUser( $val );
 					if ( is_string( $key ) || is_array( $key ) ) {
-						return $us->msg( $key )->escaped();
+						return $this->msg( $key )->escaped();
 					}
 					return true;
 				},
-			),
-			'newuser' => array(
+			],
+			'newuser' => [
 				'type' => 'text',
 				'required' => true,
 				'label-message' => 'usermerge-newuser',
-				'validation-callback' => function( $val ) use ( $us ) {
+				'validation-callback' => function ( $val ) {
 					// only pass strings to User::newFromName
-					if ( !is_string( $val ) ) { return true; }
+					if ( !is_string( $val ) ) {
+						return true;
+					}
 
-					$key = $us->validateNewUser( $val );
+					$key = $this->validateNewUser( $val );
 					if ( is_string( $key ) ) {
-						return $us->msg( $key )->escaped();
+						return $this->msg( $key )->escaped();
 					}
 					return true;
 				},
-			),
-			'delete' => array(
+			],
+			'delete' => [
 				'type' => 'check',
 				'label-message' => 'usermerge-deleteolduser',
-			),
-		);
+			],
+		];
 	}
 
 	/**
-	 * @param $val user's input for username
-	 * @return bool|string true if valid, a string of the error's message key if validation failed
+	 * @param string $val user's input for username
+	 * @return bool|string|string[] true if valid, a string or string[] of the error's message key
+	 *   if validation failed
 	 */
 	public function validateOldUser( $val ) {
-		global $wgUserMergeProtectedGroups;
 		$oldUser = User::newFromName( $val );
 		if ( !$oldUser || $oldUser->getId() === 0 ) {
 			return 'usermerge-badolduser';
 		}
 		if ( $this->getUser()->getId() === $oldUser->getId() ) {
-			return array( 'usermerge-noselfdelete', $this->getUser()->getName() );
+			return [ 'usermerge-noselfdelete', $this->getUser()->getName() ];
 		}
-		if ( count( array_intersect( $oldUser->getGroups(), $wgUserMergeProtectedGroups ) ) ) {
-			return array( 'usermerge-protectedgroup', $oldUser->getName() );
+		$protectedGroups = $this->getConfig()->get( 'UserMergeProtectedGroups' );
+		if ( count( array_intersect( $oldUser->getGroups(), $protectedGroups ) ) ) {
+			return [ 'usermerge-protectedgroup', $oldUser->getName() ];
 		}
 
 		return true;
 	}
 
 	/**
-	 * @param $val user's input for username
+	 * @param string $val user's input for username
 	 * @return bool|string true if valid, a string of the error's message key if validation failed
 	 */
 	public function validateNewUser( $val ) {
-		global $wgUserMergeEnableDelete;
-		if ( $wgUserMergeEnableDelete && $val === 'Anonymous' ) {
+		$enableDelete = $this->getConfig()->get( 'UserMergeEnableDelete' );
+		if ( $enableDelete && $val === 'Anonymous' ) {
 			return true; // Special case
 		}
 		$newUser = User::newFromName( $val );
@@ -105,7 +109,6 @@ class SpecialUserMerge extends FormSpecialPage {
 	 */
 	protected function alterForm( HTMLForm $form ) {
 		$form->setSubmitTextMsg( 'usermerge-submit' );
-		$form->setWrapperLegendMsg( 'usermerge-fieldset' );
 	}
 
 	/**
@@ -113,12 +116,12 @@ class SpecialUserMerge extends FormSpecialPage {
 	 * @return Status
 	 */
 	public function onSubmit( array $data ) {
-		global $wgUserMergeEnableDelete;
+		$enableDelete = $this->getConfig()->get( 'UserMergeEnableDelete' );
 		// Most of the data has been validated using callbacks
 		// still need to check if the users are different
 		$newUser = User::newFromName( $data['newuser'] );
 		// Handle "Anonymous" as a special case for user deletion
-		if ( $wgUserMergeEnableDelete && $data['newuser'] === 'Anonymous' ) {
+		if ( $enableDelete && $data['newuser'] === 'Anonymous' ) {
 			$newUser->mId = 0;
 		}
 
@@ -129,7 +132,7 @@ class SpecialUserMerge extends FormSpecialPage {
 
 		// Validation passed, let's merge the user now.
 		$um = new MergeUser( $oldUser, $newUser, new UserMergeLogger() );
-		$um->merge( $this->getUser() );
+		$um->merge( $this->getUser(), __METHOD__ );
 
 		$out = $this->getOutput();
 
@@ -140,7 +143,7 @@ class SpecialUserMerge extends FormSpecialPage {
 		);
 
 		if ( $data['delete'] ) {
-			$failed = $um->delete( $this->getUser(), array( $this, 'msg' ) );
+			$failed = $um->delete( $this->getUser(), [ $this, 'msg' ] );
 			$out->addWikiMsg(
 				'usermerge-userdeleted', $oldUser->getName(), $oldUser->getId()
 			);
@@ -148,13 +151,14 @@ class SpecialUserMerge extends FormSpecialPage {
 			if ( $failed ) {
 				// Output an error message for failed moves
 				$out->addHTML( Html::openElement( 'ul' ) );
+				$linkRenderer = $this->getLinkRenderer();
 				foreach ( $failed as $oldTitleText => $newTitle ) {
 					$oldTitle = Title::newFromText( $oldTitleText );
 					$out->addHTML(
-						Html::rawElement( 'li', array(),
+						Html::rawElement( 'li', [],
 							$this->msg( 'usermerge-page-unmoved' )->rawParams(
-								Linker::link( $oldTitle ),
-								Linker::link( $newTitle )
+								$linkRenderer->makeLink( $oldTitle ),
+								$linkRenderer->makeLink( $newTitle )
 							)->escaped()
 						)
 					);
@@ -166,14 +170,17 @@ class SpecialUserMerge extends FormSpecialPage {
 		return Status::newGood();
 	}
 
+	/**
+	 * @inheritDoc
+	 */
+	protected function getDisplayFormat() {
+		return 'ooui';
+	}
+
+	/**
+	 * @inheritDoc
+	 */
 	protected function getGroupName() {
 		return 'users';
 	}
-}
-
-/**
- * Former class name, for backwards compatability
- * @deprecated
- */
-class UserMerge extends SpecialUserMerge {
 }

@@ -1,6 +1,6 @@
 {
 	"name": "UserMerge",
-	"version": "1.9.0",
+	"version": "1.10.1",
 	"author": [
 		"Tim Laqua",
 		"Thomas Gries",
@@ -8,13 +8,16 @@
 	],
 	"url": "https://www.mediawiki.org/wiki/Extension:UserMerge",
 	"descriptionmsg": "usermerge-desc",
-	"license-name": "GPL-2.0+",
+	"license-name": "GPL-2.0-or-later",
+	"requires": {
+		"MediaWiki": ">= 1.31.0"
+	},
 	"type": "specialpage",
 	"AvailableRights": [
 		"usermerge"
 	],
 	"SpecialPages": {
-		"UserMerge": "UserMerge"
+		"UserMerge": "SpecialUserMerge"
 	},
 	"LogTypes": [
 		"usermerge"
@@ -25,9 +28,14 @@
 	"LogHeaders": {
 		"usermerge": "usermerge-logpagetext"
 	},
-	"LogActions": {
-		"usermerge/mergeuser": "usermerge-success-log",
-		"usermerge/deleteuser": "usermerge-userdeleted-log"
+	"ActionFilteredLogs": {
+		"usermerge": {
+			"mergeuser": [ "mergeuser" ],
+			"deleteuser": [ "deleteuser" ]
+		}
+	},
+	"LogActionsHandlers": {
+		"usermerge/*": "UserMergeLogFormatter"
 	},
 	"MessagesDirs": {
 		"UserMerge": [
@@ -38,17 +46,11 @@
 		"UserMergeAlias": "UserMerge.alias.php"
 	},
 	"AutoloadClasses": {
-		"SpecialUserMerge": "SpecialUserMerge.php",
-		"UserMerge": "SpecialUserMerge.php",
-		"MergeUser": "MergeUser.php",
-		"IUserMergeLogger": "IUserMergeLogger.php",
-		"UserMergeLogger": "UserMergeLogger.php",
-		"UserMergeHooks": "UserMerge.hooks.php"
-	},
-	"Hooks": {
-		"UnitTestsList": [
-			"UserMergeHooks::onUnitTestsList"
-		]
+		"SpecialUserMerge": "includes/SpecialUserMerge.php",
+		"MergeUser": "includes/MergeUser.php",
+		"IUserMergeLogger": "includes/IUserMergeLogger.php",
+		"UserMergeLogger": "includes/UserMergeLogger.php",
+		"UserMergeLogFormatter": "includes/UserMergeLogFormatter.php"
 	},
 	"config": {
 		"UserMergeEnableDelete": true,
