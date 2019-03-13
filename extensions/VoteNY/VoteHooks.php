@@ -29,8 +29,6 @@ class VoteHooks {
 	public static function renderVote( $input, $args, $parser ) {
 		global $wgOut, $wgUser;
 
-		wfProfileIn( __METHOD__ );
-
 		// Disable parser cache (sadly we have to do this, because the caching is
 		// messing stuff up; we want to show an up-to-date rating instead of old
 		// or totally wrong rating, i.e. another page's rating...)
@@ -71,8 +69,6 @@ class VoteHooks {
 
 			$output = $vote->display();
 		}
-
-		wfProfileOut( __METHOD__ );
 
 		return $output;
 	}
