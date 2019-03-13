@@ -1,50 +1,57 @@
 <?php
-if (!defined('MEDIAWIKI')) die();
+if ( !defined( 'MEDIAWIKI' ) ) {
+	die();
+}
+
 /**
  * Class file for the AddThis extension
  *
  * @addtogroup Extensions
- * @license GPL
+ * @license GPL-2.0-only
  */
 class AddThis {
-
 	/**
 	 * Register parser hook
 	 *
-	 * @param $parser Parser
+	 * @param Parser &$parser
 	 * @return bool
 	 */
 	public static function AddThisHeaderTag( &$parser ) {
-		$parser->setHook( 'addthis', __CLASS__.'::parserHook' );
+		$parser->setHook( 'addthis', __CLASS__ . '::parserHook' );
+
 		return true;
 	}
 
 	/**
 	 * Parser hook for the <addthis /> tag extension.
 	 *
-	 * @param $parser
+	 * @param Parser $parser
 	 * @return string
 	 */
-	 static function parserHook( $parser ) {
+	public static function parserHook( $parser ) {
 		global $wgAddThis, $wgAddThispubid, $wgAddThisHServ, $wgAddThisBackground, $wgAddThisBorder;
 
 		# Localisation for "Share"
 		$share = wfMessage( 'addthis' )->escaped();
 
 		# Output AddThis widget
-		$output ='<!-- AddThis Button BEGIN -->
-			<div class="addthis_toolbox addthis_default_style" id="addthistoolbar" style="background:'.$wgAddThisBackground.'; border-color:'.$wgAddThisBorder.';">
-				<a href="//www.addthis.com/bookmark.php?v=250&amp;pubid='.$wgAddThispubid.'" class="addthis_button_compact">&nbsp;' . $share . '</a><span class="addthis_separator">&nbsp;</span>';
+		$output = '<!-- AddThis Button BEGIN -->
+			<div class="addthis_toolbox addthis_default_style" id="addthistoolbar" style="background:' .
+			$wgAddThisBackground . '; border-color:' . $wgAddThisBorder . ';">
+				<a href="//www.addthis.com/bookmark.php?v=250&amp;pubid=' . $wgAddThispubid .
+			'" class="addthis_button_compact">&nbsp;' . $share .
+			'</a><span class="addthis_separator">&nbsp;</span>';
 
 		$output .= self::makeLinks( $wgAddThisHServ );
-		$output .='</div>
-			<script type="text/javascript" src="//s7.addthis.com/js/250/addthis_widget.js#pubid='.$wgAddThispubid.'"></script>';
-			
+		$output .= '</div>
+			<script type="text/javascript" src="//s7.addthis.com/js/250/addthis_widget.js#pubid=' .
+			$wgAddThispubid . '"></script>';
+
 		# Output AddThis Address Bar Sharing script, if enabled
 		if ( $wgAddThis['addressbarsharing'] ) {
-			$output .='<script type="text/javascript">var addthis_config = {"data_track_addressbar":true};</script>';
+			$output .=
+				'<script type="text/javascript">var addthis_config = {"data_track_addressbar":true};</script>';
 		}
-
 
 		return $output;
 	}
@@ -52,16 +59,17 @@ class AddThis {
 	/**
 	 * Function for article header toolbar
 	 *
-	 * @param $article Article
-	 * @param $outputDone
-	 * @param $pcache
+	 * @param Article &$article
+	 * @param bool &$outputDone
+	 * @param bool &$pcache
 	 * @return bool|bool
 	 */
 	public static function AddThisHeader( &$article, &$outputDone, &$pcache ) {
 		global $wgOut, $wgAddThispubid, $wgAddThis, $wgAddThisHeader, $wgAddThisMain,
-		       $wgAddThisHServ, $wgAddThisBackground, $wgAddThisBorder;
+			   $wgAddThisHServ, $wgAddThisBackground, $wgAddThisBorder;
 
-		# Check if page is in content namespace and the setting to enable/disable article header tooblar either on the main page or at all
+		# Check if page is in content namespace and the setting to enable/disable
+		# article header tooblar either on the main page or at all
 		if ( !MWNamespace::isContent( $article->getTitle()->getNamespace() )
 			|| !$wgAddThisHeader
 			|| ( $article->getTitle()->equals( Title::newMainPage() ) && !$wgAddThisMain )
@@ -73,19 +81,25 @@ class AddThis {
 		$share = wfMessage( 'addthis' )->escaped();
 
 		# Output AddThis widget
-		$wgOut->addHTML('<!-- AddThis Button BEGIN -->
-			<div class="addthis_toolbox addthis_default_style" id="addthistoolbar" style="background:'.$wgAddThisBackground.'; border-color:'.$wgAddThisBorder.';">
-			<a href="//www.addthis.com/bookmark.php?v=250&amp;pubid='.$wgAddThispubid.'" class="addthis_button_compact">&nbsp;' . $share . '</a><span class="addthis_separator">&nbsp;</span>');
+		$wgOut->addHTML( '<!-- AddThis Button BEGIN -->
+			<div class="addthis_toolbox addthis_default_style" id="addthistoolbar" style="background:' .
+			$wgAddThisBackground . '; border-color:' . $wgAddThisBorder . ';">
+			<a href="//www.addthis.com/bookmark.php?v=250&amp;pubid=' . $wgAddThispubid .
+			'" class="addthis_button_compact">&nbsp;' . $share .
+			'</a><span class="addthis_separator">&nbsp;</span>' );
 
 		$wgOut->addHTML( self::makeLinks( $wgAddThisHServ ) );
 
-		$wgOut->addHTML('</div>
-			<script type="text/javascript" src="//s7.addthis.com/js/250/addthis_widget.js#pubid='.$wgAddThispubid.'"></script>');
+		$wgOut->addHTML( '</div>
+			<script type="text/javascript" src="//s7.addthis.com/js/250/addthis_widget.js#pubid=' .
+			$wgAddThispubid . '"></script>' );
 
 		# Output AddThis Address Bar Sharing script, if enabled
 		if ( $wgAddThis['addressbarsharing'] ) {
-			$wgOut->addHTML('<script type="text/javascript">var addthis_config = {"data_track_addressbar":true};</script>');
-		}		
+			$wgOut->addHTML(
+				'<script type="text/javascript">var addthis_config = {"data_track_addressbar":true};</script>'
+			);
+		}
 
 		return true;
 	}
@@ -93,9 +107,9 @@ class AddThis {
 	/**
 	 * Function for sidebar portlet
 	 *
-	 * @param $skin
-	 * @param $bar
-	 * @return bool|array|bool
+	 * @param Skin $skin
+	 * @param Sidebar &$bar
+	 * @return bool|array
 	 */
 	public static function AddThisSidebar( $skin, &$bar ) {
 		global $wgOut, $wgAddThis, $wgAddThispubid, $wgAddThisSidebar, $wgAddThisSBServ;
@@ -115,11 +129,13 @@ class AddThis {
 		$bar['addthis'] .= self::makeLinks( $wgAddThisSBServ );
 
 		$bar['addthis'] .= '</div>
-			<script type="text/javascript" src="//s7.addthis.com/js/250/addthis_widget.js#pubid='.$wgAddThispubid.'"></script>';
+			<script type="text/javascript" src="//s7.addthis.com/js/250/addthis_widget.js#pubid=' .
+			$wgAddThispubid . '"></script>';
 
 		# Output AddThis Address Bar Sharing script, if enabled
 		if ( $wgAddThis['addressbarsharing'] ) {
-			$bar['addthis'] .='<script type="text/javascript">var addthis_config = {"data_track_addressbar":true};</script>';
+			$bar['addthis'] .=
+				'<script type="text/javascript">var addthis_config = {"data_track_addressbar":true};</script>';
 		}
 
 		return true;
@@ -128,13 +144,13 @@ class AddThis {
 	/**
 	 * Converts an array definition of links into HTML tags
 	 *
-	 * @param $links array
+	 * @param array $links
 	 * @return string
 	 */
 	protected static function makeLinks( $links ) {
 		$html = '';
 		foreach ( $links as $link ) {
-			$attribs = isset( $link['attribs'] ) ? $link['attribs'] : '';
+			$attribs = $link['attribs'] ?? '';
 
 			$html .= '<a class="addthis_button_' . $link['service'] . '" ' . $attribs . '></a>';
 		}
