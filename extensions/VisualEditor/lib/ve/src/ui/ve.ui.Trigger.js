@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface Trigger class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -86,6 +86,7 @@ ve.ui.Trigger.static.primaryKeys = [
 	'tab',
 	'enter',
 	'escape',
+	'space',
 	'page-up',
 	'page-down',
 	'end',
@@ -94,6 +95,7 @@ ve.ui.Trigger.static.primaryKeys = [
 	'up',
 	'right',
 	'down',
+	'insert',
 	'delete',
 	'clear',
 	// Numbers
@@ -168,31 +170,77 @@ ve.ui.Trigger.static.primaryKeys = [
 ];
 
 /**
- * Filter to use when rendering string for a specific platform.
+ * Mappings to use when rendering string for a specific platform.
  *
  * @static
  * @property
  * @inheritable
  */
-ve.ui.Trigger.static.platformFilters = {
-	mac: ( function () {
-		var names = {
-			meta: '⌘',
-			shift: '⇧',
-			backspace: '⌫',
-			ctrl: '^',
-			alt: '⎇',
-			escape: '⎋'
-		};
-		return function ( keys ) {
-			var i, len;
-			for ( i = 0, len = keys.length; i < len; i++ ) {
-				keys[ i ] = names[ keys[ i ] ] || keys[ i ];
-			}
-			return keys.join( '' ).toUpperCase();
-		};
-	} )()
+ve.ui.Trigger.static.platformMapping = {
+	mac: {
+		alt: '⌥',
+		backspace: '⌫',
+		ctrl: '^',
+		'delete': '⌦',
+		down: '↓',
+		end: '↗',
+		// Technically 'enter' is ⌤, but JS doesn't distinguish between 'enter' and
+		// 'return', and the return-arrow is better known
+		enter: '⏎',
+		escape: '⎋',
+		home: '↖',
+		left: '←',
+		meta: '⌘',
+		'page-down': '⇟',
+		'page-up': '⇞',
+		right: '→',
+		shift: '⇧',
+		space: '␣',
+		tab: '⇥',
+		up: '↑'
+	}
 };
+
+/**
+ * Symbol to use when concatenating keys in a sequence.
+ *
+ * @static
+ * @property
+ * @inheritable
+ */
+ve.ui.Trigger.static.platformStringJoiners = {
+	'default': '+',
+	mac: ''
+};
+
+/**
+ * Special keys which have i18n messages
+ *
+ * @static
+ * @property
+ * @inheritable
+ */
+ve.ui.Trigger.static.translatableKeys = [
+	'alt',
+	'backspace',
+	'ctrl',
+	'delete',
+	'down',
+	'end',
+	'enter',
+	'escape',
+	'home',
+	'insert',
+	'left',
+	'meta',
+	'page-down',
+	'page-up',
+	'right',
+	'shift',
+	'space',
+	'tab',
+	'up'
+];
 
 /**
  * Aliases for modifier or primary key names.
@@ -207,7 +255,7 @@ ve.ui.Trigger.static.keyAliases = {
 	apple: 'meta',
 	windows: 'meta',
 	option: 'alt',
-	return: 'enter',
+	'return': 'enter',
 	// Shorthand
 	esc: 'escape',
 	cmd: 'meta',
@@ -238,6 +286,7 @@ ve.ui.Trigger.static.primaryKeyMap = {
 	12: 'clear',
 	13: 'enter',
 	27: 'escape',
+	32: 'space',
 	33: 'page-up',
 	34: 'page-down',
 	35: 'end',
@@ -246,6 +295,7 @@ ve.ui.Trigger.static.primaryKeyMap = {
 	38: 'up',
 	39: 'right',
 	40: 'down',
+	45: 'insert',
 	46: 'delete',
 	// Numbers
 	48: '0',
@@ -381,20 +431,38 @@ ve.ui.Trigger.prototype.toString = function () {
  * Get a trigger message.
  *
  * This is similar to #toString but the resulting string will be formatted in a way that makes it
- * appear more native for the platform.
+ * appear more native for the platform, and special keys will be translated.
  *
- * @return {string} Message for trigger
+ * @param {boolean} explode Whether to return the message split up into some
+ *        reasonable sequence of inputs required
+ * @return {string[]|string} Seprate key messages, or a joined string
  */
-ve.ui.Trigger.prototype.getMessage = function () {
-	var keys,
-		platformFilters = ve.ui.Trigger.static.platformFilters,
+ve.ui.Trigger.prototype.getMessage = function ( explode ) {
+	var joiners, joiner,
+		keys = this.toString().split( '+' ),
+		hasOwn = Object.prototype.hasOwnProperty,
+		translatableKeys = this.constructor.static.translatableKeys,
+		platformMapping = this.constructor.static.platformMapping,
 		platform = ve.getSystemPlatform();
 
-	keys = this.toString().split( '+' );
-	if ( Object.prototype.hasOwnProperty.call( platformFilters, platform ) ) {
-		return platformFilters[ platform ]( keys );
+	// Platform mappings
+	if ( hasOwn.call( platformMapping, platform ) ) {
+		keys = keys.map( function ( key ) {
+			return hasOwn.call( platformMapping[ platform ], key ) ? platformMapping[ platform ][ key ] : key;
+		} );
 	}
-	return keys.map( function ( key ) {
-		return key[ 0 ].toUpperCase() + key.slice( 1 ).toLowerCase();
-	} ).join( '+' );
+
+	// i18n
+	keys = keys.map( function ( key ) {
+		return translatableKeys.indexOf( key ) !== -1 ? ve.msg( 'visualeditor-key-' + key ) : key.toUpperCase();
+	} );
+
+	// Concatenation
+	if ( explode ) {
+		return keys;
+	} else {
+		joiners = this.constructor.static.platformStringJoiners;
+		joiner = hasOwn.call( joiners, platform ) ? joiners[ platform ] : joiners.default;
+		return keys.join( joiner );
+	}
 };

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable FocusableNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -23,6 +23,8 @@
  * @constructor
  * @param {jQuery} [$focusable=this.$element] Primary element user is focusing on
  * @param {Object} [config] Configuration options
+ * @param {jQuery} [$bounding=$focusable] Element to consider for bounding box calculations (e.g.
+ *   attaching inspectors)
  * @cfg {string[]} [classes] CSS classes to be added to the highlight container
  */
 ve.ce.FocusableNode = function VeCeFocusableNode( $focusable, config ) {
@@ -34,14 +36,21 @@ ve.ce.FocusableNode = function VeCeFocusableNode( $focusable, config ) {
 	this.isFocusableSetup = false;
 	this.$highlights = $( '<div>' ).addClass( 've-ce-focusableNode-highlights' );
 	this.$focusable = $focusable || this.$element;
+	this.$bounding = config.$bounding || this.$focusable;
 	this.focusableSurface = null;
 	this.rects = null;
 	this.boundingRect = null;
 	this.startAndEndRects = null;
+	this.icon = null;
+	this.touchMoved = false;
 
 	if ( Array.isArray( config.classes ) ) {
 		this.$highlights.addClass( config.classes.join( ' ' ) );
 	}
+
+	// Use a debounced handler as some actions can trigger redrawHighlights
+	// twice in quick succession resizeEnd+rerender
+	this.redrawHighlightsDebounced = ve.debounce( this.redrawHighlights.bind( this ), 100 );
 
 	// DOM changes
 	this.$element
@@ -72,6 +81,151 @@ OO.initClass( ve.ce.FocusableNode );
  * @event blur
  */
 
+/* Static properties */
+
+/**
+ * Icon to use when the rendering is considered not visible, as defined in #hasRendering
+ *
+ * No icon is show if null.
+ *
+ * @static
+ * @property {string|null}
+ * @inheritable
+ */
+ve.ce.FocusableNode.static.iconWhenInvisible = null;
+
+/* Static methods */
+
+/**
+ * Get rects for an element
+ *
+ * @param {jQuery} $element Element to get highlights
+ * @param {Object} [relativeRect] Rect with top & left to get position relative to
+ * @return {Object} Object containing rects and boundingRect
+ */
+ve.ce.FocusableNode.static.getRectsForElement = function ( $element, relativeRect ) {
+	var i, l, $set, columnCount, columnWidth,
+		boundingRect = null,
+		rects = [],
+		filteredRects = [],
+		webkitColumns = 'webkitColumnCount' in document.createElement( 'div' ).style;
+
+	function contains( rect1, rect2 ) {
+		return rect2.left >= rect1.left &&
+			rect2.top >= rect1.top &&
+			rect2.right <= rect1.right &&
+			rect2.bottom <= rect1.bottom;
+	}
+
+	function process( el ) {
+		var i, j, il, jl, contained, clientRects, overflow, $el;
+
+		if ( el.classList.contains( 've-ce-noHighlight' ) ) {
+			return;
+		}
+
+		$el = $( el );
+
+		if ( webkitColumns ) {
+			columnCount = $el.css( '-webkit-column-count' );
+			columnWidth = $el.css( '-webkit-column-width' );
+			if ( ( columnCount && columnCount !== 'auto' ) || ( columnWidth && columnWidth !== 'auto' ) ) {
+				// Support: Chrome
+				// Chrome incorrectly measures children of nodes with columns [1], let's
+				// just ignore them rather than render a possibly bizarre highlight. They
+				// will usually not be positioned, because Chrome also doesn't position
+				// them correctly [2] and so people avoid doing it.
+				//
+				// Of course there are other ways to render a node outside the bounding
+				// box of its parent, like negative margin. We do not handle these cases,
+				// and the highlight may not correctly cover the entire node if that
+				// happens. This can't be worked around without implementing CSS
+				// layouting logic ourselves, which is not worth it.
+				//
+				// [1] https://code.google.com/p/chromium/issues/detail?id=391271
+				// [2] https://code.google.com/p/chromium/issues/detail?id=291616
+
+				// jQuery keeps nodes in its collections in document order, so the
+				// children have not been processed yet and can be safely removed.
+				$set = $set.not( $el.find( '*' ) );
+			}
+		}
+
+		// Don't descend if overflow is anything but visible as this prevents child
+		// elements appearing beyond the bounding box of the parent, *unless* display
+		// is inline, in which case the overflow setting will be ignored
+		overflow = $el.css( 'overflow' );
+		if ( overflow && overflow !== 'visible' && $el.css( 'display' ) !== 'inline' ) {
+			$set = $set.not( $el.find( '*' ) );
+		}
+
+		clientRects = el.getClientRects();
+
+		for ( i = 0, il = clientRects.length; i < il; i++ ) {
+			contained = false;
+			for ( j = 0, jl = rects.length; j < jl; j++ ) {
+				// This rect is contained by an existing rect, discard
+				if ( contains( rects[ j ], clientRects[ i ] ) ) {
+					contained = true;
+					break;
+				}
+				// An existing rect is contained by this rect, discard the existing rect
+				if ( contains( clientRects[ i ], rects[ j ] ) ) {
+					rects.splice( j, 1 );
+					j--;
+					jl--;
+				}
+			}
+			if ( !contained ) {
+				rects.push( clientRects[ i ] );
+			}
+		}
+	}
+
+	$set = $element.find( '*' ).addBack();
+	// Calling process() may change $set.length
+	for ( i = 0; i < $set.length; i++ ) {
+		process( $set[ i ] );
+	}
+
+	// Elements with a width/height of 0 return a clientRect with a width/height of 1
+	// As elements with an actual width/height of 1 aren't that useful anyway, just
+	// throw away anything that is <=1
+	filteredRects = rects.filter( function ( rect ) {
+		return rect.width > 1 && rect.height > 1;
+	} );
+	// But if this filtering doesn't leave any rects at all, then we do want to use the 1px rects
+	if ( filteredRects.length > 0 ) {
+		rects = filteredRects;
+	}
+
+	boundingRect = null;
+
+	for ( i = 0, l = rects.length; i < l; i++ ) {
+		// Translate to relative
+		if ( relativeRect ) {
+			rects[ i ] = ve.translateRect( rects[ i ], -relativeRect.left, -relativeRect.top );
+		}
+		if ( !boundingRect ) {
+			boundingRect = ve.copy( rects[ i ] );
+		} else {
+			boundingRect.top = Math.min( boundingRect.top, rects[ i ].top );
+			boundingRect.left = Math.min( boundingRect.left, rects[ i ].left );
+			boundingRect.bottom = Math.max( boundingRect.bottom, rects[ i ].bottom );
+			boundingRect.right = Math.max( boundingRect.right, rects[ i ].right );
+		}
+	}
+	if ( boundingRect ) {
+		boundingRect.width = boundingRect.right - boundingRect.left;
+		boundingRect.height = boundingRect.bottom - boundingRect.top;
+	}
+
+	return {
+		rects: rects,
+		boundingRect: boundingRect
+	};
+};
+
 /* Methods */
 
 /**
@@ -80,21 +234,17 @@ OO.initClass( ve.ce.FocusableNode );
  * @return {jQuery} A highlight element
  */
 ve.ce.FocusableNode.prototype.createHighlight = function () {
+	var extraClasses = this.generatedContentsInvalid ? ' ve-ce-focusableNode-highlight-error' : '';
 	return $( '<div>' )
-		.addClass( 've-ce-focusableNode-highlight' )
+		.addClass( 've-ce-focusableNode-highlight' + extraClasses )
 		.prop( {
 			title: this.constructor.static.getDescription( this.model ),
-			draggable: false
+			draggable: true
 		} )
-		.append( $( '<img>' )
-			.addClass( 've-ce-focusableNode-highlight-relocatable-marker' )
-			.attr( 'src', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==' )
-			.on( {
-				mousedown: this.onFocusableMouseDown.bind( this ),
-				dragstart: this.onFocusableDragStart.bind( this ),
-				dragend: this.onFocusableDragEnd.bind( this )
-			} )
-		);
+		.on( {
+			dragstart: this.onFocusableDragStart.bind( this ),
+			dragend: this.onFocusableDragEnd.bind( this )
+		} );
 };
 
 /**
@@ -118,6 +268,8 @@ ve.ce.FocusableNode.prototype.onFocusableSetup = function () {
 	// Events
 	this.$focusable.on( {
 		'mouseenter.ve-ce-focusableNode': this.onFocusableMouseEnter.bind( this ),
+		'touchstart.ve-ce-focusableNode': this.onFocusableTouchStart.bind( this ),
+		'touchmove.ve-ce-focusableNode': this.onFocusableTouchMove.bind( this ),
 		'mousedown.ve-ce-focusableNode touchend.ve-ce-focusableNode': this.onFocusableMouseDown.bind( this )
 	} );
 	// $element is ce=false so make sure nothing happens when you click
@@ -126,11 +278,125 @@ ve.ce.FocusableNode.prototype.onFocusableSetup = function () {
 	// handles mousedown events.
 	if ( !this.$element.is( this.$focusable ) ) {
 		this.$element.on( {
-			'mousedown.ve-ce-focusableNode': function ( e ) { e.preventDefault(); }
+			'mousedown.ve-ce-focusableNode': function ( e ) {
+				if ( !ve.isContentEditable( e.target ) ) {
+					e.preventDefault();
+				}
+			}
 		} );
+	}
+	// Note that preventing default on mousedown doesn't suppress click
+	// events, so link navigation would still occur:
+	this.$element.on( {
+		'click.ve-ce-focusableNode': function ( e ) {
+			if ( !ve.isContentEditable( e.target ) && e.which === OO.ui.MouseButtons.LEFT ) {
+				e.preventDefault();
+			}
+		}
+	} );
+
+	if ( this.constructor.static.iconWhenInvisible ) {
+		// Set up the invisible icon, and watch for its continued necessity if
+		// unloaded images which don't specify their width or height are
+		// involved.
+		this.$element
+			.find( 'img:not([width]),img:not([height])' )
+			.addBack( 'img:not([width]),img:not([height])' )
+			.on( 'load', this.updateInvisibleIcon.bind( this ) );
+		this.updateInvisibleIcon();
 	}
 
 	this.isFocusableSetup = true;
+};
+
+/**
+ * Update the state of icon if this node is invisible
+ *
+ * If the node doesn't have a visible rendering, we insert an icon to represent
+ * it. If the icon was already present, and this is called again when rendering
+ * has developed, we remove the icon.
+ *
+ * @method
+ */
+ve.ce.FocusableNode.prototype.updateInvisibleIcon = function () {
+	var showIcon,
+		rAF = window.requestAnimationFrame || setTimeout,
+		node = this;
+
+	if ( !this.constructor.static.iconWhenInvisible ) {
+		return;
+	}
+
+	// Make sure any existing icon is detached before measuring
+	if ( this.icon ) {
+		this.icon.$element.detach();
+	}
+	showIcon = !this.hasRendering();
+
+	// Defer updating the DOM. If we don't do this, the hasRendering() call for the next
+	// FocusableNode will force a reflow, which is slow.
+	rAF( function () {
+		node.updateInvisibleIconSync( showIcon );
+	} );
+};
+
+/**
+ * Synchronous part of #updateInvisibleIconSync
+ *
+ * @param {boolean} showIcon Show the icon
+ * @private
+ */
+ve.ce.FocusableNode.prototype.updateInvisibleIconSync = function ( showIcon ) {
+	if ( !this.getModel() ) {
+		// Check the node hasn't been destroyed, as this method is called after an rAF
+		return;
+	}
+	if ( showIcon ) {
+		this.createInvisibleIcon();
+		this.$element.first()
+			.addClass( 've-ce-focusableNode-invisible' )
+			.prepend( this.icon.$element );
+	} else if ( this.icon ) {
+		this.$element.first().removeClass( 've-ce-focusableNode-invisible' );
+		this.icon.$element.detach();
+	}
+};
+
+/**
+ * Create a element to show if the node is invisible
+ */
+ve.ce.FocusableNode.prototype.createInvisibleIcon = function () {
+	if ( this.icon ) {
+		return;
+	}
+	this.icon = new OO.ui.ButtonWidget( {
+		classes: [ 've-ce-focusableNode-invisibleIcon' ],
+		framed: false,
+		// Make button unfocusable, T198912
+		tabIndex: null,
+		icon: this.constructor.static.iconWhenInvisible
+	} );
+	this.updateInvisibleIconLabel();
+};
+
+/**
+ * Get a label for the invisible icon
+ *
+ * Defaults to #getDescription
+ *
+ * @return {jQuery|string|OO.ui.HtmlSnippet|Function|null} Invisible icon label
+ */
+ve.ce.FocusableNode.prototype.getInvisibleIconLabel = function () {
+	return this.model ? this.constructor.static.getDescription( this.model ) : '';
+};
+
+/**
+ * Update the invisible icon's label
+ */
+ve.ce.FocusableNode.prototype.updateInvisibleIconLabel = function () {
+	if ( this.icon ) {
+		this.icon.setLabel( this.getInvisibleIconLabel() || null );
+	}
 };
 
 /**
@@ -173,19 +439,21 @@ ve.ce.FocusableNode.prototype.onFocusableMouseDown = function ( e ) {
 		selection = surfaceModel.getSelection(),
 		nodeRange = this.model.getOuterRange();
 
+	if ( e.type === 'touchend' && this.touchMoved ) {
+		return;
+	}
+
 	if ( !this.isInContentEditable() ) {
 		return;
 	}
-	if ( e.which === 3 ) {
-		// Hide images, and select spans so context menu shows 'copy', but not 'copy image'
-		this.$highlights.addClass( 've-ce-focusableNode-highlights-contextOpen' );
+
+	if ( e.which === OO.ui.MouseButtons.RIGHT ) {
 		// Make ce=true so we get cut/paste options in context menu
 		this.$highlights.prop( 'contentEditable', 'true' );
 		ve.selectElement( this.$highlights[ 0 ] );
 		setTimeout( function () {
-			// Undo everything as soon as the context menu is show
-			node.$highlights.removeClass( 've-ce-focusableNode-highlights-contextOpen' );
-			node.$highlights.prop( 'contentEditable', 'true' );
+			// Undo ce=true as soon as the context menu is shown
+			node.$highlights.prop( 'contentEditable', 'false' );
 			node.focusableSurface.preparePasteTargetForCopy();
 		} );
 	}
@@ -200,6 +468,7 @@ ve.ce.FocusableNode.prototype.onFocusableMouseDown = function ( e ) {
 				) :
 				nodeRange
 		).select();
+		node.focusableSurface.updateActiveAnnotations();
 	} );
 };
 
@@ -213,7 +482,9 @@ ve.ce.FocusableNode.prototype.onFocusableDblClick = function () {
 	if ( !this.isInContentEditable() ) {
 		return;
 	}
-	this.executeCommand();
+	if ( this.getModel().isEditable() ) {
+		this.executeCommand();
+	}
 };
 
 /**
@@ -222,13 +493,14 @@ ve.ce.FocusableNode.prototype.onFocusableDblClick = function () {
  * @method
  */
 ve.ce.FocusableNode.prototype.executeCommand = function () {
-	var command;
+	var command, surface;
 	if ( !this.model.isInspectable() ) {
-		return false;
+		return;
 	}
-	command = ve.init.target.commandRegistry.getCommandForNode( this );
+	surface = this.focusableSurface.getSurface();
+	command = surface.commandRegistry.getCommandForNode( this );
 	if ( command ) {
-		command.execute( this.focusableSurface.getSurface() );
+		command.execute( surface );
 	}
 };
 
@@ -238,12 +510,11 @@ ve.ce.FocusableNode.prototype.executeCommand = function () {
  * @method
  * @param {jQuery.Event} e Drag start event
  */
-ve.ce.FocusableNode.prototype.onFocusableDragStart = function () {
+ve.ce.FocusableNode.prototype.onFocusableDragStart = function ( e ) {
 	if ( this.focusableSurface ) {
-		// Allow dragging this node in the surface
-		this.focusableSurface.startRelocation( this );
+		// Pass event up to the surface
+		this.focusableSurface.onDocumentDragStart( e );
 	}
-	this.$highlights.addClass( 've-ce-focusableNode-highlights-relocating' );
 };
 
 /**
@@ -260,7 +531,6 @@ ve.ce.FocusableNode.prototype.onFocusableDragEnd = function () {
 	if ( this.focusableSurface ) {
 		this.focusableSurface.endRelocation();
 	}
-	this.$highlights.removeClass( 've-ce-focusableNode-highlights-relocating' );
 };
 
 /**
@@ -273,6 +543,26 @@ ve.ce.FocusableNode.prototype.onFocusableMouseEnter = function () {
 	if ( !this.root.getSurface().dragging && !this.root.getSurface().resizing && this.isInContentEditable() ) {
 		this.createHighlights();
 	}
+};
+
+/**
+ * Handle touch start events.
+ *
+ * @method
+ * @param {jQuery.Event} e Touch start event
+ */
+ve.ce.FocusableNode.prototype.onFocusableTouchStart = function () {
+	this.touchMoved = false;
+};
+
+/**
+ * Handle touch move events.
+ *
+ * @method
+ * @param {jQuery.Event} e Touch move event
+ */
+ve.ce.FocusableNode.prototype.onFocusableTouchMove = function () {
+	this.touchMoved = true;
 };
 
 /**
@@ -292,12 +582,12 @@ ve.ce.FocusableNode.prototype.onSurfaceMouseMove = function ( e ) {
 };
 
 /**
- * Handle surface mouse out events.
+ * Handle surface mouse leave events.
  *
  * @method
- * @param {jQuery.Event} e Mouse out event
+ * @param {jQuery.Event} e Mouse leave event
  */
-ve.ce.FocusableNode.prototype.onSurfaceMouseOut = function ( e ) {
+ve.ce.FocusableNode.prototype.onSurfaceMouseLeave = function ( e ) {
 	if ( e.relatedTarget === null ) {
 		this.clearHighlights();
 	}
@@ -318,7 +608,7 @@ ve.ce.FocusableNode.prototype.onFocusableResizeStart = function () {
  * @method
  */
 ve.ce.FocusableNode.prototype.onFocusableResizeEnd = function () {
-	this.redrawHighlights();
+	this.redrawHighlightsDebounced();
 };
 
 /**
@@ -328,8 +618,8 @@ ve.ce.FocusableNode.prototype.onFocusableResizeEnd = function () {
  */
 ve.ce.FocusableNode.prototype.onFocusableRerender = function () {
 	if ( this.focused && this.focusableSurface ) {
-		this.redrawHighlights();
-		// reposition menu
+		this.redrawHighlightsDebounced();
+		// Reposition menu
 		this.focusableSurface.getSurface().getContext().updateDimensions( true );
 	}
 };
@@ -360,6 +650,7 @@ ve.ce.FocusableNode.prototype.setFocused = function ( value ) {
 			this.emit( 'focus' );
 			this.$element.addClass( 've-ce-focusableNode-focused' );
 			this.createHighlights();
+			// this.focused may have changed, so re-attach in the correct container
 			this.focusableSurface.appendHighlights( this.$highlights, this.focused );
 			this.focusableSurface.$element.off( '.ve-ce-focusableNode' );
 		} else {
@@ -390,15 +681,15 @@ ve.ce.FocusableNode.prototype.createHighlights = function () {
 	this.positionHighlights();
 
 	this.focusableSurface.appendHighlights( this.$highlights, this.focused );
+	this.focusableSurface.connect( this, { position: 'positionHighlights' } );
 
 	// Events
 	if ( !this.focused ) {
 		this.focusableSurface.$element.on( {
 			'mousemove.ve-ce-focusableNode': this.onSurfaceMouseMove.bind( this ),
-			'mouseout.ve-ce-focusableNode': this.onSurfaceMouseOut.bind( this )
+			'mouseleave.ve-ce-focusableNode': this.onSurfaceMouseLeave.bind( this )
 		} );
 	}
-	this.focusableSurface.connect( this, { position: 'positionHighlights' } );
 };
 
 /**
@@ -423,137 +714,36 @@ ve.ce.FocusableNode.prototype.clearHighlights = function () {
  * @method
  */
 ve.ce.FocusableNode.prototype.redrawHighlights = function () {
-	this.clearHighlights();
-	this.createHighlights();
+	if ( this.focused ) {
+		// setFocused will call clearHighlights/createHighlights
+		// and also re-bind events.
+		this.setFocused( false );
+		this.setFocused( true );
+	}
 };
 
 /**
- * Calculate position of highlights
+ * Re-calculate position of highlights
  */
 ve.ce.FocusableNode.prototype.calculateHighlights = function () {
-	var i, l, $set, columnCount, columnWidth,
-		rects = [],
-		filteredRects = [],
-		webkitColumns = 'webkitColumnCount' in document.createElement( 'div' ).style,
-		surfaceOffset = this.focusableSurface.getSurface().getBoundingClientRect();
+	var allRects, surfaceOffset;
 
-	function contains( rect1, rect2 ) {
-		return rect2.left >= rect1.left &&
-			rect2.top >= rect1.top &&
-			rect2.right <= rect1.right &&
-			rect2.bottom <= rect1.bottom;
+	// Protect against calling before/after surface setup/teardown
+	if ( !this.focusableSurface ) {
+		this.rects = [];
+		this.boundingRect = null;
+		this.startAndEndRects = null;
+		return;
 	}
 
-	function process( el ) {
-		var i, j, il, jl, contained, clientRects, overflow,
-			$el = $( el );
+	surfaceOffset = this.focusableSurface.getSurface().getBoundingClientRect();
 
-		if ( $el.hasClass( 've-ce-noHighlight' ) ) {
-			return;
-		}
+	allRects = this.constructor.static.getRectsForElement( this.$focusable, surfaceOffset );
 
-		if ( webkitColumns ) {
-			columnCount = $el.css( '-webkit-column-count' );
-			columnWidth = $el.css( '-webkit-column-width' );
-			if ( ( columnCount && columnCount !== 'auto' ) || ( columnWidth && columnWidth !== 'auto' ) ) {
-				// Chrome incorrectly measures children of nodes with columns [1], let's
-				// just ignore them rather than render a possibly bizarre highlight. They
-				// will usually not be positioned, because Chrome also doesn't position
-				// them correctly [2] and so people avoid doing it.
-				//
-				// Of course there are other ways to render a node outside the bounding
-				// box of its parent, like negative margin. We do not handle these cases,
-				// and the highlight may not correctly cover the entire node if that
-				// happens. This can't be worked around without implementing CSS
-				// layouting logic ourselves, which is not worth it.
-				//
-				// [1] https://code.google.com/p/chromium/issues/detail?id=391271
-				// [2] https://code.google.com/p/chromium/issues/detail?id=291616
-
-				// jQuery keeps nodes in its collections in document order, so the
-				// children have not been processed yet and can be safely removed.
-				$set = $set.not( $el.find( '*' ) );
-			}
-		}
-
-		// Don't descend if overflow is anything but visible as this prevents
-		// child elements appearing beyond the bounding box of the parent
-		overflow = $el.css( 'overflow' );
-		if ( overflow && overflow !== 'visible' ) {
-			$set = $set.not( $el.find( '*' ) );
-		}
-
-		clientRects = el.getClientRects();
-
-		for ( i = 0, il = clientRects.length; i < il; i++ ) {
-			contained = false;
-			for ( j = 0, jl = rects.length; j < jl; j++ ) {
-				// This rect is contained by an existing rect, discard
-				if ( contains( rects[ j ], clientRects[ i ] ) ) {
-					contained = true;
-					break;
-				}
-				// An existing rect is contained by this rect, discard the existing rect
-				if ( contains( clientRects[ i ], rects[ j ] ) ) {
-					rects.splice( j, 1 );
-					j--;
-					jl--;
-				}
-			}
-			if ( !contained ) {
-				rects.push( clientRects[ i ] );
-			}
-		}
-	}
-
-	$set = this.$focusable.find( '*' ).addBack();
-	// Calling process() may change $set.length
-	for ( i = 0; i < $set.length; i++ ) {
-		process( $set[ i ] );
-	}
-
-	// Elements with a width/height of 0 return a clientRect with a width/height of 1
-	// As elements with an actual width/height of 1 aren't that useful anyway, just
-	// throw away anything that is <=1
-	filteredRects = rects.filter( function ( rect ) {
-		return rect.width > 1 && rect.height > 1;
-	} );
-	// But if this filtering doesn't leave any rects at all, then we do want to use the 1px rects
-	if ( filteredRects.length > 0 ) {
-		rects = filteredRects;
-	}
-
-	this.boundingRect = null;
+	this.rects = allRects.rects;
+	this.boundingRect = allRects.boundingRect;
 	// startAndEndRects is lazily evaluated in getStartAndEndRects from rects
 	this.startAndEndRects = null;
-
-	for ( i = 0, l = rects.length; i < l; i++ ) {
-		// Translate to relative
-		rects[ i ] = ve.translateRect( rects[ i ], -surfaceOffset.left, -surfaceOffset.top );
-		this.$highlights.append(
-			this.createHighlight().css( {
-				top: rects[ i ].top,
-				left: rects[ i ].left,
-				width: rects[ i ].width,
-				height: rects[ i ].height
-			} )
-		);
-
-		if ( !this.boundingRect ) {
-			this.boundingRect = ve.copy( rects[ i ] );
-		} else {
-			this.boundingRect.top = Math.min( this.boundingRect.top, rects[ i ].top );
-			this.boundingRect.left = Math.min( this.boundingRect.left, rects[ i ].left );
-			this.boundingRect.bottom = Math.max( this.boundingRect.bottom, rects[ i ].bottom );
-			this.boundingRect.right = Math.max( this.boundingRect.right, rects[ i ].right );
-		}
-	}
-	if ( this.boundingRect ) {
-		this.boundingRect.width = this.boundingRect.right - this.boundingRect.left;
-		this.boundingRect.height = this.boundingRect.bottom - this.boundingRect.top;
-	}
-
-	this.rects = rects;
 };
 
 /**
@@ -603,6 +793,12 @@ ve.ce.FocusableNode.prototype.getRects = function () {
  * @return {Object|null} Top, left, bottom & right positions of the focusable node relative to the surface
  */
 ve.ce.FocusableNode.prototype.getBoundingRect = function () {
+	var surfaceOffset, allRects;
+	if ( !this.$bounding.is( this.$focusable ) ) {
+		surfaceOffset = this.focusableSurface.getSurface().getBoundingClientRect();
+		allRects = this.constructor.static.getRectsForElement( this.$bounding, surfaceOffset );
+		return allRects.boundingRect;
+	}
 	if ( !this.highlighted ) {
 		this.calculateHighlights();
 	}
@@ -622,4 +818,31 @@ ve.ce.FocusableNode.prototype.getStartAndEndRects = function () {
 		this.startAndEndRects = ve.getStartAndEndRects( this.rects );
 	}
 	return this.startAndEndRects;
+};
+
+/**
+ * Check if the rendering is visible
+ *
+ * "Visible", in this case, is defined as any of:
+ *  * contains any non-whitespace text
+ *  * is greater than 8px x 8px in dimensions
+ *
+ * @return {boolean} The node has a visible rendering
+ */
+ve.ce.FocusableNode.prototype.hasRendering = function () {
+	var visible = false;
+	if ( this.$element.text().trim() !== '' ) {
+		return true;
+	}
+	this.$element.each( function () {
+		if (
+			( this.offsetWidth >= 8 && this.offsetHeight >= 8 ) ||
+			// Check width/height attribute as well. (T125767)
+			( this.width >= 8 && this.height >= 8 )
+		) {
+			visible = true;
+			return false;
+		}
+	} );
+	return visible;
 };

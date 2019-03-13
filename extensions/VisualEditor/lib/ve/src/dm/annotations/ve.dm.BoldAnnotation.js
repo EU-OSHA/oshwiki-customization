@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel BoldAnnotation class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -28,6 +28,8 @@ OO.inheritClass( ve.dm.BoldAnnotation, ve.dm.TextStyleAnnotation );
 ve.dm.BoldAnnotation.static.name = 'textStyle/bold';
 
 ve.dm.BoldAnnotation.static.matchTagNames = [ 'b', 'strong' ];
+
+ve.dm.BoldAnnotation.static.inferFromView = true;
 
 /* Registration */
 

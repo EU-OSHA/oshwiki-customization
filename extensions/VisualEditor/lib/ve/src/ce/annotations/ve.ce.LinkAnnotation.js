@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable LinkAnnotation class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -9,29 +9,35 @@
  *
  * @class
  * @extends ve.ce.Annotation
+ * @mixins ve.ce.NailedAnnotation
  * @constructor
  * @param {ve.dm.LinkAnnotation} model Model to observe
  * @param {ve.ce.ContentBranchNode} [parentNode] Node rendering this annotation
  * @param {Object} [config] Configuration options
  */
-ve.ce.LinkAnnotation = function VeCeLinkAnnotation() {
+ve.ce.LinkAnnotation = function VeCeLinkAnnotation( model, parentNode, config ) {
 	// Parent constructor
-	ve.ce.LinkAnnotation.super.apply( this, arguments );
+	ve.ce.LinkAnnotation.super.call( this, model, parentNode, ve.extendObject( { $element: $( '<a>' ) }, config ) );
 
-	// Initialization
-	this.contentFragment = document.createDocumentFragment();
+	// Mixin constructor
+	ve.ce.NailedAnnotation.call( this );
 
-	this.$anchor = $( '<a>' )
-		.addClass( 've-ce-linkAnnotation' )
+	this.$element.addClass( 've-ce-linkAnnotation' )
 		.prop( {
 			href: ve.resolveUrl( this.model.getHref(), this.getModelHtmlDocument() ),
 			title: this.constructor.static.getDescription( this.model )
 		} );
+
+	this.$element.on( 'click', this.onClick.bind( this ) );
+	// Deprecated, use this.$element
+	this.$anchor = this.$element;
 };
 
 /* Inheritance */
 
 OO.inheritClass( ve.ce.LinkAnnotation, ve.ce.Annotation );
+
+OO.mixinClass( ve.ce.LinkAnnotation, ve.ce.NailedAnnotation );
 
 /* Static Properties */
 
@@ -48,38 +54,19 @@ ve.ce.LinkAnnotation.static.getDescription = function ( model ) {
 	return model.getHref();
 };
 
-ve.ce.LinkAnnotation.static.makeNail = function ( type ) {
-	return $( '<img>' )
-		.prop( 'src', ve.inputDebug ? ve.ce.nailImgDataUri : ve.ce.minImgDataUri )
-		.addClass( 've-ce-nail' )
-		.addClass( 've-ce-nail-' + type )
-		.css( { width: ve.inputDebug ? '' : '0', height: ve.inputDebug ? '' : '0' } )
-		.get( 0 );
-};
-
 /* Methods */
 
-ve.ce.LinkAnnotation.prototype.getContentContainer = function () {
-	return this.contentFragment;
-};
-
 /**
- * Attach contents to the annotation as descendent nodes, if not already attached
+ * Handle click events.
+ *
+ * @param {jQuery.Event} e Mouse click event
  */
-ve.ce.LinkAnnotation.prototype.attachContents = function () {
-	this.$anchor
-		.append( this.constructor.static.makeNail( 'post-open' ) )
-		.append( this.contentFragment )
-		.append( this.constructor.static.makeNail( 'pre-close' ) );
-};
-
-/**
- * @param {Node} node Parent node
- */
-ve.ce.LinkAnnotation.prototype.appendTo = function ( node ) {
-	node.appendChild( this.constructor.static.makeNail( 'pre-open' ) );
-	node.appendChild( this.$anchor[ 0 ] );
-	node.appendChild( this.constructor.static.makeNail( 'post-close' ) );
+ve.ce.LinkAnnotation.prototype.onClick = function ( e ) {
+	if ( e.which === OO.ui.MouseButtons.LEFT && ( e.ctrlKey || e.metaKey ) ) {
+		window.open( this.$element.prop( 'href' ) );
+		// Prevent multiple windows being opened, or other action being performed (e.g. middle click paste)
+		e.preventDefault();
+	}
 };
 
 /* Registration */

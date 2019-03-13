@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable TextNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -30,10 +30,8 @@ ve.ce.TextNode.static.name = 'text';
 
 ve.ce.TextNode.static.splitOnEnter = true;
 
-ve.ce.TextNode.whitespaceHtmlCharacters = {
-	'\n': '\u21b5', // &crarr; / ↵
-	'\t': '\u279e' // &#10142; / ➞
-};
+// Deprecated alias
+ve.ce.TextNode.static.whitespaceHtmlCharacters = ve.visibleWhitespaceCharacters;
 
 /* Methods */
 
@@ -46,7 +44,7 @@ ve.ce.TextNode.whitespaceHtmlCharacters = {
 ve.ce.TextNode.prototype.getAnnotatedHtml = function () {
 	var i, chr,
 		data = this.model.getDocument().getDataFromNode( this.model ),
-		whitespaceHtmlChars = ve.ce.TextNode.whitespaceHtmlCharacters,
+		whitespaceHtmlChars = ve.visibleWhitespaceCharacters,
 		significantWhitespace = this.getModel().getParent().hasSignificantWhitespace();
 
 	function setChar( chr, index, data ) {
@@ -75,32 +73,8 @@ ve.ce.TextNode.prototype.getAnnotatedHtml = function () {
 				setChar( whitespaceHtmlChars[ chr ], i, data );
 			}
 		}
-
-		// Replace spaces with &nbsp; where needed
-		// \u00a0 == &#160; == &nbsp;
-		if ( data.length > 0 ) {
-			// Leading space
-			if ( getChar( 0, data ) === ' ' ) {
-				setChar( '\u00a0', 0, data );
-			}
-		}
-		if ( data.length > 1 ) {
-			// Trailing space
-			if ( getChar( data.length - 1, data ) === ' ' ) {
-				setChar( '\u00a0', data.length - 1, data );
-			}
-		}
-
-		for ( i = 0; i < data.length - 1; i++ ) {
-			// Replace any sequence of 2+ spaces with an alternating pattern
-			// (space-nbsp-space-nbsp-...).
-			// The leading and trailing space, if present, have already been converted
-			// to nbsp, so we know that i is between 1 and data.length - 2.
-			if ( getChar( i, data ) === ' ' && getChar( i + 1, data ) === ' ' ) {
-				setChar( '\u00a0', i + 1, data );
-			}
-		}
 	}
+
 	return data;
 };
 

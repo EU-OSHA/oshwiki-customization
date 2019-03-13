@@ -40,13 +40,16 @@ fi
 
 # Generate commit summary
 # TODO recurse
-NEWCHANGES=$(git log ..$TARGET --oneline --no-merges --reverse --color=never)
+NEWCHANGES=$(git log ..$TARGET --oneline --no-merges --topo-order --reverse --color=never)
+TASKS=$(git log ..$TARGET --no-merges --format=format:%B | grep "Bug: T" | sort | uniq)
 NEWCHANGESDISPLAY=$(git log ..$TARGET --oneline --no-merges --reverse --color=always)
 COMMITMSG=$(cat <<END
 Update VE core submodule to $TARGETDESC
 
 New changes:
 $NEWCHANGES
+
+$TASKS
 END
 )
 # Check out master of VE core

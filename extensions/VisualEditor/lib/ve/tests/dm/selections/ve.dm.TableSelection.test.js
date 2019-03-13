@@ -1,14 +1,14 @@
 /*!
  * VisualEditor DataModel Table Selection tests.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.dm.TableSelection' );
 
 /* Tests */
 
-QUnit.test( 'Construction and getters (getDocument, getRanges, getOuterRanges, getTableNode)', 28, function ( assert ) {
+QUnit.test( 'Construction and getters (getDocument, getRanges, getOuterRanges, getTableNode)', function ( assert ) {
 	var i, selection,
 		doc = ve.dm.example.createExampleDocument( 'mergedCells' ),
 		tableNode = doc.getBranchNodeFromOffset( 1 ),
@@ -84,12 +84,11 @@ QUnit.test( 'Construction and getters (getDocument, getRanges, getOuterRanges, g
 			}
 		];
 
-	QUnit.expect( 12 * cases.length );
-
 	for ( i in cases ) {
 		selection = cases[ i ].selection;
 		assert.strictEqual( selection.getDocument(), doc, 'getDocument' );
 		assert.strictEqual( selection.getTableNode(), tableNode, 'getTableNode' );
+		assert.strictEqual( selection.getName(), 'table', 'getName' );
 		assert.deepEqual( selection.getRanges(), cases[ i ].ranges, cases[ i ].msg + ': getRanges' );
 		assert.deepEqual( selection.getOuterRanges(), cases[ i ].outerRanges, cases[ i ].msg + ': getOuterRanges' );
 		assert.strictEqual( selection.fromCol, cases[ i ].fromCol, cases[ i ].msg + ': fromCol set' );
@@ -104,19 +103,17 @@ QUnit.test( 'Construction and getters (getDocument, getRanges, getOuterRanges, g
 
 } );
 
-QUnit.test( 'Basic methods (clone, expand, collapse*, getRange(s), isCollased, isSingleCell, equals, isNull, isFullRow/Col, getRow/ColCount)', 17, function ( assert ) {
+QUnit.test( 'Basic methods (expand, collapse*, getRange(s), isCollased, isSingleCell, equals, isNull, isFullRow/Col, getRow/ColCount)', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument( 'mergedCells' ),
 		doc2 = ve.dm.example.createExampleDocument( 'mergedCells' ),
 		tableRange = doc.getBranchNodeFromOffset( 1 ).getOuterRange(),
 		selection = new ve.dm.TableSelection( doc, tableRange, 1, 2, 0, 1, true ),
-		expandedSelection = new ve.dm.TableSelection( doc, tableRange, 2, 2, 0, 1 ),
 		selection2 = new ve.dm.TableSelection( doc2, tableRange, 1, 2, 0, 1, true ),
 		startSelection = new ve.dm.TableSelection( doc, tableRange, 0, 1 ),
 		endSelection = new ve.dm.TableSelection( doc, tableRange, 2, 2 ),
 		mergedSingleCell = new ve.dm.TableSelection( doc, tableRange, 1, 3, 3, 5, true ),
 		largeSelection = new ve.dm.TableSelection( doc, tableRange, 0, 0, 3, 6 );
 
-	assert.deepEqual( selection.clone(), expandedSelection, 'clone' );
 	assert.deepEqual( selection.collapseToStart(), startSelection, 'collapseToStart' );
 	assert.deepEqual( selection.collapseToEnd(), endSelection, 'collapseToEnd' );
 	assert.deepEqual( selection.collapseToFrom(), endSelection, 'collapseToFrom' );
@@ -135,7 +132,7 @@ QUnit.test( 'Basic methods (clone, expand, collapse*, getRange(s), isCollased, i
 	assert.strictEqual( largeSelection.isFullRow(), false, 'isFullRow' );
 } );
 
-QUnit.test( 'Factory methods & serialization (newFromJSON, toJSON, getDescription)', 3, function ( assert ) {
+QUnit.test( 'Factory methods & serialization (newFromJSON, toJSON, getDescription)', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument( 'mergedCells' ),
 		tableRange = doc.getBranchNodeFromOffset( 1 ).getOuterRange(),
 		selection = new ve.dm.TableSelection( doc, tableRange, 1, 2, 3, 4 ),
@@ -155,7 +152,7 @@ QUnit.test( 'Factory methods & serialization (newFromJSON, toJSON, getDescriptio
 		selection,
 		'newFromJSON'
 	);
-	assert.deepEqual( selection.getDescription(), 'Table: 0 - 171, c1 r2 - c3 r4', 'getDescription' );
+	assert.strictEqual( selection.getDescription(), 'Table: 0 - 171, c1 r2 - c3 r4', 'getDescription' );
 } );
 
 // TODO: getMatrixCells

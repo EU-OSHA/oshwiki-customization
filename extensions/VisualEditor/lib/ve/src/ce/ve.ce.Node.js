@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable Node class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -15,15 +15,12 @@
  * @param {ve.dm.Node} model Model to observe
  * @param {Object} [config] Configuration options
  */
-ve.ce.Node = function VeCeNode( model, config ) {
+ve.ce.Node = function VeCeNode() {
 	// Parent constructor
-	ve.ce.View.call( this, model, config );
+	ve.ce.Node.super.apply( this, arguments );
 
 	// Mixin constructor
 	ve.Node.call( this );
-
-	// Properties
-	this.parent = null;
 };
 
 /* Inheritance */
@@ -41,10 +38,31 @@ OO.mixinClass( ve.ce.Node, ve.Node );
  * if splittable, and continue traversing up the tree and stop at the first non-splittable node.
  *
  * @static
- * @property
+ * @property {boolean}
  * @inheritable
  */
 ve.ce.Node.static.splitOnEnter = false;
+
+/**
+ * Whether a node supports multiline input at all.
+ *
+ * If set to false, pressing Enter will not perform any splitting at all. If set to null, traverse
+ * up the tree until a boolean value is found.
+ *
+ * @static
+ * @property {boolean|null}
+ * @inheritable
+ */
+ve.ce.Node.static.isMultiline = null;
+
+/**
+ * Whether a node traps the cursor when active, e.g. in table cells
+ *
+ * @static
+ * @property {boolean}
+ * @inheritable
+ */
+ve.ce.Node.static.trapsCursor = false;
 
 /**
  * Command to execute when Enter is pressed while this node is selected, or when the node is double-clicked.
@@ -109,8 +127,29 @@ ve.ce.Node.prototype.canHaveChildrenNotContent = function () {
 /**
  * @inheritdoc ve.Node
  */
+ve.ce.Node.prototype.isInternal = function () {
+	return this.model.isInternal();
+};
+
+/**
+ * @inheritdoc ve.Node
+ */
+ve.ce.Node.prototype.isMetaData = function () {
+	return this.model.isMetaData();
+};
+
+/**
+ * @inheritdoc ve.Node
+ */
 ve.ce.Node.prototype.isWrapped = function () {
 	return this.model.isWrapped();
+};
+
+/**
+ * @inheritdoc ve.Node
+ */
+ve.ce.Node.prototype.isUnwrappable = function () {
+	return this.model.isUnwrappable();
 };
 
 /**
@@ -212,6 +251,34 @@ ve.ce.Node.prototype.splitOnEnter = function () {
 };
 
 /**
+ * Check if the node is supports multiline input.
+ *
+ * Traverses upstream until a boolean value is found. If no value
+ * is found, reads the default from the surface.
+ *
+ * @return {boolean} Node supports multiline input
+ */
+ve.ce.Node.prototype.isMultiline = function () {
+	var booleanNode = this.traverseUpstream( function ( node ) {
+		return node.constructor.static.isMultiline === null;
+	} );
+	if ( booleanNode ) {
+		return booleanNode.constructor.static.isMultiline;
+	} else {
+		return !this.root || this.getRoot().getSurface().getSurface().isMultiline();
+	}
+};
+
+/**
+ * Check if the node traps cursor when active
+ *
+ * @return {boolean} Node traps cursor
+ */
+ve.ce.Node.prototype.trapsCursor = function () {
+	return this.constructor.static.trapsCursor;
+};
+
+/**
  * Release all memory.
  */
 ve.ce.Node.prototype.destroy = function () {
@@ -220,10 +287,14 @@ ve.ce.Node.prototype.destroy = function () {
 	this.doc = null;
 
 	// Parent method
-	ve.ce.View.prototype.destroy.call( this );
+	ve.ce.Node.super.prototype.destroy.call( this );
 };
 
-/** */
+/**
+ * Get the model's HTML document
+ *
+ * @return {HTMLDocument} Model document
+ */
 ve.ce.Node.prototype.getModelHtmlDocument = function () {
 	return this.model.getDocument() && this.model.getDocument().getHtmlDocument();
 };

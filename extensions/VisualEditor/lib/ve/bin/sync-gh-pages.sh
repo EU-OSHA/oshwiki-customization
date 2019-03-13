@@ -2,6 +2,13 @@
 
 # This script builds a new gh-pages branch from latest master
 
+read -p "This script will delete all untracked files in the VE folder. Continue (y/n)? " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+	exit 0
+fi
+
 cd "$(dirname $0)/.."
 git fetch origin
 git checkout -B gh-pages origin/master
@@ -14,7 +21,7 @@ npm install
 html='<!DOCTYPE html>
 <meta charset="utf-8">
 <title>VisualEditor</title>
-<link rel=stylesheet href="lib/oojs-ui/oojs-ui-apex.vector.css">
+<link rel=stylesheet href="lib/oojs-ui/oojs-ui-apex.css">
 <link rel=stylesheet href="demos/ve/demo.css">
 <style>
 	article {
@@ -34,8 +41,14 @@ html='<!DOCTYPE html>
 </article>'
 echo "$html" > index.html
 
-git add index.html
-git add -f node_modules/qunitjs dist/
+# Disable Jekyll default settings for GitHub Pages
+# as otherwise node_modules/qunitjs will not be published.
+# https://help.github.com/articles/files-that-start-with-an-underscore-are-missing/
+# https://www.bennadel.com/blog/3181-including-node-modules.htm
+touch .nojekyll
+
+git add index.html .nojekyll
+git add -f node_modules/qunit dist/
 
 git commit -m "Create gh-pages branch"
 git push origin -f HEAD

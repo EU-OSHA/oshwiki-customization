@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MediaWiki Initialization namespace.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -11,4 +11,6 @@
  * @class
  * @singleton
  */
-ve.init.mw = {};
+ve.init.mw = {
+	targetFactory: new OO.Factory()
+};

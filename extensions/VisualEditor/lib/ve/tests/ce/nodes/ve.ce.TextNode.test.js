@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable TextNode tests.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.ce.TextNode' );
@@ -10,7 +10,7 @@ QUnit.module( 've.ce.TextNode' );
 
 QUnit.test( 'getAnnotatedHtml', function ( assert ) {
 	var i, len, cases, doc,
-		store = new ve.dm.IndexValueStore();
+		store = new ve.dm.HashValueStore();
 
 	cases = [
 		{
@@ -54,57 +54,22 @@ QUnit.test( 'getAnnotatedHtml', function ( assert ) {
 		{
 			// [ ]
 			data: [ { type: 'paragraph' }, ' ', { type: '/paragraph' } ],
-			html: [ '\u00a0' ]
-		},
-		{
-			// [ ][ ]
-			data: [ { type: 'paragraph' }, ' ', ' ', { type: '/paragraph' } ],
-			html: [ '\u00a0', '\u00a0' ]
+			html: [ ' ' ]
 		},
 		{
 			// [ ][ ][ ]
 			data: [ { type: 'paragraph' }, ' ', ' ', ' ', { type: '/paragraph' } ],
-			html: [ '\u00a0', ' ', '\u00a0' ]
-		},
-		{
-			// [ ][ ][ ][ ]
-			data: [ { type: 'paragraph' }, ' ', ' ', ' ', ' ', { type: '/paragraph' } ],
-			html: [ '\u00a0', ' ', '\u00a0', '\u00a0' ]
-		},
-		{
-			// [ ][ ][ ][ ][ ]
-			data: [ { type: 'paragraph' }, ' ', ' ', ' ', ' ', ' ', { type: '/paragraph' } ],
-			html: [ '\u00a0', ' ', '\u00a0', ' ', '\u00a0' ]
-		},
-		{
-			// [ ][ ][ ][ ][ ][ ]
-			data: [ { type: 'paragraph' }, ' ', ' ', ' ', ' ', ' ', ' ', { type: '/paragraph' } ],
-			html: [ '\u00a0', ' ', '\u00a0', ' ', '\u00a0', '\u00a0' ]
-		},
-		{
-			// [ ][A][ ][ ][ ][ ]
-			data: [ { type: 'paragraph' }, ' ', 'A', ' ', ' ', ' ', ' ', { type: '/paragraph' } ],
-			html: [ '\u00a0', 'A', ' ', '\u00a0', ' ', '\u00a0' ]
-		},
-		{
-			// [ ][ ][A][ ][ ][ ]
-			data: [ { type: 'paragraph' }, ' ', ' ', 'A', ' ', ' ', ' ', { type: '/paragraph' } ],
-			html: [ '\u00a0', ' ', 'A', ' ', '\u00a0', '\u00a0' ]
+			html: [ ' ', ' ', ' ' ]
 		},
 		{
 			// [ ][ ][ ][A][ ][ ]
 			data: [ { type: 'paragraph' }, ' ', ' ', ' ', 'A', ' ', ' ', { type: '/paragraph' } ],
-			html: [ '\u00a0', ' ', '\u00a0', 'A', ' ', '\u00a0' ]
+			html: [ ' ', ' ', ' ', 'A', ' ', ' ' ]
 		},
 		{
-			// [ ][ ][ ][ ][A][ ]
-			data: [ { type: 'paragraph' }, ' ', ' ', ' ', ' ', 'A', ' ', { type: '/paragraph' } ],
-			html: [ '\u00a0', ' ', '\u00a0', ' ', 'A', '\u00a0' ]
-		},
-		{
-			// [ ][ ][ ][ ][ ][A]
-			data: [ { type: 'paragraph' }, ' ', ' ', ' ', ' ', ' ', 'A', { type: '/paragraph' } ],
-			html: [ '\u00a0', ' ', '\u00a0', ' ', '\u00a0', 'A' ]
+			// [A][ ][A] with non-breaking space
+			data: [ { type: 'paragraph' }, 'A', '\u00a0', 'A', { type: '/paragraph' } ],
+			html: [ 'A', '\u00a0', 'A' ]
 		},
 		{
 			data: [ { type: 'paragraph' }, '\n', 'A', '\n', 'B', '\n', { type: '/paragraph' } ],
@@ -132,7 +97,7 @@ QUnit.test( 'getAnnotatedHtml', function ( assert ) {
 			html: [ '&', '<', '>', '\'', '"' ]
 		}
 	];
-	QUnit.expect( cases.length );
+
 	for ( i = 0, len = cases.length; i < len; i++ ) {
 		doc = new ve.dm.Document( ve.dm.example.preprocessAnnotations( cases[ i ].data, store ) );
 		ve.dm.example.preprocessAnnotations( cases[ i ].html, store );

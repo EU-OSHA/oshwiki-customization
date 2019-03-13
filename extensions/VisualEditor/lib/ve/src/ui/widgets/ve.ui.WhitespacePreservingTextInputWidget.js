@@ -1,14 +1,14 @@
 /*!
  * VisualEditor UserInterface WhitespacePreservingTextInputWidget class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
  * Text input widget which hides but preserves leading and trailing whitespace
  *
  * @class
- * @extends OO.ui.TextInputWidget
+ * @extends OO.ui.MultilineTextInputWidget
  *
  * @constructor
  * @param {Object} [config] Configuration options
@@ -24,15 +24,15 @@ ve.ui.WhitespacePreservingTextInputWidget = function VeUiWhitespacePreservingTex
 
 	this.limit = config.limit;
 
-	this.whitespace = [ '', '' ];
+	this.setWhitespace( [ '', '' ] );
 	this.setValueAndWhitespace( config.valueAndWhitespace || '' );
 
-	this.$element.addClass( 've-ui-WhitespacePreservingTextInputWidget' );
+	this.$element.addClass( 've-ui-whitespacePreservingTextInputWidget' );
 };
 
 /* Inheritance */
 
-OO.inheritClass( ve.ui.WhitespacePreservingTextInputWidget, OO.ui.TextInputWidget );
+OO.inheritClass( ve.ui.WhitespacePreservingTextInputWidget, OO.ui.MultilineTextInputWidget );
 
 /* Methods */
 
@@ -65,21 +65,14 @@ ve.ui.WhitespacePreservingTextInputWidget.prototype.setWhitespace = function ( w
 };
 
 /**
- * @inheritdoc
+ * Get the value of text widget, including hidden outer whitespace
+ *
+ * @return {string} Text widget value including whitespace
  */
-ve.ui.WhitespacePreservingTextInputWidget.prototype.getValue = function () {
+ve.ui.WhitespacePreservingTextInputWidget.prototype.getValueAndWhitespace = function () {
 	if ( !this.whitespace ) {
 		// In case getValue() is called from a parent constructor
 		return this.value;
 	}
-	return this.whitespace[ 0 ] + this.getInnerValue() + this.whitespace[ 1 ];
-};
-
-/**
- * Get the inner/displayed value of text widget, excluding hidden outer whitespace
- *
- * @return {string} Inner/displayed value
- */
-ve.ui.WhitespacePreservingTextInputWidget.prototype.getInnerValue = function () {
-	return $.trim( this.value );
+	return this.whitespace[ 0 ] + this.value + this.whitespace[ 1 ];
 };

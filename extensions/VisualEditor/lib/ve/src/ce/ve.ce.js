@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable namespace.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -16,22 +16,9 @@ ve.ce = {
 /* Static Properties */
 
 /**
- * RegExp pattern for matching all whitespaces in HTML text.
- *
- * \u0020 (32) space
- * \u00A0 (160) non-breaking space
- *
- * @property
+ * Data URI for minimal GIF image. This is the smallest technically-valid 1x1px transparent GIF it's possible to create.
  */
-ve.ce.whitespacePattern = /[\u0020\u00A0]/g;
-
-/**
- * Data URI for minimal GIF image.
- */
-ve.ce.minImgDataUri = 'data:image/gif;base64,R0lGODdhAQABAADcACwAAAAAAQABAAA';
-ve.ce.unicornImgDataUri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAATCAQAAADly58hAAAAAmJLR0QAAKqNIzIAAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfeChIMMi319aEqAAAAzUlEQVQoz4XSMUoDURAG4K8NIljaeQZrCwsRb5FWL5Daa1iIjQewTycphAQloBEUAoogFmqMsiBmHSzcdfOWlcyU3/+YGXgsqJZMbvv/wLqZDCw1B9rCBSaOmgOHQsfQvVYT7wszIbPSxO9CCF8ebNXx1J2TIvDoxlrKU3mBIYz1U87mMISB3QqXk7e/A4bp1WV/CiE3sFHymZ4X4cO57yLWdVDyjoknr47/MPRcput1k+ljt/O4V1vu2bXViq9qPNW3WfGoxrk37UVfxQ999n1bP+Vh5gAAAABJRU5ErkJggg==';
-ve.ce.chimeraImgDataUri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATCAYAAAByUDbMAAAABGdBTUEAALGPC/xhBQAAAThJREFUOMvF088rRFEYxvGpKdnwJ8iStVnMytZ2ipJmI6xmZKEUe5aUULMzCxtlSkzNjCh2lClFSUpDmYj8KBZq6vreetLbrXs5Rjn1aWbuuee575z7nljsH8YkepoNaccsHrGFgWbCWpHCLZb+oroFzKOEbpeFHVp8gitsYltzSRyiqrkKhsKCevGMfWQwor/2ghns4BQTGMMcnlBA3Aa14U5VLeMDnqrq1/cDpHGv35eqrI5pG+Y/qYYp3WiN6zOHs8DcA7IK/BqLWMOuY5inQjwbNqheGnYMO9d+XtiwFu1BQU/y96ooKRO2Yq6vqog3jAbfZgKvuDELfGWFXQeu76GB9bD26MQRNnSMotTVJvGoxs2rx2oR/B47Rtd3pyBv3lCYnEtYWo0Yps8l7F3HKErjJ2G/Hp/F9YtlR3MQiAAAAABJRU5ErkJggg==';
-ve.ce.nailImgDataUri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATCAYAAAByUDbMAAAAsElEQVQ4y%2B3RzYnCYBSF4ScOOtjBdGGKkCBYRZYWYE%2B2MNvgShAFp4JpQUZwoXFhAoPk0y%2F4s%2FLAXdzFfTn3HF6gT0yxxBZ%2FKDBsC%2FrCBmXDHDCOBfWwDoDqWcXCJjdAJfaxsCIC9h067lzsg3ta6zS0GFSWZTCLhS9C76VpWoffjYWNkyQ5BkAl8ravjzDHrnKSV6FfDb%2BN8n9O80cA3%2B7O%2BmgJW%2BMXffxU%2B0McPlcnctpQa2TeZewAAAAASUVORK5CYII%3D';
+ve.ce.minImgDataUri = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
 /* Static Methods */
 
@@ -51,7 +38,6 @@ ve.ce.getDomText = function ( element ) {
 	var func = function ( element ) {
 		var viewNode,
 			nodeType = element.nodeType,
-			$element = $( element ),
 			text = '';
 
 		if (
@@ -59,18 +45,18 @@ ve.ce.getDomText = function ( element ) {
 			nodeType === Node.DOCUMENT_NODE ||
 			nodeType === Node.DOCUMENT_FRAGMENT_NODE
 		) {
-			if ( $element.hasClass( 've-ce-branchNode-blockSlug' ) ) {
+			if ( element.classList.contains( 've-ce-branchNode-blockSlug' ) ) {
 				// Block slugs are not represented in the model at all, but they do
 				// contain a single nbsp/FEFF character in the DOM, so make sure
 				// that character isn't counted
 				return '';
-			} else if ( $element.hasClass( 've-ce-cursorHolder' ) ) {
+			} else if ( element.classList.contains( 've-ce-cursorHolder' ) ) {
 				// Cursor holders do not exist in the model
 				return '';
-			} else if ( $element.hasClass( 've-ce-leafNode' ) ) {
+			} else if ( element.classList.contains( 've-ce-leafNode' ) ) {
 				// For leaf nodes, don't return the content, but return
 				// the right number of placeholder characters so the offsets match up.
-				viewNode = $element.data( 'view' );
+				viewNode = $( element ).data( 'view' );
 				// Only return snowmen for the first element in a sibling group: otherwise
 				// we'll double-count this node
 				if ( viewNode && element === viewNode.$element[ 0 ] ) {
@@ -90,9 +76,8 @@ ve.ce.getDomText = function ( element ) {
 		}
 		return text;
 	};
-	// Return the text, replacing spaces and non-breaking spaces with spaces?
-	// TODO: Why are we replacing spaces (\u0020) with spaces (' ')
-	return func( element ).replace( ve.ce.whitespacePattern, ' ' );
+	// Return the text
+	return func( element );
 };
 
 /**
@@ -108,19 +93,17 @@ ve.ce.getDomText = function ( element ) {
  * @return {string} Hash of DOM element
  */
 ve.ce.getDomHash = function ( element ) {
-	var $element,
-		nodeType = element.nodeType,
+	var nodeType = element.nodeType,
 		nodeName = element.nodeName,
 		hash = '';
 
 	if ( nodeType === Node.TEXT_NODE || nodeType === Node.CDATA_SECTION_NODE ) {
 		return '#';
 	} else if ( nodeType === Node.ELEMENT_NODE || nodeType === Node.DOCUMENT_NODE ) {
-		$element = $( element );
 		if ( !(
-			$element.hasClass( 've-ce-branchNode-blockSlug' ) ||
-			$element.hasClass( 've-ce-cursorHolder' ) ||
-			$element.hasClass( 've-ce-nail' )
+			element.classList.contains( 've-ce-branchNode-blockSlug' ) ||
+			element.classList.contains( 've-ce-cursorHolder' ) ||
+			element.classList.contains( 've-ce-nail' )
 		) ) {
 			hash += '<' + nodeName + '>';
 			// Traverse its children
@@ -150,7 +133,7 @@ ve.ce.nextCursorOffset = function ( node ) {
 		offset = 0;
 	} else {
 		nextNode = node.parentNode;
-		offset = 1 + Array.prototype.indexOf.call( node.parentNode.childNodes, node );
+		offset = 1 + ve.parentIndex( node );
 	}
 	return { node: nextNode, offset: offset };
 };
@@ -170,7 +153,7 @@ ve.ce.previousCursorOffset = function ( node ) {
 		offset = previousNode.data.length;
 	} else {
 		previousNode = node.parentNode;
-		offset = Array.prototype.indexOf.call( node.parentNode.childNodes, node );
+		offset = ve.parentIndex( node );
 	}
 	return { node: previousNode, offset: offset };
 };
@@ -187,14 +170,14 @@ ve.ce.previousCursorOffset = function ( node ) {
  * @throws {Error} domNode is not in document
  */
 ve.ce.getOffset = function ( domNode, domOffset ) {
-	var node, view, offset, startNode, maxOffset, lengthSum = 0,
-		$domNode = $( domNode );
+	var node, view, offset, startNode, maxOffset,
+		lengthSum = 0;
 
-	if ( $domNode.hasClass( 've-ce-unicorn' ) ) {
+	if ( domNode.nodeType === Node.ELEMENT_NODE && domNode.classList.contains( 've-ce-unicorn' ) ) {
 		if ( domOffset !== 0 ) {
 			throw new Error( 'Non-zero offset in unicorn' );
 		}
-		return $domNode.data( 'dmOffset' );
+		return $( domNode ).data( 'modelOffset' );
 	}
 
 	/**
@@ -294,8 +277,8 @@ ve.ce.getOffset = function ( domNode, domOffset ) {
 	} else {
 		// Text inside of a block slug doesn't count
 		if ( !(
-			$( domNode.parentNode ).hasClass( 've-ce-branchNode-blockSlug' ) ||
-			$( domNode.parentNode ).hasClass( 've-ce-cursorHolder' )
+			domNode.parentNode.classList.contains( 've-ce-branchNode-blockSlug' ) ||
+			domNode.parentNode.classList.contains( 've-ce-cursorHolder' )
 		) ) {
 			lengthSum += domOffset;
 		}
@@ -319,8 +302,8 @@ ve.ce.getOffset = function ( domNode, domOffset ) {
 		// Text inside of a block slug doesn't count
 		if (
 			node.nodeType === Node.TEXT_NODE &&
-			!$( node.parentNode ).hasClass( 've-ce-branchNode-blockSlug' ) &&
-			!$( node.parentNode ).hasClass( 've-ce-cursorHolder' )
+			!node.parentNode.classList.contains( 've-ce-branchNode-blockSlug' ) &&
+			!node.parentNode.classList.contains( 've-ce-cursorHolder' )
 		) {
 			lengthSum += node.data.length;
 		}
@@ -367,14 +350,17 @@ ve.ce.getOffset = function ( domNode, domOffset ) {
  * @throws {Error}
  */
 ve.ce.getOffsetOfSlug = function ( element ) {
-	var model, $element = $( element );
+	var model, $prev, $element = $( element );
 	if ( $element.index() === 0 ) {
 		model = $element.parent().data( 'view' ).getModel();
 		return model.getOffset() + ( model.isWrapped() ? 1 : 0 );
-	} else if ( $element.prev().length ) {
-		model = $element.prev().data( 'view' ).getModel();
-		return model.getOffset() + model.getOuterLength();
 	} else {
+		// Don't pick up DOM nodes not from the view tree e.g. cursorHolders (T202103)
+		$prev = $element.prevAll( '.ve-ce-leafNode,.ve-ce-branchNode' ).first();
+		if ( $prev.length ) {
+			model = $prev.data( 'view' ).getModel();
+			return model.getOffset() + model.getOuterLength();
+		}
 		throw new Error( 'Incorrect slug location' );
 	}
 };
@@ -407,7 +393,7 @@ ve.ce.isAfterAnnotationBoundary = function ( node, offset ) {
 		if ( offset > 0 ) {
 			return false;
 		}
-		offset = Array.prototype.indexOf.call( node.parentNode.childNodes, node );
+		offset = ve.parentIndex( node );
 		node = node.parentNode;
 	}
 	if ( offset === 0 ) {
@@ -457,14 +443,183 @@ ve.ce.veRangeFromSelection = function ( selection ) {
 };
 
 /**
- * Find the link in which a node lies
+ * Find the closest nailed annotation in which a node lies
  *
  * @param {Node|null} node The node to test
- * @return {Node|null} The link within which the node lies (possibly the node itself)
+ * @return {Node|null} The closest nailed annotation within which the node lies (possibly the node itself)
  */
-ve.ce.linkAt = function ( node ) {
+ve.ce.nailedAnnotationAt = function ( node ) {
 	if ( node && node.nodeType === Node.TEXT_NODE ) {
 		node = node.parentNode;
 	}
-	return $( node ).closest( '.ve-ce-linkAnnotation' )[ 0 ];
+	return $( node ).closest( '.ve-ce-nailedAnnotation' )[ 0 ];
+};
+
+/**
+ * Analyse a DOM content change to build a Transaction
+ *
+ * Content changes have oldState.node === newState.node and newState.contentChanged === true .
+ * Annotations are inferred heuristically from plaintext to do what the user intended.
+ * TODO: treat more changes as simple (not needing a re-render); see
+ * https://phabricator.wikimedia.org/T114260 .
+ *
+ * @method
+ * @param {ve.ce.RangeState} oldState The prior range state
+ * @param {ve.ce.RangeState} newState The changed range state
+ *
+ * @return {Object} Results of analysis
+ * @return {ve.dm.Transaction} return.transaction Transaction corresponding to the DOM content change
+ * @return {ve.dm.Selection} return.selection Changed selection to apply (TODO: unsafe / useless?)
+ * @return {boolean} return.rerender Whether the DOM needs rerendering after applying the transaction
+ */
+ve.ce.modelChangeFromContentChange = function ( oldState, newState ) {
+	var data, len, annotations, bothCollapsed, oldStart, newStart, replacementRange,
+		fromLeft = 0,
+		fromRight = 0,
+		// It is guaranteed that oldState.node === newState.node , so just call it 'node'
+		node = newState.node,
+		nodeOffset = node.getModel().getOffset(),
+		oldText = oldState.text,
+		newText = newState.text,
+		oldRange = oldState.veRange,
+		newRange = newState.veRange,
+		oldData = oldText.split( '' ),
+		newData = newText.split( '' ),
+		lengthDiff = newText.length - oldText.length,
+		dmDoc = node.getModel().getDocument(),
+		modelData = dmDoc.data;
+
+	bothCollapsed = oldRange.isCollapsed() && newRange.isCollapsed();
+	oldStart = oldRange.start - nodeOffset - 1;
+	newStart = newRange.start - nodeOffset - 1;
+
+	// If the only change is an insertion just before the new cursor, then apply a
+	// single insertion transaction, using the annotations from the old start
+	// position (accounting for whether the cursor was before or after an annotation
+	// boundary)
+	if (
+		bothCollapsed &&
+		lengthDiff > 0 &&
+		oldText.slice( 0, oldStart ) === newText.slice( 0, oldStart ) &&
+		oldText.slice( oldStart ) === newText.slice( newStart )
+	) {
+		data = newData.slice( oldStart, newStart );
+		if ( node.unicornAnnotations ) {
+			annotations = node.unicornAnnotations;
+		} else {
+			annotations = modelData.getInsertionAnnotationsFromRange(
+				oldRange,
+				oldState.focusIsAfterAnnotationBoundary
+			);
+		}
+
+		if ( annotations.getLength() ) {
+			ve.dm.Document.static.addAnnotationsToData( data, annotations );
+		}
+
+		return {
+			transaction: ve.dm.TransactionBuilder.static.newFromInsertion(
+				dmDoc,
+				oldRange.start,
+				data
+			),
+			selection: new ve.dm.LinearSelection( dmDoc, newRange ),
+			rerender: false
+		};
+	}
+
+	// If the only change is a removal touching the old cursor position, then apply
+	// a single removal transaction.
+	if (
+		bothCollapsed &&
+		lengthDiff < 0 &&
+		oldText.slice( 0, newStart ) === newText.slice( 0, newStart ) &&
+		oldText.slice( newStart - lengthDiff ) === newText.slice( newStart )
+	) {
+		return {
+			transaction: ve.dm.TransactionBuilder.static.newFromRemoval(
+				dmDoc,
+				new ve.Range( newRange.start, newRange.start - lengthDiff )
+			),
+			selection: new ve.dm.LinearSelection( dmDoc, newRange ),
+			rerender: false
+		};
+	}
+
+	// Complex change (either removal+insertion or insertion not just before new cursor)
+	// 1. Count unchanged characters from left and right;
+	// 2. Assume that the minimal changed region indicates the replacement made by the user;
+	// 3. Hence guess how to map annotations.
+	// N.B. this logic can go wrong; e.g. this code will see slice->slide and
+	// assume that the user changed 'c' to 'd', but the user could instead have changed 'ic'
+	// to 'id', which would map annotations differently.
+
+	len = Math.min( oldData.length, newData.length );
+
+	while ( fromLeft < len && oldData[ fromLeft ] === newData[ fromLeft ] ) {
+		++fromLeft;
+	}
+
+	while (
+		fromRight < len - fromLeft &&
+		oldData[ oldData.length - 1 - fromRight ] ===
+		newData[ newData.length - 1 - fromRight ]
+	) {
+		++fromRight;
+	}
+	replacementRange = new ve.Range(
+		nodeOffset + 1 + fromLeft,
+		nodeOffset + 1 + oldData.length - fromRight
+	);
+	data = newData.slice( fromLeft, newData.length - fromRight );
+
+	if ( node.unicornAnnotations ) {
+		// This CBN is unicorned. Use the stored annotations.
+		annotations = node.unicornAnnotations;
+	} else {
+		// Guess the annotations from the (possibly empty) range being replaced.
+		//
+		// Still consider focusIsAfterAnnotationBoundary, even though the change is
+		// not necessarily at the cursor: assume the old focus was inside the same
+		// DOM text node as the insertion, and therefore has the same annotations.
+		// Otherwise, when using an IME that selects inserted text, this code path
+		// can cause an annotation discrepancy that triggers an unwanted re-render,
+		// closing the IME (For example, when typing at the start of <p><i>x</i></p>
+		// in Windows 8.1 Korean on IE11).
+		annotations = modelData.getInsertionAnnotationsFromRange(
+			replacementRange,
+			oldRange.isCollapsed() && oldState.focusIsAfterAnnotationBoundary
+		);
+	}
+	if ( annotations.getLength() ) {
+		ve.dm.Document.static.addAnnotationsToData( data, annotations );
+	}
+	if ( newRange.isCollapsed() ) {
+		// TODO: Remove this, or comment why it's necessary
+		// (When wouldn't we be at a cursor offset?)
+		newRange = new ve.Range( dmDoc.getNearestCursorOffset( newRange.start, 1 ) );
+	}
+	return {
+		transaction: ve.dm.TransactionBuilder.static.newFromReplacement(
+			dmDoc,
+			replacementRange,
+			data
+		),
+		selection: new ve.dm.LinearSelection( dmDoc, newRange ),
+		rerender: true
+	};
+};
+
+/**
+ * Check whether a given DOM element is an inline annotation
+ *
+ * @param {Node} element The element
+ * @return {boolean} Whether the element is an inline annotation
+ */
+ve.ce.isAnnotationElement = function ( element ) {
+	return !(
+		ve.isBlockElement( element ) ||
+		ve.isVoidElement( element ) ||
+		element.classList.contains( 've-ce-branchNode-slug' )
+	);
 };

@@ -1,14 +1,14 @@
 /*!
  * VisualEditor DataModel SurfaceFragment tests.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.dm.SurfaceFragment' );
 
 /* Tests */
 
-QUnit.test( 'constructor', 5, function ( assert ) {
+QUnit.test( 'constructor', function ( assert ) {
 	var fragment,
 		doc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc );
@@ -26,7 +26,7 @@ QUnit.test( 'constructor', 5, function ( assert ) {
 	assert.strictEqual( fragment.willAutoSelect(), false, 'noAutoSelect values are boolean' );
 } );
 
-QUnit.test( 'update', 3, function ( assert ) {
+QUnit.test( 'update', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc ),
 		fragment1 = surface.getLinearFragment( new ve.Range( 55, 61 ) ),
@@ -67,7 +67,7 @@ QUnit.test( 'update', 3, function ( assert ) {
 
 } );
 
-QUnit.test( 'getSelectedModels', 4, function ( assert ) {
+QUnit.test( 'getSelectedModels', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc );
 
@@ -78,14 +78,14 @@ QUnit.test( 'getSelectedModels', 4, function ( assert ) {
 	);
 	assert.deepEqual(
 		surface.getLinearFragment( new ve.Range( 2, 3 ) ).getSelectedModels(),
-		[ doc.data.store.value( 0 ) ],
+		[ doc.data.store.value( ve.dm.example.boldHash ) ],
 		'Bold annotation'
 	);
 	assert.deepEqual(
 		surface.getLinearFragment( new ve.Range( 1, 3 ) ).getSelectedModels( true ),
 		[
 			doc.getDocumentNode().children[ 0 ].children[ 0 ],
-			doc.data.store.value( 0 )
+			doc.data.store.value( ve.dm.example.boldHash )
 		],
 		'Bold annotation and text node'
 	);
@@ -96,7 +96,27 @@ QUnit.test( 'getSelectedModels', 4, function ( assert ) {
 	);
 } );
 
-QUnit.test( 'hasAnnotations', 2, function ( assert ) {
+QUnit.test( 'getAnnotations', function ( assert ) {
+	var tableSelection,
+		doc = ve.dm.example.createExampleDocument( 'annotatedTable' ),
+		tableRange = new ve.Range( 0, 52 ),
+		surface = new ve.dm.Surface( doc );
+
+	tableSelection = new ve.dm.TableSelection( doc, tableRange, 0, 0, 1, 0 );
+
+	assert.deepEqual( surface.getFragment( tableSelection ).getAnnotations().getHashes(), [ ve.dm.example.boldHash, ve.dm.example.strongHash ], 'Comparable annotations: [B] ∩ [Strong] = [B,Strong] ' );
+
+	tableSelection = new ve.dm.TableSelection( doc, tableRange, 0, 0, 2, 0 );
+	assert.deepEqual( surface.getFragment( tableSelection ).getAnnotations().getHashes(), [], 'Non-comparable annotations: [B] ∩ [Strong] ∩ [I] = [] ' );
+
+	tableSelection = new ve.dm.TableSelection( doc, tableRange, 0, 1, 1, 1 );
+	assert.deepEqual( surface.getFragment( tableSelection ).getAnnotations().getHashes(), [ ve.dm.example.boldHash, ve.dm.example.strongHash ], 'Non-comparable in first cell: [B,I] ∩ [Strong] = [B,Strong]' );
+
+	tableSelection = new ve.dm.TableSelection( doc, tableRange, 0, 0, 2, 0 );
+	assert.deepEqual( surface.getFragment( tableSelection ).getAnnotations( true ).getHashes(), [ ve.dm.example.boldHash, ve.dm.example.strongHash, ve.dm.example.italicHash ], 'Get all annotations' );
+} );
+
+QUnit.test( 'hasAnnotations', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc );
 
@@ -104,13 +124,13 @@ QUnit.test( 'hasAnnotations', 2, function ( assert ) {
 	assert.strictEqual( surface.getLinearFragment( new ve.Range( 2, 3 ) ).hasAnnotations(), true, 'Bold text has some' );
 } );
 
-QUnit.test( 'adjustLinearSelection', 4, function ( assert ) {
+QUnit.test( 'adjustLinearSelection', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc ),
 		fragment = surface.getLinearFragment( new ve.Range( 20, 21 ) ),
 		adjustedFragment = fragment.adjustLinearSelection( -19, 35 );
 
-	assert.ok( fragment !== adjustedFragment, 'adjustLinearSelection produces a new fragment' );
+	assert.notStrictEqual( fragment, adjustedFragment, 'adjustLinearSelection produces a new fragment' );
 	assert.equalRange( fragment.getSelection().getRange(), new ve.Range( 20, 21 ), 'old fragment is not changed' );
 	assert.equalRange( adjustedFragment.getSelection().getRange(), new ve.Range( 1, 56 ), 'new range is used' );
 
@@ -118,7 +138,7 @@ QUnit.test( 'adjustLinearSelection', 4, function ( assert ) {
 	assert.deepEqual( adjustedFragment, fragment, 'fragment is clone if no parameters supplied' );
 } );
 
-QUnit.test( 'truncateLinearSelection', 4, function ( assert ) {
+QUnit.test( 'truncateLinearSelection', function ( assert ) {
 	var range = new ve.Range( 100, 200 ),
 		doc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc ),
@@ -130,18 +150,18 @@ QUnit.test( 'truncateLinearSelection', 4, function ( assert ) {
 	assert.equalRange( fragment.truncateLinearSelection( -150 ).getSelection().getRange(), range, 'truncate -150 does nothing' );
 } );
 
-QUnit.test( 'collapseToStart/End', 6, function ( assert ) {
+QUnit.test( 'collapseToStart/End', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc ),
 		fragment = surface.getLinearFragment( new ve.Range( 20, 21 ) ),
 		collapsedFragment = fragment.collapseToStart();
 
-	assert.ok( fragment !== collapsedFragment, 'collapseToStart produces a new fragment' );
+	assert.notStrictEqual( fragment, collapsedFragment, 'collapseToStart produces a new fragment' );
 	assert.equalRange( fragment.getSelection().getRange(), new ve.Range( 20, 21 ), 'old fragment is not changed' );
 	assert.equalRange( collapsedFragment.getSelection().getRange(), new ve.Range( 20 ), 'new range is used' );
 
 	collapsedFragment = fragment.collapseToEnd();
-	assert.ok( fragment !== collapsedFragment, 'collapseToEnd produces a new fragment' );
+	assert.notStrictEqual( fragment, collapsedFragment, 'collapseToEnd produces a new fragment' );
 	assert.equalRange( fragment.getSelection().getRange(), new ve.Range( 20, 21 ), 'old fragment is not changed' );
 	assert.equalRange( collapsedFragment.getSelection().getRange(), new ve.Range( 21 ), 'range is at end when collapseToEnd is set' );
 } );
@@ -201,7 +221,6 @@ QUnit.test( 'expandLinearSelection (annotation)', function ( assert ) {
 			}
 		];
 
-	QUnit.expect( cases.length );
 	for ( i = 0; i < cases.length; i++ ) {
 		fragment = surface.getLinearFragment( cases[ i ].range ).expandLinearSelection(
 			'annotation',
@@ -242,7 +261,6 @@ QUnit.test( 'expandLinearSelection (closest)', function ( assert ) {
 			}
 		];
 
-	QUnit.expect( cases.length );
 	for ( i = 0; i < cases.length; i++ ) {
 		surface = new ve.dm.Surface( ve.dm.example.createExampleDocument( cases[ i ].doc ) );
 		fragment = surface.getLinearFragment( cases[ i ].range ).expandLinearSelection( 'closest', cases[ i ].type );
@@ -250,28 +268,29 @@ QUnit.test( 'expandLinearSelection (closest)', function ( assert ) {
 	}
 } );
 
-QUnit.test( 'expandLinearSelection (word)', 1, function ( assert ) {
-	var i, doc, surface, fragment, newFragment, range, word, cases = [
-		{
-			phrase: 'the quick brown fox',
-			range: new ve.Range( 6, 13 ),
-			expected: 'quick brown',
-			msg: 'range starting and ending in latin words'
-		},
-		{
-			phrase: 'the quick brown fox',
-			range: new ve.Range( 18, 12 ),
-			expected: 'brown fox',
-			msg: 'backwards range starting and ending in latin words'
-		},
-		{
-			phrase: 'the quick brown fox',
-			range: new ve.Range( 7 ),
-			expected: 'quick',
-			msg: 'zero-length range'
-		}
-	];
-	QUnit.expect( cases.length * 2 );
+QUnit.test( 'expandLinearSelection (word)', function ( assert ) {
+	var i, doc, surface, fragment, newFragment, range, word,
+		cases = [
+			{
+				phrase: 'the quick brown fox',
+				range: new ve.Range( 6, 13 ),
+				expected: 'quick brown',
+				msg: 'range starting and ending in latin words'
+			},
+			{
+				phrase: 'the quick brown fox',
+				range: new ve.Range( 18, 12 ),
+				expected: 'brown fox',
+				msg: 'backwards range starting and ending in latin words'
+			},
+			{
+				phrase: 'the quick brown fox',
+				range: new ve.Range( 7 ),
+				expected: 'quick',
+				msg: 'zero-length range'
+			}
+		];
+
 	for ( i = 0; i < cases.length; i++ ) {
 		doc = new ve.dm.Document( cases[ i ].phrase.split( '' ) );
 		surface = new ve.dm.Surface( doc );
@@ -284,7 +303,7 @@ QUnit.test( 'expandLinearSelection (word)', 1, function ( assert ) {
 	}
 } );
 
-QUnit.test( 'removeContent', 6, function ( assert ) {
+QUnit.test( 'removeContent', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		originalDoc = ve.dm.example.createExampleDocument(),
 		expectedDoc = ve.dm.example.createExampleDocument(),
@@ -337,9 +356,7 @@ ve.test.utils.runSurfaceFragmentDeleteTest = function ( assert, html, range, dir
 	var data, doc, surface, fragment;
 
 	if ( html ) {
-		doc = new ve.dm.Document(
-			ve.dm.converter.getModelFromDom( ve.createDocumentFromHtml( html ) )
-		);
+		doc = ve.dm.converter.getModelFromDom( ve.createDocumentFromHtml( html ) );
 	} else {
 		doc = ve.dm.example.createExampleDocument();
 	}
@@ -397,17 +414,47 @@ QUnit.test( 'delete', function ( assert ) {
 				range: new ve.Range( 0, 63 ),
 				directionAfterRemove: -1,
 				expectedData: function ( data ) {
-					data.splice( 0, 61,
-							{ type: 'paragraph' },
-							{ type: '/paragraph' }
-						);
+					data.splice(
+						0,
+						61,
+						{ type: 'paragraph' },
+						{ type: '/paragraph' }
+					);
 				},
 				expectedRange: new ve.Range( 1 ),
 				msg: 'Backspace after select all spanning entire document creates empty paragraph'
+			},
+			{
+				html: '<div rel="ve:Alien">Foo</div><p>Bar</p>',
+				range: new ve.Range( 0, 6 ),
+				directionAfterRemove: -1,
+				expectedData: function ( data ) {
+					data.splice(
+						0,
+						7,
+						{ type: 'paragraph' },
+						{ type: '/paragraph' }
+					);
+				},
+				expectedRange: new ve.Range( 1 ),
+				msg: 'Delete all when document starts with a focusable node'
+			},
+			{
+				html: '<div rel="ve:Alien">Foo</div><p>Bar</p><div rel="ve:Alien">Baz</div>',
+				range: new ve.Range( 0, 9 ),
+				directionAfterRemove: -1,
+				expectedData: function ( data ) {
+					data.splice(
+						0,
+						9,
+						{ type: 'paragraph' },
+						{ type: '/paragraph' }
+					);
+				},
+				expectedRange: new ve.Range( 1 ),
+				msg: 'Delete all when document starts and ends with a focusable node'
 			}
 		];
-
-	QUnit.expect( cases.length * 2 );
 
 	for ( i = 0; i < cases.length; i++ ) {
 		ve.test.utils.runSurfaceFragmentDeleteTest(
@@ -417,11 +464,27 @@ QUnit.test( 'delete', function ( assert ) {
 	}
 } );
 
-QUnit.test( 'insertContent', 9, function ( assert ) {
+QUnit.test( 'insertContent/insertDocument', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc ),
-		fragment = surface.getLinearFragment( new ve.Range( 1, 4 ) );
+		fragment = surface.getLinearFragment( new ve.Range( 3, 4 ) );
 
+	fragment.insertContent( [ 'a' ], true );
+	assert.deepEqual(
+		doc.getData( new ve.Range( 3, 4 ) ),
+		[ [ 'a', [ ve.dm.example.italicHash ] ] ],
+		'inserting content (annotate=true) replaces selection with new annotated content'
+	);
+
+	fragment = surface.getLinearFragment( new ve.Range( 3, 4 ) );
+	fragment.insertContent( [ 'b' ] );
+	assert.deepEqual(
+		doc.getData( new ve.Range( 3, 4 ) ),
+		[ 'b' ],
+		'inserting content (annotate=false) replaces selection with new plain content'
+	);
+
+	fragment = surface.getLinearFragment( new ve.Range( 1, 4 ) );
 	fragment.insertContent( [ '1', '2', '3' ] );
 	assert.deepEqual(
 		doc.getData( new ve.Range( 1, 4 ) ),
@@ -494,9 +557,92 @@ QUnit.test( 'insertContent', 9, function ( assert ) {
 		new ve.Range( 5, 7 ),
 		'range covers inserted content in moved position (right)'
 	);
+
+	// Set up document and surface from scratch
+	doc = ve.dm.example.createExampleDocument();
+	surface = new ve.dm.Surface( doc );
+
+	fragment = surface.getLinearFragment( new ve.Range( 2, 3 ) );
+	fragment.insertDocument( new ve.dm.Document( [
+		{ type: 'paragraph' }, { type: 'exampleUnboldable' }, { type: '/exampleUnboldable' }, 'x', { type: '/paragraph' },
+		{ type: 'internalList' }, { type: '/internalList' }
+	] ), new ve.Range( 1, 4 ), true );
+	assert.deepEqual(
+		doc.getData( new ve.Range( 2, 5 ) ),
+		[
+			{ type: 'exampleUnboldable' },
+			{ type: '/exampleUnboldable' },
+			[ 'x', [ ve.dm.example.boldHash ] ]
+		],
+		'Unboldable node pasted into bold doesn\'t get bolded'
+	);
+	surface.undo();
+
+	fragment = surface.getLinearFragment( new ve.Range( 3, 4 ) );
+	fragment.insertDocument( new ve.dm.Document( [
+		{ type: 'paragraph' }, { type: 'alienInline' }, { type: '/alienInline' }, { type: '/paragraph' },
+		{ type: 'internalList' }, { type: '/internalList' }
+	] ), new ve.Range( 1, 3 ), true );
+	assert.deepEqual(
+		doc.getData( new ve.Range( 3, 5 ) ),
+		[
+			{ type: 'alienInline', annotations: [ ve.dm.example.italicHash ] },
+			{ type: '/alienInline' }
+		],
+		'Inline node inserted in annotation gets annotated'
+	);
+
+	doc = ve.dm.example.createExampleDocumentFromData( [
+		{ type: 'paragraph' },
+		[ 'F', [ ve.dm.example.bold ] ],
+		[ 'o', [ ve.dm.example.bold ] ],
+		[ 'o', [ ve.dm.example.bold ] ],
+		{ type: '/paragraph' },
+		{ type: 'internalList' },
+		{ type: '/internalList' }
+	] );
+	surface = new ve.dm.Surface( doc );
+	fragment = surface.getLinearFragment( new ve.Range( 2 ) );
+	fragment.insertContent(
+		ve.dm.example.preprocessAnnotations( [
+			// Annotated with a differently-hashing bold attribute
+			[ 'x', [ { type: 'textStyle/bold', attributes: { nodeName: 'b', irrelevant: true } } ] ]
+		], doc.store ).data,
+		true
+	);
+	assert.deepEqual(
+		doc.getData( new ve.Range( 2, 3 ) ),
+		[
+			[ 'x', [ ve.dm.example.boldHash ] ]
+		],
+		'inserting content (annotate=true) reuses comparable annotations on existing content'
+	);
+
+	doc = ve.dm.example.createExampleDocumentFromData( [
+		{ type: 'paragraph' },
+		[ 'F', [ ve.dm.example.bold ] ],
+		[ 'o', [ ve.dm.example.bold ] ],
+		[ 'o', [ ve.dm.example.bold ] ],
+		{ type: '/paragraph' },
+		{ type: 'internalList' },
+		{ type: '/internalList' }
+	] );
+	surface = new ve.dm.Surface( doc );
+	fragment = surface.getLinearFragment( new ve.Range( 2 ) );
+	fragment.insertDocument( ve.dm.example.createExampleDocumentFromData( [
+		{ type: 'paragraph' }, [ 'x', [ { type: 'textStyle/bold', attributes: { nodeName: 'b', irrelevant: true } } ] ], { type: '/paragraph' },
+		{ type: 'internalList' }, { type: '/internalList' }
+	] ), new ve.Range( 1, 3 ), true );
+	assert.deepEqual(
+		doc.getData( new ve.Range( 2, 3 ) ),
+		[
+			[ 'x', [ ve.dm.example.boldHash ] ]
+		],
+		'inserting document (annotate=true) reuses comparable annotations on existing content'
+	);
 } );
 
-QUnit.test( 'changeAttributes', 1, function ( assert ) {
+QUnit.test( 'changeAttributes', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc ),
 		fragment = surface.getLinearFragment( new ve.Range( 0, 5 ) );
@@ -508,7 +654,7 @@ QUnit.test( 'changeAttributes', 1, function ( assert ) {
 	);
 } );
 
-QUnit.test( 'wrapNodes/unwrapNodes', 10, function ( assert ) {
+QUnit.test( 'wrapNodes/unwrapNodes', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		originalDoc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc ),
@@ -583,7 +729,7 @@ QUnit.test( 'wrapNodes/unwrapNodes', 10, function ( assert ) {
 	assert.equalRange( fragment.getSelection().getRange(), new ve.Range( 5, 29 ), 'new range contains inner elements' );
 } );
 
-QUnit.test( 'rewrapNodes', 4, function ( assert ) {
+QUnit.test( 'rewrapNodes', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc ),
 		fragment = surface.getLinearFragment( new ve.Range( 43, 55 ) ),
@@ -592,14 +738,14 @@ QUnit.test( 'rewrapNodes', 4, function ( assert ) {
 		expectedFragment = expectedSurface.getLinearFragment( new ve.Range( 43, 55 ) ),
 		expectedData;
 
-	// set up wrapped nodes in example document
+	// Set up wrapped nodes in example document
 	fragment.wrapNodes(
 		[ { type: 'list', attributes: { style: 'bullet' } }, { type: 'listItem' } ]
 	);
 	expectedFragment.wrapNodes(
 		[ { type: 'list', attributes: { style: 'bullet' } }, { type: 'listItem' } ]
 	);
-	// range is now 43, 59
+	// Range is now 43, 59
 
 	// Compare a rewrap operation with its equivalent unwrap + wrap
 	// This type of test can only exist if the intermediate state is valid
@@ -636,7 +782,7 @@ QUnit.test( 'rewrapNodes', 4, function ( assert ) {
 	assert.equalRange( fragment.getSelection().getRange(), new ve.Range( 59, 65 ), 'new range contains rewrapping elements' );
 } );
 
-QUnit.test( 'wrapAllNodes', 10, function ( assert ) {
+QUnit.test( 'wrapAllNodes', function ( assert ) {
 	var doc = ve.dm.example.createExampleDocument(),
 		originalDoc = ve.dm.example.createExampleDocument(),
 		surface = new ve.dm.Surface( doc ),
@@ -715,7 +861,7 @@ QUnit.test( 'wrapAllNodes', 10, function ( assert ) {
 	);
 } );
 
-QUnit.test( 'rewrapAllNodes', 6, function ( assert ) {
+QUnit.test( 'rewrapAllNodes', function ( assert ) {
 	var expectedData,
 		doc = ve.dm.example.createExampleDocument(),
 		originalDoc = ve.dm.example.createExampleDocument(),
@@ -774,7 +920,7 @@ QUnit.test( 'rewrapAllNodes', 6, function ( assert ) {
 	assert.equalRange( fragment.getSelection().getRange(), new ve.Range( 0, 5 ), 'new range contains rewrapping elements' );
 } );
 
-QUnit.test( 'isolateAndUnwrap', 1, function ( assert ) {
+QUnit.test( 'isolateAndUnwrap', function ( assert ) {
 	ve.test.utils.runIsolateTest( assert, 'heading', new ve.Range( 12, 20 ), function ( data ) {
 		data.splice( 11, 0, { type: 'listItem' } );
 		data.splice( 12, 1 );

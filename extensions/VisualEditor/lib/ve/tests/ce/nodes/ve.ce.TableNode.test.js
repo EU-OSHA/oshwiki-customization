@@ -1,14 +1,14 @@
 /*!
  * VisualEditor ContentEditable TableNode tests.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.ce.TableNode' );
 
 /* Tests */
 
-QUnit.test( 'getCellNodeFromTarget', function ( assert ) {
+QUnit.test( 'getNearestCellNode', function ( assert ) {
 	var i,
 		view = ve.test.utils.createSurfaceViewFromHtml(
 			'<table>' +
@@ -23,24 +23,23 @@ QUnit.test( 'getCellNodeFromTarget', function ( assert ) {
 		cases = [
 			{
 				msg: 'Table cell',
-				target: $tableNode.find( 'td' )[ 0 ],
+				element: $tableNode.find( 'td' )[ 0 ],
 				node: documentNode.children[ 0 ].children[ 0 ].children[ 0 ].children[ 0 ]
 			},
 			{
 				msg: 'Paragraph inside cell',
-				target: $tableNode.find( 'td' ).last().find( 'p' )[ 0 ],
+				element: $tableNode.find( 'td' ).last().find( 'p' )[ 0 ],
 				node: documentNode.children[ 0 ].children[ 0 ].children[ 0 ].children[ 1 ]
 			},
 			{
 				msg: 'Cell inside nested table',
-				target: $tableNode.find( 'table td' ).first()[ 0 ],
+				element: $tableNode.find( 'table td' ).first()[ 0 ],
 				node: null
 			}
 		];
 
-	QUnit.expect( cases.length );
 	for ( i = 0; i < cases.length; i++ ) {
-		assert.strictEqual( tableNode.getCellNodeFromTarget( cases[ i ].target ), cases[ i ].node, cases[ i ].msg );
+		assert.strictEqual( tableNode.getNearestCellNode( cases[ i ].element ), cases[ i ].node, cases[ i ].msg );
 	}
 	view.destroy();
 } );
@@ -88,7 +87,6 @@ QUnit.test( 'onTableMouseDown', function ( assert ) {
 			}
 		];
 
-	QUnit.expect( cases.length );
 	for ( i = 0; i < cases.length; i++ ) {
 		tableNode.onTableMouseDown( $.extend( mockEvent, cases[ i ].event ) );
 		assert.deepEqual(

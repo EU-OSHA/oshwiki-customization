@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel InternalListNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -32,6 +32,8 @@ ve.dm.InternalListNode.static.childNodeTypes = [ 'internalItem' ];
 ve.dm.InternalListNode.static.matchTagNames = [];
 
 ve.dm.InternalListNode.static.isInternal = true;
+
+ve.dm.InternalListNode.static.isDeletable = false;
 
 /* Registration */
 

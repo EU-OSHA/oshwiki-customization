@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MediaWiki media dialog tool classes.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -9,18 +9,18 @@
  * MediaWiki UserInterface media edit tool.
  *
  * @class
- * @extends ve.ui.DialogTool
+ * @extends ve.ui.FragmentWindowTool
  * @constructor
  * @param {OO.ui.ToolGroup} toolGroup
  * @param {Object} [config] Configuration options
  */
-ve.ui.MWMediaDialogTool = function VeUiMWMediaDialogTool( toolGroup, config ) {
-	ve.ui.DialogTool.call( this, toolGroup, config );
+ve.ui.MWMediaDialogTool = function VeUiMWMediaDialogTool() {
+	ve.ui.MWMediaDialogTool.super.apply( this, arguments );
 };
-OO.inheritClass( ve.ui.MWMediaDialogTool, ve.ui.DialogTool );
+OO.inheritClass( ve.ui.MWMediaDialogTool, ve.ui.FragmentWindowTool );
 ve.ui.MWMediaDialogTool.static.name = 'media';
 ve.ui.MWMediaDialogTool.static.group = 'object';
-ve.ui.MWMediaDialogTool.static.icon = 'picture';
+ve.ui.MWMediaDialogTool.static.icon = 'image';
 ve.ui.MWMediaDialogTool.static.title =
 	OO.ui.deferMsg( 'visualeditor-dialogbutton-media-tooltip' );
 ve.ui.MWMediaDialogTool.static.modelClasses = [ ve.dm.MWBlockImageNode, ve.dm.MWInlineImageNode ];

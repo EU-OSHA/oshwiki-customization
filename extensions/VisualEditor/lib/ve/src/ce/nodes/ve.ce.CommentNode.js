@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable CommentNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -10,7 +10,6 @@
  * @class
  * @extends ve.ce.LeafNode
  * @mixins ve.ce.FocusableNode
- * @mixins OO.ui.mixin.IconElement
  *
  * @constructor
  * @param {ve.dm.CommentNode} model Model to observe
@@ -22,28 +21,26 @@ ve.ce.CommentNode = function VeCeCommentNode( model, config ) {
 
 	// Mixin constructors
 	ve.ce.FocusableNode.call( this, this.$element, config );
-	OO.ui.mixin.IconElement.call( this, $.extend( {}, config, {
-		$icon: this.$element, icon: 'notice'
-	} ) );
+
+	// Events
+	this.model.connect( this, { attributeChange: 'onAttributeChange' } );
 
 	// DOM changes
-	this.$element
-		.addClass( 've-ce-commentNode' )
-		// Add em space for selection highlighting
-		.text( '\u2003' );
+	this.$element.addClass( 've-ce-commentNode' );
 };
 
 /* Inheritance */
 
 OO.inheritClass( ve.ce.CommentNode, ve.ce.LeafNode );
 OO.mixinClass( ve.ce.CommentNode, ve.ce.FocusableNode );
-OO.mixinClass( ve.ce.CommentNode, OO.ui.mixin.IconElement );
 
 /* Static Properties */
 
 ve.ce.CommentNode.static.name = 'comment';
 
 ve.ce.CommentNode.static.primaryCommandName = 'comment';
+
+ve.ce.CommentNode.static.iconWhenInvisible = 'notice';
 
 /* Static Methods */
 
@@ -52,6 +49,31 @@ ve.ce.CommentNode.static.primaryCommandName = 'comment';
  */
 ve.ce.CommentNode.static.getDescription = function ( model ) {
 	return model.getAttribute( 'text' );
+};
+
+/**
+ * Update the rendering of the 'text' attribute
+ * when it changes in the model.
+ *
+ * @method
+ * @param {string} key Attribute key
+ * @param {string} from Old value
+ * @param {string} to New value
+ */
+ve.ce.CommentNode.prototype.onAttributeChange = function ( key ) {
+	if ( key === 'text' ) {
+		this.updateInvisibleIconLabel();
+	}
+};
+
+/* Method */
+
+/**
+ * @inheritdoc ve.ce.FocusableNode
+ */
+ve.ce.CommentNode.prototype.hasRendering = function () {
+	// Comment nodes never have a rendering, don't bother with expensive DOM inspection
+	return false;
 };
 
 /* Registration */

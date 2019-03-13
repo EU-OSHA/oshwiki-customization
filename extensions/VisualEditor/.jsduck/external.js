@@ -1,24 +1,6 @@
 /**
- * Provided by VisualEditorDataModule.php for the MediaWiki environment.
- *
- * @class ve.version
- * @singleton
- */
-
-/**
- * @property {string|boolean} [id=false] Git commit hash (abbreviated to 7 characters)
- */
-
-/**
- * @property {string|boolean} [url=false] URL to git commit viewer for #id
- */
-
-/**
- * @property {number|boolean} [timestamp=false] Commit date (UNIX timestamp)
- */
-
-/**
- * @property {string} [dateString=""] Formatted date or empty string
+ * @class mw.Api
+ * @source <https://doc.wikimedia.org/mediawiki-core/master/js/#!/api/mw.Api>
  */
 
 /**
@@ -29,4 +11,14 @@
 /**
  * @class mw.widgets.TitleInputWidget
  * @source <https://doc.wikimedia.org/mediawiki-core/master/js/#!/api/mw.widgets.TitleInputWidget>
+ */
+
+/**
+ * @class mw.widgets.MediaSearchWidget
+ * @source <https://doc.wikimedia.org/mediawiki-core/master/js/#!/api/mw.widgets.MediaSearchWidget>
+ */
+
+/**
+ * @class mw.widgets.MediaResultWidget
+ * @source <https://doc.wikimedia.org/mediawiki-core/master/js/#!/api/mw.widgets.MediaResultWidget>
  */

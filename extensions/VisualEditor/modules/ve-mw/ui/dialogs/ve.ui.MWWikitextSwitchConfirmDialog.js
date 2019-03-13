@@ -1,7 +1,7 @@
-/*
+/*!
  * VisualEditor user interface MWWikitextSwitchConfirmDialog class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -27,12 +27,6 @@ OO.inheritClass( ve.ui.MWWikitextSwitchConfirmDialog, OO.ui.MessageDialog );
 
 ve.ui.MWWikitextSwitchConfirmDialog.static.name = 'wikitextswitchconfirm';
 
-ve.ui.MWWikitextSwitchConfirmDialog.static.verbose = true;
-
-ve.ui.MWWikitextSwitchConfirmDialog.static.size = 'small';
-
-ve.ui.MWWikitextSwitchConfirmDialog.static.icon = 'help';
-
 ve.ui.MWWikitextSwitchConfirmDialog.static.title =
 	OO.ui.deferMsg( 'visualeditor-mweditmodesource-title' );
 
@@ -49,11 +43,6 @@ ve.ui.MWWikitextSwitchConfirmDialog.static.actions = [
 		action: 'switch',
 		label: OO.ui.deferMsg( 'visualeditor-mweditmodesource-warning-switch' ),
 		flags: [ 'progressive', 'primary' ]
-	},
-	{
-		action: 'discard',
-		label: OO.ui.deferMsg( 'visualeditor-mweditmodesource-warning-switch-discard' ),
-		flags: 'destructive'
 	}
 ];
 
@@ -65,15 +54,9 @@ ve.ui.MWWikitextSwitchConfirmDialog.static.actions = [
 ve.ui.MWWikitextSwitchConfirmDialog.prototype.getActionProcess = function ( action ) {
 	if ( action === 'switch' ) {
 		return new OO.ui.Process( function () {
-			this.getActions().setAbilities( { cancel: false, discard: false } );
+			this.getActions().setAbilities( { cancel: false } );
 			this.getActions().get()[ 1 ].pushPending();
 			this.target.switchToWikitextEditor( false, true );
-		}, this );
-	} else if ( action === 'discard' ) {
-		return new OO.ui.Process( function () {
-			this.getActions().setAbilities( { cancel: false, switch: false } );
-			this.getActions().get()[ 2 ].pushPending();
-			this.target.switchToWikitextEditor( true, true );
 		}, this );
 	} else if ( action === 'cancel' ) {
 		return new OO.ui.Process( function () {
@@ -94,22 +77,6 @@ ve.ui.MWWikitextSwitchConfirmDialog.prototype.setup = function ( data ) {
 
 	// Parent method
 	return ve.ui.MWWikitextSwitchConfirmDialog.super.prototype.setup.call( this, data );
-};
-
-/**
- * @inheritdoc
- */
-ve.ui.MWWikitextSwitchConfirmDialog.prototype.getTeardownProcess = function ( data ) {
-	data = data || {};
-	return ve.ui.MWWikitextSwitchConfirmDialog.super.prototype.getTeardownProcess.call( this, data )
-		.first( function () {
-			// EVIL HACK - we shouldn't be reaching into the manager for these promises
-			if ( data.action === 'switch' || data.action === 'discard' ) {
-				this.manager.closing.resolve( data );
-			} else {
-				this.manager.closing.reject( data );
-			}
-		}, this );
 };
 
 /* Registration */

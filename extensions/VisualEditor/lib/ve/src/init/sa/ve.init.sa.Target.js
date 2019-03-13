@@ -1,7 +1,7 @@
 /*!
  * VisualEditor Standalone Initialization Target class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -30,12 +30,14 @@
  */
 ve.init.sa.Target = function VeInitSaTarget( config ) {
 	config = config || {};
-	config.toolbarConfig = $.extend( { shadow: true, actions: true, floatable: true }, config.toolbarConfig );
+	config.toolbarConfig = ve.extendObject( { shadow: true, actions: true, floatable: true }, config.toolbarConfig );
 
 	// Parent constructor
 	ve.init.sa.Target.super.call( this, config );
 
-	this.$element.addClass( 've-init-sa-target' );
+	this.$element
+		.addClass( 've-init-sa-target' )
+		.attr( 'lang', ve.init.platform.getUserLanguages()[ 0 ] );
 };
 
 /* Inheritance */
@@ -46,10 +48,12 @@ OO.inheritClass( ve.init.sa.Target, ve.init.Target );
 
 ve.init.sa.Target.static.actionGroups = [
 	{
+		name: 'pageMenu',
 		type: 'list',
 		icon: 'menu',
+		indicator: null,
 		title: OO.ui.deferMsg( 'visualeditor-pagemenu-tooltip' ),
-		include: [ 'findAndReplace', 'commandHelp' ]
+		include: [ 'findAndReplace', 'changeDirectionality', 'commandHelp' ]
 	}
 ];
 
@@ -59,7 +63,9 @@ ve.init.sa.Target.static.actionGroups = [
  * @inheritdoc
  */
 ve.init.sa.Target.prototype.addSurface = function () {
+	// Parent method
 	var surface = ve.init.sa.Target.super.prototype.addSurface.apply( this, arguments );
+
 	this.$element.append( $( '<div>' ).addClass( 've-init-sa-target-surfaceWrapper' ).append( surface.$element ) );
 	if ( !this.getSurface() ) {
 		this.setSurface( surface );

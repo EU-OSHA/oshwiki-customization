@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable TableNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -21,6 +21,8 @@ ve.ce.TableNode = function VeCeTableNode() {
 	this.surface = null;
 	this.active = false;
 	this.startCell = null;
+	// Stores the original table selection as
+	// a fragment when entering cell edit mode
 	this.editingFragment = null;
 
 	// DOM changes
@@ -51,14 +53,8 @@ ve.ce.TableNode.prototype.onSetup = function () {
 	// Overlay
 	this.$selectionBox = $( '<div>' ).addClass( 've-ce-tableNodeOverlay-selection-box' );
 	this.$selectionBoxAnchor = $( '<div>' ).addClass( 've-ce-tableNodeOverlay-selection-box-anchor' );
-	this.colContext = new ve.ui.TableContext( this, 'col', {
-		classes: [ 've-ui-tableContext-colContext' ],
-		indicator: 'down'
-	} );
-	this.rowContext = new ve.ui.TableContext( this, 'row', {
-		classes: [ 've-ui-tableContext-rowContext' ],
-		indicator: 'next'
-	} );
+	this.colContext = new ve.ui.TableLineContext( this, 'col' );
+	this.rowContext = new ve.ui.TableLineContext( this, 'row' );
 
 	this.$overlay = $( '<div>' )
 		.addClass( 've-ce-tableNodeOverlay oo-ui-element-hidden' )
@@ -74,6 +70,10 @@ ve.ce.TableNode.prototype.onSetup = function () {
 
 	// Events
 	this.$element.on( {
+		'mousedown.ve-ce-tableNode': this.onTableMouseDown.bind( this ),
+		'dblclick.ve-ce-tableNode': this.onTableDblClick.bind( this )
+	} );
+	this.$overlay.on( {
 		'mousedown.ve-ce-tableNode': this.onTableMouseDown.bind( this ),
 		'dblclick.ve-ce-tableNode': this.onTableDblClick.bind( this )
 	} );
@@ -94,6 +94,7 @@ ve.ce.TableNode.prototype.onTeardown = function () {
 	ve.ce.TableNode.super.prototype.onTeardown.call( this );
 	// Events
 	this.$element.off( '.ve-ce-tableNode' );
+	this.$overlay.off( '.ve-ce-tableNode' );
 	this.surface.getModel().disconnect( this );
 	this.surface.disconnect( this );
 	this.$overlay.remove();
@@ -105,11 +106,22 @@ ve.ce.TableNode.prototype.onTeardown = function () {
  * @param {jQuery.Event} e Double click event
  */
 ve.ce.TableNode.prototype.onTableDblClick = function ( e ) {
-	if ( !this.getCellNodeFromTarget( e.target ) ) {
+	var offset;
+	if ( !this.getCellNodeFromEvent( e ) ) {
 		return;
 	}
 	if ( this.surface.getModel().getSelection() instanceof ve.dm.TableSelection ) {
-		this.setEditing( true );
+		// Don't change selection in setEditing to avoid scrolling to bottom of cell
+		this.setEditing( true, true );
+		// getOffsetFromEventCoords doesn't work in ce=false in Firefox, so ensure
+		// this is called after setEditing( true ).
+		offset = this.surface.getOffsetFromEventCoords( e.originalEvent );
+		if ( offset !== -1 ) {
+			// Set selection to where the double click happened
+			this.surface.getModel().setLinearSelection( new ve.Range( offset ) );
+		} else {
+			this.setEditing( true );
+		}
 	}
 };
 
@@ -119,15 +131,22 @@ ve.ce.TableNode.prototype.onTableDblClick = function ( e ) {
  * @param {jQuery.Event} e Mouse down or touch start event
  */
 ve.ce.TableNode.prototype.onTableMouseDown = function ( e ) {
-	var cellNode, startCell, endCell, selection, newSelection;
+	var cellNode, startCell, endCell, selection, newSelection,
+		node = this;
 
-	if ( e.type === 'touchstart' && e.originalEvent.touches.length > 1 ) {
-		// Ignore multi-touch
+	cellNode = this.getCellNodeFromEvent( e );
+	if ( !cellNode ) {
 		return;
 	}
 
-	cellNode = this.getCellNodeFromTarget( e.target );
-	if ( !cellNode ) {
+	// Right-click on a cell which isn't being edited
+	if ( e.which === OO.ui.MouseButtons.RIGHT && !this.getActiveCellNode() ) {
+		// Select the cell to the browser renders the correct context menu
+		ve.selectElement( cellNode.$element[ 0 ] );
+		setTimeout( function () {
+			// Trigger onModelSelect to restore the selection
+			node.surface.onModelSelect();
+		} );
 		return;
 	}
 
@@ -165,21 +184,63 @@ ve.ce.TableNode.prototype.onTableMouseDown = function ( e ) {
 };
 
 /**
- * Get the table and cell node from an event target
+ * Get a table cell node from a mouse event
  *
- * @param {HTMLElement} target Element target to find nearest cell node to
+ * Works around various issues with touch events and browser support.
+ *
+ * @param {jQuery.Event} e Mouse event
+ * @return {ve.ce.TableCellNode|null} Table cell node
+ */
+ve.ce.TableNode.prototype.getCellNodeFromEvent = function ( e ) {
+	var touch;
+
+	// 'touchmove' doesn't give a correct e.target, so calculate it from coordinates
+	if ( e.type === 'touchstart' && e.originalEvent.touches.length > 1 ) {
+		// Ignore multi-touch
+		return null;
+	} else if ( e.type === 'touchmove' ) {
+		if ( e.originalEvent.touches.length > 1 ) {
+			// Ignore multi-touch
+			return null;
+		}
+		touch = e.originalEvent.touches[ 0 ];
+		return this.getCellNodeFromPoint( touch.clientX, touch.clientY );
+	} else {
+		return this.getNearestCellNode( e.target );
+	}
+};
+
+/**
+ * Get the cell node from a point
+ *
+ * @param {number} x X offset
+ * @param {number} y Y offset
  * @return {ve.ce.TableCellNode|null} Table cell node, or null if none found
  */
-ve.ce.TableNode.prototype.getCellNodeFromTarget = function ( target ) {
-	var $target = $( target ),
-		$table = $target.closest( 'table' );
+ve.ce.TableNode.prototype.getCellNodeFromPoint = function ( x, y ) {
+	return this.getNearestCellNode(
+		this.surface.getElementDocument().elementFromPoint( x, y )
+	);
+};
+
+/**
+ * Get the nearest cell node in this table to an element
+ *
+ * If the nearest cell node is in another table, return null.
+ *
+ * @param {HTMLElement} element Element target to find nearest cell node to
+ * @return {ve.ce.TableCellNode|null} Table cell node, or null if none found
+ */
+ve.ce.TableNode.prototype.getNearestCellNode = function ( element ) {
+	var $element = $( element ),
+		$table = $element.closest( 'table' );
 
 	// Nested table, ignore
 	if ( !this.$element.is( $table ) ) {
 		return null;
 	}
 
-	return $target.closest( 'td, th' ).data( 'view' );
+	return $element.closest( 'td, th' ).data( 'view' );
 };
 
 /**
@@ -188,21 +249,9 @@ ve.ce.TableNode.prototype.getCellNodeFromTarget = function ( target ) {
  * @param {jQuery.Event} e Mouse/touch move event
  */
 ve.ce.TableNode.prototype.onTableMouseMove = function ( e ) {
-	var cell, selection, touch, target, cellNode;
+	var cell, selection, cellNode;
 
-	// 'touchmove' doesn't give a correct e.target, so calculate it from coordinates
-	if ( e.type === 'touchmove' ) {
-		if ( e.originalEvent.touches.length > 1 ) {
-			// Ignore multi-touch
-			return;
-		}
-		touch = e.originalEvent.touches[ 0 ];
-		target = this.surface.getElementDocument().elementFromPoint( touch.clientX, touch.clientY );
-	} else {
-		target = e.target;
-	}
-
-	cellNode = this.getCellNodeFromTarget( target );
+	cellNode = this.getCellNodeFromEvent( e );
 	if ( !cellNode ) {
 		return;
 	}
@@ -241,9 +290,10 @@ ve.ce.TableNode.prototype.onTableMouseUp = function () {
  * @param {boolean} noSelect Don't change the selection
  */
 ve.ce.TableNode.prototype.setEditing = function ( isEditing, noSelect ) {
-	var cell, offset, cellRange, profile,
+	var cell, offset, cellRange, profile, activeCellNode,
 		surfaceModel = this.surface.getModel(),
 		selection = surfaceModel.getSelection();
+
 	if ( isEditing ) {
 		if ( !selection.isSingleCell() ) {
 			selection = selection.collapseToFrom();
@@ -262,15 +312,19 @@ ve.ce.TableNode.prototype.setEditing = function ( isEditing, noSelect ) {
 				surfaceModel.setLinearSelection( new ve.Range( offset ) );
 			}
 		}
-	} else if ( this.editingFragment ) {
-		this.getCellNodesFromSelection( this.editingFragment.getSelection() )[ 0 ].setEditing( false );
-		if ( !noSelect ) {
-			surfaceModel.setSelection( this.editingFragment.getSelection() );
+	} else {
+		if ( ( activeCellNode = this.getActiveCellNode() ) ) {
+			activeCellNode.setEditing( false );
+			if ( !noSelect ) {
+				surfaceModel.setSelection( this.editingFragment.getSelection() );
+			}
 		}
 		this.editingFragment = null;
 	}
+
 	this.$element.toggleClass( 've-ce-tableNode-editing', isEditing );
-	// HACK T103035: Firefox 39 has a regression which clicking on a ce=false table
+	// Support: Firefox 39
+	// HACK T103035: Firefox 39 has a regression in which clicking on a ce=false table
 	// always selects the entire table, even if you click in a ce=true child.
 	// Making the table ce=true does allow the user to make selections across cells
 	// and corrupt the table in some circumstance, so restrict this hack as much
@@ -283,33 +337,15 @@ ve.ce.TableNode.prototype.setEditing = function ( isEditing, noSelect ) {
 };
 
 /**
- * Get fragment with table selection covering cell being edited
- *
- * @return {ve.dm.SurfaceFragment} Fragment, or null if not cell editing
- */
-ve.ce.TableNode.prototype.getEditingFragment = function () {
-	return this.editingFragment;
-};
-
-/**
- * Get range of cell being edited from editing fragment
- *
- * @return {ve.Range} Range, or null if not cell editing
- */
-ve.ce.TableNode.prototype.getEditingRange = function () {
-	var fragment = this.getEditingFragment();
-	return fragment ? fragment.getSelection().getRanges()[ 0 ] : null;
-};
-
-/**
  * Handle select events from the surface model.
  *
  * @param {ve.dm.Selection} selection Selection
  */
 ve.ce.TableNode.prototype.onSurfaceModelSelect = function ( selection ) {
-	// The table is active if it is a linear selection inside a cell being edited
+	// The table is active if there is a linear selection inside a cell being edited
 	// or a table selection matching this table.
-	var active = (
+	var active =
+		(
 			this.editingFragment !== null &&
 			selection instanceof ve.dm.LinearSelection &&
 			this.editingFragment.getSelection().getRanges()[ 0 ].containsRange( selection.getRange() )
@@ -326,15 +362,21 @@ ve.ce.TableNode.prototype.onSurfaceModelSelect = function ( selection ) {
 			// accidental focusing of the table while scrolling
 			this.$element.on( 'touchstart.ve-ce-tableNode', this.onTableMouseDown.bind( this ) );
 		}
-		this.surface.setActiveTableNode( this );
-		this.updateOverlayDebounced( true );
+		// Ignore update the overlay if the table selection changed, i.e. not an in-cell selection change
+		if ( selection instanceof ve.dm.TableSelection ) {
+			if ( this.editingFragment ) {
+				this.setEditing( false, true );
+			}
+			this.updateOverlayDebounced( true );
+		}
 	} else if ( !active && this.active ) {
 		this.$overlay.addClass( 'oo-ui-element-hidden' );
 		if ( this.editingFragment ) {
 			this.setEditing( false, true );
 		}
-		if ( this.surface.getActiveTableNode() === this ) {
-			this.surface.setActiveTableNode( null );
+		// When the table of the active node is deactivated, clear the active node
+		if ( this.getActiveCellNode() ) {
+			this.surface.setActiveNode( null );
 		}
 		this.$element.off( 'touchstart.ve-ce-tableNode' );
 	}
@@ -343,12 +385,24 @@ ve.ce.TableNode.prototype.onSurfaceModelSelect = function ( selection ) {
 };
 
 /**
+ * Get the active node in this table, if it has one
+ *
+ * @return {ve.ce.TableNode|null} The active cell node in this table
+ */
+ve.ce.TableNode.prototype.getActiveCellNode = function () {
+	var activeNode = this.surface.getActiveNode(),
+		tableNodeOfActiveCellNode = activeNode && activeNode instanceof ve.ce.TableCellNode && activeNode.findParent( ve.ce.TableNode );
+
+	return tableNodeOfActiveCellNode === this ? activeNode : null;
+};
+
+/**
  * Update the overlay positions
  *
  * @param {boolean} selectionChanged The update was triggered by a selection change
  */
 ve.ce.TableNode.prototype.updateOverlay = function ( selectionChanged ) {
-	var i, l, anchorNode, anchorOffset, selectionOffset, selection, tableOffset, surfaceOffset, cells,
+	var i, l, anchorNode, anchorOffset, selectionOffset, selection, selectionRect, tableOffset, surfaceOffset, cells,
 		editable = true;
 
 	if ( !this.active || !this.root ) {
@@ -367,6 +421,12 @@ ve.ce.TableNode.prototype.updateOverlay = function ( selectionChanged ) {
 		return;
 	}
 
+	selectionRect = this.surface.getSelection( selection ).getSelectionBoundingRect();
+
+	if ( !selectionRect ) {
+		return;
+	}
+
 	cells = selection.getMatrixCells();
 	anchorNode = this.getCellNodesFromSelection( selection.collapseToFrom() )[ 0 ];
 	anchorOffset = ve.translateRect( anchorNode.$element[ 0 ].getBoundingClientRect(), -tableOffset.left, -tableOffset.top );
@@ -379,8 +439,8 @@ ve.ce.TableNode.prototype.updateOverlay = function ( selectionChanged ) {
 	}
 
 	selectionOffset = ve.translateRect(
-		this.getSelectionBoundingRect( selection ),
-		-tableOffset.left, -tableOffset.top
+		selectionRect,
+		surfaceOffset.left - tableOffset.left, surfaceOffset.top - tableOffset.top
 	);
 
 	// Resize controls
@@ -403,23 +463,13 @@ ve.ce.TableNode.prototype.updateOverlay = function ( selectionChanged ) {
 		left: tableOffset.left - surfaceOffset.left,
 		width: tableOffset.width
 	} );
-	this.colContext.$element.css( {
-		left: selectionOffset.left
-	} );
-	this.colContext.indicator.$element.css( {
+	this.colContext.icon.$element.css( {
+		left: selectionOffset.left,
 		width: selectionOffset.width
 	} );
-	this.colContext.popup.$element.css( {
-		'margin-left': selectionOffset.width / 2
-	} );
-	this.rowContext.$element.css( {
-		top: selectionOffset.top
-	} );
-	this.rowContext.indicator.$element.css( {
+	this.rowContext.icon.$element.css( {
+		top: selectionOffset.top,
 		height: selectionOffset.height
-	} );
-	this.rowContext.popup.$element.css( {
-		'margin-top': selectionOffset.height / 2
 	} );
 
 	// Classes
@@ -431,41 +481,6 @@ ve.ce.TableNode.prototype.updateOverlay = function ( selectionChanged ) {
 	if ( selectionChanged ) {
 		ve.scrollIntoView( this.$selectionBox.get( 0 ) );
 	}
-};
-
-/**
- * Get the coordinates of the selection's bounding rectangle relative to the client.
- *
- * @param {ve.dm.Selection} selection Selection to get rectangles for
- * @return {Object} Selection rectangle, with keys top, bottom, left, right, width, height
- */
-ve.ce.TableNode.prototype.getSelectionBoundingRect = function ( selection ) {
-	var i, l, cellOffset, top, bottom, left, right,
-		nodes = this.getCellNodesFromSelection( selection );
-
-	top = Infinity;
-	bottom = -Infinity;
-	left = Infinity;
-	right = -Infinity;
-
-	// Compute a bounding box for the given cell elements
-	for ( i = 0, l = nodes.length; i < l; i++ ) {
-		cellOffset = nodes[ i ].$element[ 0 ].getBoundingClientRect();
-
-		top = Math.min( top, cellOffset.top );
-		bottom = Math.max( bottom, cellOffset.bottom );
-		left = Math.min( left, cellOffset.left );
-		right = Math.max( right, cellOffset.right );
-	}
-
-	return {
-		top: top,
-		bottom: bottom,
-		left: left,
-		right: right,
-		width: right - left,
-		height: bottom - top
-	};
 };
 
 /**

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable MWEntityNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -14,9 +14,9 @@
  * @param {ve.dm.MWEntityNode} model Model to observe
  * @param {Object} [config] Configuration options
  */
-ve.ce.MWEntityNode = function VeCeMWEntityNode( model, config ) {
+ve.ce.MWEntityNode = function VeCeMWEntityNode() {
 	// Parent constructor
-	ve.ce.LeafNode.call( this, model, config );
+	ve.ce.MWEntityNode.super.apply( this, arguments );
 
 	// DOM changes
 	this.$element.addClass( 've-ce-mwEntityNode' );
@@ -48,11 +48,13 @@ ve.ce.MWEntityNode.static.name = 'mwEntity';
 ve.ce.MWEntityNode.prototype.onUpdate = function () {
 	var
 		chr = this.model.getAttribute( 'character' ),
-		whitespaceHtmlChars = ve.ce.TextNode.whitespaceHtmlCharacters,
+		whitespaceHtmlChars = ve.visibleWhitespaceCharacters,
 		significantWhitespace = this.getModel().getParent().hasSignificantWhitespace();
+
 	if ( !significantWhitespace && Object.prototype.hasOwnProperty.call( whitespaceHtmlChars, chr ) ) {
 		chr = whitespaceHtmlChars[ chr ];
 	}
+
 	this.$element.text( chr );
 };
 

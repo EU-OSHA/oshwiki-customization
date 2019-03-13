@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWImageModel class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -126,6 +126,7 @@ ve.dm.MWImageModel.static.createImageNode = function ( attributes, imageType ) {
 		defaultThumbSize = mw.config.get( 'wgVisualEditorConfig' ).defaultUserOptions.defaultthumbsize;
 
 	attrs = ve.extendObject( {
+		mediaClass: 'Image',
 		type: 'thumb',
 		align: 'default',
 		width: defaultThumbSize,
@@ -162,23 +163,23 @@ ve.dm.MWImageModel.static.createImageNode = function ( attributes, imageType ) {
  */
 ve.dm.MWImageModel.static.newFromImageAttributes = function ( attrs, parentDoc ) {
 	var imgModel = new ve.dm.MWImageModel(
-			parentDoc,
-			{
-				resourceName: attrs.resource,
-				currentDimensions: {
-					width: attrs.width,
-					height: attrs.height
-				},
-				defaultSize: !!attrs.defaultSize
-			}
-		);
+		parentDoc,
+		{
+			resourceName: attrs.resource,
+			currentDimensions: {
+				width: attrs.width,
+				height: attrs.height
+			},
+			defaultSize: !!attrs.defaultSize
+		}
+	);
 
 	// Cache the attributes so we can create a new image without
 	// losing any existing information
 	imgModel.cacheOriginalImageAttributes( attrs );
 
 	imgModel.setImageSource( attrs.src );
-	imgModel.setFilename( new mw.Title( attrs.resource.replace( /^(\.+\/)*/, '' ) ).getMainText() );
+	imgModel.setFilename( new mw.Title( ve.normalizeParsoidResourceName( attrs.resource ) ).getMainText() );
 	imgModel.setImageHref( attrs.href );
 
 	// Set bounding box
@@ -204,11 +205,7 @@ ve.dm.MWImageModel.static.newFromImageAttributes = function ( attrs, parentDoc )
 
 	// TODO: When scale/upright is available, set the size
 	// type accordingly
-	imgModel.setSizeType(
-		imgModel.isDefaultSize() ?
-		'default' :
-		'custom'
-	);
+	imgModel.setSizeType( imgModel.isDefaultSize() ? 'default' : 'custom' );
 
 	return imgModel;
 };
@@ -286,7 +283,7 @@ ve.dm.MWImageModel.prototype.changeImageSource = function ( attrs, APIinfo ) {
 	}
 	if ( attrs.resource ) {
 		this.setImageResourceName( attrs.resource );
-		this.setFilename( new mw.Title( attrs.resource.replace( /^(\.+\/)*/, '' ) ).getMainText() );
+		this.setFilename( new mw.Title( ve.normalizeParsoidResourceName( attrs.resource ) ).getMainText() );
 	}
 
 	if ( attrs.src ) {
@@ -320,7 +317,7 @@ ve.dm.MWImageModel.prototype.changeImageSource = function ( attrs, APIinfo ) {
 	} else {
 		// Call for updated scalable if we don't have dimensions from the API info
 		if ( this.getFilename() ) {
-			// Update anyways
+			// Update anyway
 			ve.dm.MWImageNode.static.getScalablePromise( this.getFilename() ).done( function ( info ) {
 				imageModel.scalable.setOriginalDimensions( {
 					width: info.width,
@@ -404,7 +401,7 @@ ve.dm.MWImageModel.prototype.updateImageNode = function ( node, surfaceModel ) {
 
 		// Remove contents of old caption
 		surfaceModel.change(
-			ve.dm.Transaction.newFromRemoval(
+			ve.dm.TransactionBuilder.static.newFromRemoval(
 				doc,
 				captionRange,
 				true
@@ -413,7 +410,7 @@ ve.dm.MWImageModel.prototype.updateImageNode = function ( node, surfaceModel ) {
 
 		// Add contents of new caption
 		surfaceModel.change(
-			ve.dm.Transaction.newFromDocumentInsertion(
+			ve.dm.TransactionBuilder.static.newFromDocumentInsertion(
 				doc,
 				captionRange.start,
 				this.getCaptionDocument()
@@ -423,7 +420,7 @@ ve.dm.MWImageModel.prototype.updateImageNode = function ( node, surfaceModel ) {
 
 	// Update attributes
 	surfaceModel.change(
-		ve.dm.Transaction.newFromAttributeChanges(
+		ve.dm.TransactionBuilder.static.newFromAttributeChanges(
 			doc,
 			node.getOffset(),
 			this.getUpdatedAttributes()
@@ -441,7 +438,7 @@ ve.dm.MWImageModel.prototype.updateImageNode = function ( node, surfaceModel ) {
  * @throws {Error} Unknown image node type
  */
 ve.dm.MWImageModel.prototype.insertImageNode = function ( fragment ) {
-	var captionDoc, offset, contentToInsert,
+	var offset, contentToInsert, selectedNode,
 		nodeType = this.getImageNodeType(),
 		surfaceModel = fragment.getSurface();
 
@@ -449,12 +446,26 @@ ve.dm.MWImageModel.prototype.insertImageNode = function ( fragment ) {
 		return fragment;
 	}
 
+	selectedNode = fragment.getSelectedNode();
+
+	// If there was a previous node, remove it first
+	if ( selectedNode ) {
+		// Remove the old image
+		fragment.removeContent();
+	}
+
 	contentToInsert = this.getData();
 
 	switch ( nodeType ) {
 		case 'mwInlineImage':
-			// Try to put the image inside the nearest content node
-			offset = fragment.getDocument().data.getNearestContentOffset( fragment.getSelection().getRange().start );
+			if ( selectedNode && selectedNode.type === 'mwBlockImage' ) {
+				// If converting from a block image, create a wrapper paragraph for the inline image to go in.
+				fragment.insertContent( [ { type: 'paragraph', internal: { generated: 'wrapper' } }, { type: '/paragraph' } ] );
+				offset = fragment.getSelection().getRange().start + 1;
+			} else {
+				// Try to put the image inside the nearest content node
+				offset = fragment.getDocument().data.getNearestContentOffset( fragment.getSelection().getRange().start );
+			}
 			if ( offset > -1 ) {
 				fragment = fragment.clone( new ve.dm.LinearSelection( fragment.getDocument(), new ve.Range( offset ) ) );
 			}
@@ -468,18 +479,14 @@ ve.dm.MWImageModel.prototype.insertImageNode = function ( fragment ) {
 				fragment = fragment.clone( new ve.dm.LinearSelection( fragment.getDocument(), new ve.Range( offset ) ) );
 			}
 			fragment.insertContent( contentToInsert );
-			// Check if there is caption document and insert it
-			captionDoc = this.getCaptionDocument();
-			if ( captionDoc.data.hasContent() ) {
-				// Add contents of new caption
-				surfaceModel.change(
-					ve.dm.Transaction.newFromDocumentInsertion(
-						surfaceModel.getDocument(),
-						fragment.getSelection().getRange().start + 2,
-						this.getCaptionDocument()
-					)
-				);
-			}
+			// Add contents of new caption
+			surfaceModel.change(
+				ve.dm.TransactionBuilder.static.newFromDocumentInsertion(
+					surfaceModel.getDocument(),
+					fragment.getSelection().getRange().start + 2,
+					this.getCaptionDocument()
+				)
+			);
 			return fragment;
 
 		default:
@@ -537,6 +544,7 @@ ve.dm.MWImageModel.prototype.getUpdatedAttributes = function () {
 	}
 
 	attrs = {
+		mediaClass: this.getMediaClass(),
 		type: this.getType(),
 		width: currentDimensions.width,
 		height: currentDimensions.height,
@@ -559,11 +567,6 @@ ve.dm.MWImageModel.prototype.getUpdatedAttributes = function () {
 	attrs.src = this.getImageSource();
 	attrs.href = this.getImageHref();
 	attrs.resource = this.getImageResourceName();
-
-	// If converting from block to inline, set isLinked=true to avoid |link=
-	if ( origAttrs.isLinked === undefined && this.getImageNodeType() === 'mwInlineImage' ) {
-		attrs.isLinked = true;
-	}
 
 	return attrs;
 };
@@ -640,7 +643,8 @@ ve.dm.MWImageModel.prototype.setMediaType = function ( type ) {
  * @return {boolean} Default size flag on or off
  */
 ve.dm.MWImageModel.prototype.isDefaultSize = function () {
-	return this.scalable.isDefault();
+	// An image with 'frame' always ignores the size specification
+	return this.scalable.isDefault() || this.getType() === 'frame';
 };
 
 /**
@@ -691,7 +695,7 @@ ve.dm.MWImageModel.prototype.isDefaultAligned = function ( imageType, align ) {
 		defaultAlignment = ( this.parentDoc.getDir() === 'rtl' ) ? 'left' : 'right';
 
 	imageType = imageType || this.getType();
-	// No alignment specified means defeault alignment always
+	// No alignment specified means default alignment always
 	// Inline images have no align attribute; during the initialization
 	// stage of the model we have to account for that option. Later the
 	// model creates a faux alignment for inline images ('none' for default)
@@ -772,6 +776,21 @@ ve.dm.MWImageModel.prototype.getMediaType = function () {
 };
 
 /**
+ * Get Parsoid media class: Image, Video or Audio
+ */
+ve.dm.MWImageModel.prototype.getMediaClass = function () {
+	var mediaType = this.getMediaType();
+
+	if ( mediaType === 'VIDEO' ) {
+		return 'Video';
+	}
+	if ( mediaType === 'AUDIO' ) {
+		return 'Audio';
+	}
+	return 'Image';
+};
+
+/**
  * Get image alignment 'left', 'right', 'center', 'none' or 'default'
  *
  * @return {string|null} Image alignment. Inline images have initial alignment
@@ -821,26 +840,12 @@ ve.dm.MWImageModel.prototype.getCurrentDimensions = function () {
  */
 ve.dm.MWImageModel.prototype.getCaptionDocument = function () {
 	if ( !this.captionDoc ) {
-		this.captionDoc = new ve.dm.Document(
-			[
-				{ type: 'paragraph', internal: { generated: 'wrapper' } },
-				{ type: '/paragraph' },
-				{ type: 'internalList' },
-				{ type: '/internalList' }
-			],
-			// htmlDocument
-			this.parentDoc.getHtmlDocument(),
-			// parentDocument
-			null,
-			// internalList
-			null,
-			// innerWhitespace
-			null,
-			// lang
-			this.parentDoc.getLang(),
-			// dir
-			this.parentDoc.getDir()
-		);
+		this.captionDoc = this.parentDoc.cloneWithData( [
+			{ type: 'paragraph', internal: { generated: 'wrapper' } },
+			{ type: '/paragraph' },
+			{ type: 'internalList' },
+			{ type: '/internalList' }
+		] );
 	}
 	return this.captionDoc;
 };
@@ -938,7 +943,7 @@ ve.dm.MWImageModel.prototype.setType = function ( type ) {
 
 	this.type = type;
 
-	// If we're switching between inline and block or vise versa,
+	// If we're switching between inline and block or vice versa,
 	// check if the old type image was default aligned
 	if ( isDefaultAligned && this.imageCurrentType !== this.type ) {
 		if ( this.type === 'none' || this.type === 'frameless' ) {
@@ -981,7 +986,7 @@ ve.dm.MWImageModel.prototype.setType = function ( type ) {
 ve.dm.MWImageModel.prototype.resetDefaultDimensions = function () {
 	var originalDimensions = this.scalable.getOriginalDimensions();
 
-	if ( !$.isEmptyObject( originalDimensions ) ) {
+	if ( !ve.isEmptyObject( originalDimensions ) ) {
 		if ( this.getType() === 'thumb' || this.getType() === 'frameless' ) {
 			// Default is thumb size
 			if ( originalDimensions.width <= this.defaultThumbSize ) {
@@ -998,7 +1003,7 @@ ve.dm.MWImageModel.prototype.resetDefaultDimensions = function () {
 			this.scalable.setDefaultDimensions( originalDimensions );
 		}
 	} else {
-		this.scalable.setDefaultDimensions( {} );
+		this.scalable.clearDefaultDimensions();
 	}
 };
 
@@ -1119,7 +1124,7 @@ ve.dm.MWImageModel.prototype.getImageHref = function () {
  * @param {ve.dm.Scalable} scalable Scalable object
  */
 ve.dm.MWImageModel.prototype.attachScalable = function ( scalable ) {
-	var imageName = this.getResourceName().replace( /^(\.+\/)*/, '' ),
+	var imageName = ve.normalizeParsoidResourceName( this.getResourceName() ),
 		imageModel = this;
 
 	if ( this.scalable instanceof ve.dm.Scalable ) {
@@ -1149,7 +1154,7 @@ ve.dm.MWImageModel.prototype.attachScalable = function ( scalable ) {
 			// We have to adjust the details in the initial hash if the original
 			// image was 'default' since we didn't have default until now and the
 			// default dimensions that were 'recorded' were wrong
-			if ( !$.isEmptyObject( imageModel.initialHash ) && imageModel.initialHash.scalable.isDefault ) {
+			if ( !ve.isEmptyObject( imageModel.initialHash ) && imageModel.initialHash.scalable.isDefault ) {
 				imageModel.initialHash.scalable.currentDimensions = imageModel.scalable.getDefaultDimensions();
 			}
 
@@ -1160,7 +1165,7 @@ ve.dm.MWImageModel.prototype.attachScalable = function ( scalable ) {
 /**
  * Set the filename of the current image
  *
- * @param {string} filename Image filename
+ * @param {string} filename Image filename (without namespace)
  */
 ve.dm.MWImageModel.prototype.setFilename = function ( filename ) {
 	this.filename = filename;
@@ -1169,7 +1174,7 @@ ve.dm.MWImageModel.prototype.setFilename = function ( filename ) {
 /**
  * Get the filename of the current image
  *
- * @return {string} filename Image filename
+ * @return {string} filename Image filename (without namespace)
  */
 ve.dm.MWImageModel.prototype.getFilename = function () {
 	return this.filename;

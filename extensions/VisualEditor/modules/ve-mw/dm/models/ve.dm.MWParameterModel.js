@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWParameterModel class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -142,6 +142,15 @@ ve.dm.MWParameterModel.prototype.getExampleValue = function () {
  */
 ve.dm.MWParameterModel.prototype.getAutoValue = function () {
 	return this.template.getSpec().getParameterAutoValue( this.name );
+};
+
+/**
+ * Get parameter type.
+ *
+ * @return {string} Parameter type
+ */
+ve.dm.MWParameterModel.prototype.getType = function () {
+	return this.template.getSpec().getParameterType( this.name );
 };
 
 /**

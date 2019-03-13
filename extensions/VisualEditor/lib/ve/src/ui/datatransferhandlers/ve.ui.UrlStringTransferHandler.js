@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface UrlStringTransferHandler class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -31,6 +31,7 @@ ve.ui.UrlStringTransferHandler.static.name = 'urlString';
 ve.ui.UrlStringTransferHandler.static.types = [
 	// DnD standard, no title information
 	'text/uri-list',
+	// Support: Firefox
 	// Firefox type, preserves title
 	'text/x-moz-url',
 	// Used in GNOME drag-and-drop
@@ -97,7 +98,8 @@ ve.ui.UrlStringTransferHandler.prototype.process = function () {
 				.split( /[\r\n]+/g ).map( function ( line ) {
 					return { href: line };
 				} );
-			// When Google Chrome uses this mime type the link titles can
+			// Support: Chrome
+			// When Chrome uses this mime type the link titles can
 			// be extracted from the 'text/html' version of the item.
 			// Let's try that.
 			if ( this.item.data.htmlStringData ) {
@@ -129,7 +131,7 @@ ve.ui.UrlStringTransferHandler.prototype.process = function () {
 	links.forEach( function ( link ) {
 		var i,
 			annotation = linkAction.getLinkAnnotation( link.href ),
-			annotationSet = new ve.dm.AnnotationSet( store, store.indexes( [
+			annotationSet = new ve.dm.AnnotationSet( store, store.hashAll( [
 				annotation
 			] ) ),
 			title = link.title || annotation.getDisplayTitle(),

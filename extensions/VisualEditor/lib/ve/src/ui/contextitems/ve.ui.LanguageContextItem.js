@@ -1,14 +1,14 @@
 /*!
  * VisualEditor LanguageContextItem class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
  * Context item for a language.
  *
  * @class
- * @extends ve.ui.LinearContextItem
+ * @extends ve.ui.AnnotationContextItem
  *
  * @param {ve.ui.Context} context Context item is in
  * @param {ve.dm.Model} model Model item is related to
@@ -24,7 +24,7 @@ ve.ui.LanguageContextItem = function VeUiLanguageContextItem( context, model, co
 
 /* Inheritance */
 
-OO.inheritClass( ve.ui.LanguageContextItem, ve.ui.LinearContextItem );
+OO.inheritClass( ve.ui.LanguageContextItem, ve.ui.AnnotationContextItem );
 
 /* Static Properties */
 
@@ -39,6 +39,8 @@ ve.ui.LanguageContextItem.static.modelClasses = [ ve.dm.LanguageAnnotation ];
 ve.ui.LanguageContextItem.static.embeddable = false;
 
 ve.ui.LanguageContextItem.static.commandName = 'language';
+
+ve.ui.LanguageContextItem.static.clearMsg = OO.ui.deferMsg( 'visualeditor-languagecontext-remove' );
 
 /* Methods */
 

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel UnderlineAnnotation class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -28,6 +28,8 @@ OO.inheritClass( ve.dm.UnderlineAnnotation, ve.dm.TextStyleAnnotation );
 ve.dm.UnderlineAnnotation.static.name = 'textStyle/underline';
 
 ve.dm.UnderlineAnnotation.static.matchTagNames = [ 'u' ];
+
+ve.dm.UnderlineAnnotation.static.inferFromView = true;
 
 /* Registration */
 

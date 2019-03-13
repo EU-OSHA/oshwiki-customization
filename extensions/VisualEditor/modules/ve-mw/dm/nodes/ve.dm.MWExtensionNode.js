@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWExtensionNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -59,43 +59,61 @@ ve.dm.MWExtensionNode.static.getMatchRdfaTypes = function () {
 	return [ 'mw:Extension/' + this.extensionName ];
 };
 
-ve.dm.MWExtensionNode.static.toDataElement = function ( domElements, converter ) {
-	var dataElement, index,
+/**
+ * @inheritdoc
+ * @param {Node[]} domElements
+ * @param {ve.dm.Converter} converter
+ * @param {string} [type] Type to give dataElement, defaults to static.name
+ */
+ve.dm.MWExtensionNode.static.toDataElement = function ( domElements, converter, type ) {
+	var dataElement,
 		mwDataJSON = domElements[ 0 ].getAttribute( 'data-mw' ),
 		mwData = mwDataJSON ? JSON.parse( mwDataJSON ) : {};
 
 	dataElement = {
-		type: this.name,
+		type: type || this.name,
 		attributes: {
 			mw: mwData,
 			originalMw: mwDataJSON
 		}
 	};
 
-	index = this.storeGeneratedContents( dataElement, domElements, converter.getStore() );
-	dataElement.attributes.originalIndex = index;
+	this.storeGeneratedContents( dataElement, domElements, converter.getStore() );
+	// Sub-classes should not modify dataElement beyond this point as it will invalidate the cache
 
 	return dataElement;
 };
 
+/** */
+ve.dm.MWExtensionNode.static.cloneElement = function () {
+	// Parent method
+	var clone = ve.dm.MWExtensionNode.super.static.cloneElement.apply( this, arguments );
+	delete clone.attributes.originalMw;
+	return clone;
+};
+
 ve.dm.MWExtensionNode.static.toDomElements = function ( dataElement, doc, converter ) {
-	var el, els,
-		index = converter.getStore().indexOfHash( OO.getHash( [ this.getHashObject( dataElement ), undefined ] ) ),
+	var el, els, value,
+		store = converter.getStore(),
 		originalMw = dataElement.attributes.originalMw;
 
 	// If the transclusion is unchanged just send back the
 	// original DOM elements so selser can skip over it
 	if (
-		index === dataElement.attributes.originalIndex ||
-		( originalMw && ve.compare( dataElement.attributes.mw, JSON.parse( originalMw ) ) )
+		dataElement.originalDomElementsHash &&
+		originalMw && ve.compare( dataElement.attributes.mw, JSON.parse( originalMw ) )
 	) {
-		// The object in the store is also used for CE rendering so return a copy
-		els = ve.copyDomElements( dataElement.originalDomElements, doc );
+		// originalDomElements is also used for CE rendering so return a copy
+		els = ve.copyDomElements( converter.getStore().value( dataElement.originalDomElementsHash ), doc );
 	} else {
-		if ( converter.isForClipboard() && index !== null ) {
+		if (
+			converter.doesModeNeedRendering() &&
+			// Use getHashObjectForRendering to get the rendering from the store
+			( value = store.value( store.hashOfValue( null, OO.getHash( [ this.getHashObjectForRendering( dataElement ), undefined ] ) ) ) )
+		) {
 			// For the clipboard use the current DOM contents so the user has something
 			// meaningful to paste into external applications
-			els = ve.copyDomElements( converter.getStore().value( index ), doc );
+			els = ve.copyDomElements( value, doc );
 		} else {
 			el = doc.createElement( this.tagName );
 			el.setAttribute( 'typeof', 'mw:Extension/' + this.getExtensionName( dataElement ) );
@@ -103,17 +121,13 @@ ve.dm.MWExtensionNode.static.toDomElements = function ( dataElement, doc, conver
 			els = [ el ];
 		}
 	}
-	if ( converter.isForClipboard() ) {
-		// Resolve attributes
-		ve.resolveAttributes( $( els ), doc, ve.dm.Converter.static.computedAttributes );
-	}
 	return els;
 };
 
 ve.dm.MWExtensionNode.static.getHashObject = function ( dataElement ) {
 	return {
 		type: dataElement.type,
-		mw: dataElement.attributes.mw
+		mw: ve.copy( dataElement.attributes.mw )
 	};
 };
 
@@ -130,6 +144,50 @@ ve.dm.MWExtensionNode.static.getExtensionName = function () {
 	return this.extensionName;
 };
 
+ve.dm.MWExtensionNode.static.describeChanges = function ( attributeChanges, attributes, element ) {
+	var tools, change,
+		descriptions = [];
+
+	if ( attributeChanges.mw ) {
+		// HACK: Try to generate an '<Extension> has changed' message using the associated tool's title
+		tools = ve.ui.toolFactory.getRelatedItems( [ ve.dm.nodeFactory.createFromElement( element ) ] );
+		if ( tools.length ) {
+			descriptions.push( ve.msg( 'visualeditor-changedesc-unknown',
+				OO.ui.resolveMsg( ve.ui.toolFactory.lookup( tools[ 0 ].name ).static.title )
+			) );
+		}
+		// Compare body - default behaviour in #describeChange does nothing
+		if ( !ve.compare( attributeChanges.mw.from.body, attributeChanges.mw.to.body ) ) {
+			change = this.describeChange( 'body', {
+				from: attributeChanges.mw.from.body.extsrc,
+				to: attributeChanges.mw.to.body.extsrc
+			} );
+			if ( change ) {
+				descriptions.push( change );
+			}
+		}
+		// Append attribute changes
+		// Parent method
+		Array.prototype.push.apply( descriptions, ve.dm.MWExtensionNode.super.static.describeChanges.call(
+			this,
+			ve.ui.DiffElement.static.compareAttributes( attributeChanges.mw.from.attrs || {}, attributeChanges.mw.to.attrs || {} ),
+			attributes
+		) );
+		return descriptions;
+	}
+	// 'mw' should be the only attribute that changes...
+	return [];
+};
+
+ve.dm.MWExtensionNode.static.describeChange = function ( key ) {
+	if ( key === 'body' ) {
+		// TODO: Produce a diff of the body, suitable to display in the sidebar.
+		return null;
+	}
+	// Parent method
+	return ve.dm.MWExtensionNode.super.static.describeChange.apply( this, arguments );
+};
+
 /* Methods */
 
 /**
@@ -141,46 +199,3 @@ ve.dm.MWExtensionNode.static.getExtensionName = function () {
 ve.dm.MWExtensionNode.prototype.getExtensionName = function () {
 	return this.constructor.static.getExtensionName( this.element );
 };
-
-/**
- * DataModel MediaWiki inline extension node.
- *
- * @class
- * @abstract
- * @extends ve.dm.MWExtensionNode
- *
- * @constructor
- * @param {Object} [element] Reference to element in linear model
- */
-ve.dm.MWInlineExtensionNode = function VeDmMWInlineExtensionNode() {
-	// Parent constructor
-	ve.dm.MWInlineExtensionNode.super.apply( this, arguments );
-};
-
-/* Inheritance */
-
-OO.inheritClass( ve.dm.MWInlineExtensionNode, ve.dm.MWExtensionNode );
-
-/* Static members */
-
-ve.dm.MWInlineExtensionNode.static.isContent = true;
-
-/**
- * DataModel MediaWiki block extension node.
- *
- * @class
- * @abstract
- * @extends ve.dm.MWExtensionNode
- *
- * @constructor
- * @param {Object} [element] Reference to element in linear model
- * @param {ve.dm.Node[]} [children]
- */
-ve.dm.MWBlockExtensionNode = function VeDmMWBlockExtensionNode() {
-	// Parent constructor
-	ve.dm.MWBlockExtensionNode.super.apply( this, arguments );
-};
-
-/* Inheritance */
-
-OO.inheritClass( ve.dm.MWBlockExtensionNode, ve.dm.MWExtensionNode );

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface delimiter-separated values file transfer handler class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -37,21 +37,34 @@ ve.ui.DSVFileTransferHandler.static.extensions = [ 'csv', 'tsv' ];
  * @inheritdoc
  */
 ve.ui.DSVFileTransferHandler.prototype.onFileLoad = function () {
-	var i, j, line,
+	var i, j, line, tableNodeName, tableNodeClass, tableElement,
 		data = [],
 		input = Papa.parse( this.reader.result );
 
 	if ( input.meta.aborted || ( input.data.length <= 0 ) ) {
 		this.abort();
 	} else {
+		// Lookup the type for table elements
+		tableNodeName = ve.dm.modelRegistry.matchElement( document.createElement( 'table' ) );
+		tableNodeClass = ve.dm.modelRegistry.lookup( tableNodeName );
+		tableElement = { type: tableNodeName };
+		// Sanitize, as this can add default attributes for the table type
+		tableNodeClass.static.sanitize( tableElement );
+
 		data.push(
-			{ type: 'table' },
+			tableElement,
 			{ type: 'tableSection', attributes: { style: 'body' } }
 		);
 
 		for ( i = 0; i < input.data.length; i++ ) {
-			data.push( { type: 'tableRow' } );
 			line = input.data[ i ];
+
+			// Skip 'empty' row if at the end of the file
+			if ( i === input.data.length - 1 && line.length === 1 && line[ 0 ] === '' ) {
+				continue;
+			}
+
+			data.push( { type: 'tableRow' } );
 			for ( j = 0; j < line.length; j++ ) {
 				data.push(
 					{ type: 'tableCell', attributes: { style: ( i === 0 ? 'header' : 'data' ) } },
@@ -68,7 +81,7 @@ ve.ui.DSVFileTransferHandler.prototype.onFileLoad = function () {
 
 		data.push(
 			{ type: '/tableSection' },
-			{ type: '/table' }
+			{ type: '/' + tableElement.type }
 		);
 
 		this.resolve( data );

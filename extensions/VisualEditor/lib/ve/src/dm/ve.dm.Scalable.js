@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel Scalable class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -55,7 +55,7 @@ ve.dm.Scalable = function VeDmScalable( config ) {
 	if ( config.defaultDimensions ) {
 		this.setDefaultDimensions( config.defaultDimensions );
 	}
-	if ( !!config.isDefault ) {
+	if ( config.isDefault ) {
 		this.toggleDefault( !!config.isDefault );
 	}
 	if ( config.minDimensions ) {
@@ -140,10 +140,10 @@ ve.dm.Scalable.static.getDimensionsFromValue = function ( dimensions, ratio ) {
 	}
 
 	// Calculate the opposite size if needed
-	if ( !dimensions.height && ratio !== null && $.isNumeric( dimensions.width ) ) {
+	if ( !dimensions.height && ratio !== null && +dimensions.width ) {
 		dimensions.height = Math.round( dimensions.width / ratio );
 	}
-	if ( !dimensions.width && ratio !== null && $.isNumeric( dimensions.height ) ) {
+	if ( !dimensions.width && ratio !== null && +dimensions.height ) {
 		dimensions.width = Math.round( dimensions.height * ratio );
 	}
 
@@ -160,7 +160,7 @@ ve.dm.Scalable.static.getDimensionsFromValue = function ( dimensions, ratio ) {
 ve.dm.Scalable.static.isDimensionsObjectValid = function ( dimensions ) {
 	if (
 		dimensions &&
-		!$.isEmptyObject( dimensions ) &&
+		!ve.isEmptyObject( dimensions ) &&
 		(
 			dimensions.width !== undefined ||
 			dimensions.height !== undefined
@@ -288,9 +288,11 @@ ve.dm.Scalable.prototype.setDefaultDimensions = function ( dimensions ) {
  * @fires defaultSizeChange
  */
 ve.dm.Scalable.prototype.clearDefaultDimensions = function () {
-	this.defaultDimensions = null;
-	this.valid = null;
-	this.emit( 'defaultSizeChange', this.isDefault() );
+	if ( this.defaultDimensions !== null ) {
+		this.defaultDimensions = null;
+		this.valid = null;
+		this.emit( 'defaultSizeChange', this.isDefault() );
+	}
 };
 
 /**
@@ -299,9 +301,11 @@ ve.dm.Scalable.prototype.clearDefaultDimensions = function () {
  * @fires originalSizeChange
  */
 ve.dm.Scalable.prototype.clearOriginalDimensions = function () {
-	this.originalDimensions = null;
-	this.valid = null;
-	this.emit( 'originalSizeChange', this.isDefault() );
+	if ( this.originalDimensions !== null ) {
+		this.originalDimensions = null;
+		this.valid = null;
+		this.emit( 'originalSizeChange', this.isDefault() );
+	}
 };
 
 /**
@@ -515,10 +519,12 @@ ve.dm.Scalable.prototype.getCurrentScale = function () {
  * @return {boolean} Current dimensions are greater than maximum dimensions
  */
 ve.dm.Scalable.prototype.isTooSmall = function () {
-	return !!( this.getCurrentDimensions() && this.getMinDimensions() && (
+	return !!( this.getCurrentDimensions() && this.getMinDimensions() &&
+		(
 			this.getCurrentDimensions().width < this.getMinDimensions().width ||
 			this.getCurrentDimensions().height < this.getMinDimensions().height
-		) );
+		)
+	);
 };
 
 /**
@@ -529,10 +535,12 @@ ve.dm.Scalable.prototype.isTooSmall = function () {
  * @return {boolean} Current dimensions are greater than maximum dimensions
  */
 ve.dm.Scalable.prototype.isTooLarge = function () {
-	return !!( this.getCurrentDimensions() && this.getMaxDimensions() && (
+	return !!( this.getCurrentDimensions() && this.getMaxDimensions() &&
+		(
 			this.getCurrentDimensions().width > this.getMaxDimensions().width ||
 			this.getCurrentDimensions().height > this.getMaxDimensions().height
-		) );
+		)
+	);
 };
 
 /**
@@ -596,12 +604,14 @@ ve.dm.Scalable.prototype.getBoundedDimensions = function ( dimensions, grid ) {
  */
 ve.dm.Scalable.prototype.isCurrentDimensionsValid = function () {
 	var dimensions = this.getCurrentDimensions(),
-		minDimensions = this.isEnforcedMin() && !$.isEmptyObject( this.getMinDimensions() ) && this.getMinDimensions(),
-		maxDimensions = this.isEnforcedMax() && !$.isEmptyObject( this.getMaxDimensions() ) && this.getMaxDimensions();
+		minDimensions = this.isEnforcedMin() && !ve.isEmptyObject( this.getMinDimensions() ) && this.getMinDimensions(),
+		maxDimensions = this.isEnforcedMax() && !ve.isEmptyObject( this.getMaxDimensions() ) && this.getMaxDimensions();
 
 	this.valid = (
-		$.isNumeric( dimensions.width ) &&
-		$.isNumeric( dimensions.height ) &&
+		!!dimensions &&
+		// Dimensions must be non-zero
+		+dimensions.width &&
+		+dimensions.height &&
 		(
 			!minDimensions || (
 				dimensions.width >= minDimensions.width &&

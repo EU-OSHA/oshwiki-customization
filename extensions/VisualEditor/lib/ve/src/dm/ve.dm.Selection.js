@@ -1,7 +1,7 @@
 /*!
  * VisualEditor Selection class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -75,15 +75,6 @@ ve.dm.Selection.prototype.toJSON = null;
 ve.dm.Selection.prototype.getDescription = null;
 
 /**
- * Create a copy of this selection
- *
- * @abstract
- * @method
- * @return {ve.dm.Selection} Cloned selection
- */
-ve.dm.Selection.prototype.clone = null;
-
-/**
  * Get a new selection at the start point of this one
  *
  * @abstract
@@ -140,6 +131,17 @@ ve.dm.Selection.prototype.isCollapsed = null;
 ve.dm.Selection.prototype.translateByTransaction = null;
 
 /**
+ * Apply translations from a transaction, with bias depending on author ID comparison
+ *
+ * @abstract
+ * @method
+ * @param {ve.dm.Transaction} tx Transaction
+ * @param {number} authorId The selection's author ID
+ * @return {ve.dm.Selection} A new translated selection
+ */
+ve.dm.Selection.prototype.translateByTransactionWithAuthor = null;
+
+/**
  * Apply translations from a set of transactions
  *
  * @param {ve.dm.Transaction[]} txs Transactions
@@ -150,6 +152,25 @@ ve.dm.Selection.prototype.translateByTransactions = function ( txs, excludeInser
 	var i, l, selection = this;
 	for ( i = 0, l = txs.length; i < l; i++ ) {
 		selection = selection.translateByTransaction( txs[ i ], excludeInsertion );
+	}
+	return selection;
+};
+
+/**
+ * Apply translations from a change
+ *
+ * @param {ve.dm.Change} change The change
+ * @param {number} authorId The author ID of this selection
+ * @return {ve.dm.Selection} A new translated selection
+ */
+ve.dm.Selection.prototype.translateByChange = function ( change, authorId ) {
+	var i, len,
+		selection = this;
+	for ( i = 0, len = change.transactions.length; i < len; i++ ) {
+		selection = selection.translateByTransactionWithAuthor(
+			change.transactions[ i ],
+			authorId
+		);
 	}
 	return selection;
 };
@@ -173,12 +194,30 @@ ve.dm.Selection.prototype.isNull = function () {
 ve.dm.Selection.prototype.getRanges = null;
 
 /**
+ * Get the covering linear range for this selection
+ *
+ * @abstract
+ * @method
+ * @return {ve.Range|null} Covering range, if not null
+ */
+ve.dm.Selection.prototype.getCoveringRange = null;
+
+/**
  * Get the document model this selection applies to
  *
  * @return {ve.dm.Document} Document model
  */
 ve.dm.Selection.prototype.getDocument = function () {
 	return this.documentModel;
+};
+
+/**
+ * Get the name of the selection type
+ *
+ * @return {string} Selection type name
+ */
+ve.dm.Selection.prototype.getName = function () {
+	return this.constructor.static.name;
 };
 
 /**

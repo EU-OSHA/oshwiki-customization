@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable BranchNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -17,15 +17,12 @@
  * @param {ve.dm.BranchNode} model Model to observe
  * @param {Object} [config] Configuration options
  */
-ve.ce.BranchNode = function VeCeBranchNode( model, config ) {
+ve.ce.BranchNode = function VeCeBranchNode( model ) {
 	// Mixin constructor
 	ve.BranchNode.call( this );
 
 	// Parent constructor
-	ve.ce.Node.call( this, model, config );
-
-	// DOM changes (keep in sync with #onSetup)
-	this.$element.addClass( 've-ce-branchNode' );
+	ve.ce.BranchNode.super.apply( this, arguments );
 
 	// Properties
 	this.tagName = this.$element.get( 0 ).nodeName.toLowerCase();
@@ -53,16 +50,26 @@ OO.mixinClass( ve.ce.BranchNode, ve.BranchNode );
  * @property {HTMLElement}
  */
 ve.ce.BranchNode.inlineSlugTemplate = ( function () {
-	var layout = $.client.profile().layout,
+	var profile = $.client.profile(),
+		// The following classes can be used here:
+		// * ve-ce-chimera-gecko
+		// * ve-ce-chimera-konqueror
+		// * ve-ce-chimera-msie
+		// * ve-ce-chimera-trident
+		// * ve-ce-chimera-edge
+		// * ve-ce-chimera-opera
+		// * ve-ce-chimera-webkit
 		$img = $( '<img>' )
-			.addClass( 've-ce-chimera ve-ce-chimera-' + layout ),
+			.addClass( 've-ce-chimera ve-ce-chimera-' + profile.layout ),
 		$span = $( '<span>' )
 			.addClass( 've-ce-branchNode-slug ve-ce-branchNode-inlineSlug' )
 			.append( $img );
 
-	// Firefox misbehaves if we don't set an src: https://bugzilla.mozilla.org/show_bug.cgi?id=989012
-	// But setting an src in Chrome is very slow, so only set it in Firefox
-	if ( layout === 'gecko' ) {
+	// Support: Firefox
+	// Firefox <=37 misbehaves if we don't set an src: https://bugzilla.mozilla.org/show_bug.cgi?id=989012
+	// Firefox misbehaves if we don't set an src and there is no sizing at node creation time: https://bugzilla.mozilla.org/show_bug.cgi?id=1267906
+	// Setting an src in Chrome is slow, so only set it in affected versions of Firefox
+	if ( profile.layout === 'gecko' ) {
 		$img.prop( 'src', ve.ce.minImgDataUri );
 	}
 	return $span.get( 0 );
@@ -98,11 +105,10 @@ ve.ce.BranchNode.blockSlugTemplate = $( '<div>' )
 /**
  * @inheritdoc
  */
-ve.ce.BranchNode.prototype.onSetup = function () {
+ve.ce.BranchNode.prototype.initialize = function () {
 	// Parent method
-	ve.ce.Node.prototype.onSetup.call( this );
+	ve.ce.BranchNode.super.prototype.initialize.call( this );
 
-	// DOM changes (duplicated from constructor in case this.$element is replaced)
 	this.$element.addClass( 've-ce-branchNode' );
 };
 
@@ -112,7 +118,7 @@ ve.ce.BranchNode.prototype.onSetup = function () {
  * WARNING: The contents, .data( 'view' ), the contentEditable property and any classes the wrapper
  * already has will be moved to  the new wrapper, but other attributes and any other information
  * added using $.data() will be lost upon updating the wrapper. To retain information added to the
- * wrapper, subscribe to the 'teardown' and 'setup' events.
+ * wrapper, subscribe to the 'teardown' and 'setup' events, or override #initialize.
  *
  * @method
  * @fires teardown
@@ -139,9 +145,11 @@ ve.ce.BranchNode.prototype.updateTagName = function () {
 		}
 		// Use new element from now on
 		this.$element = $( wrapper );
-		this.emit( 'setup' );
 		// Remember which tag name we are using now
 		this.tagName = tagName;
+		// Give subclasses the opportunity to touch the new element
+		this.initialize();
+		this.emit( 'setup' );
 	}
 };
 
@@ -166,14 +174,8 @@ ve.ce.BranchNode.prototype.onModelUpdate = function ( transaction ) {
  * @param {...ve.dm.BranchNode} [nodes] Variadic list of nodes to insert
  */
 ve.ce.BranchNode.prototype.onSplice = function ( index ) {
-	var i, j,
-		length,
-		args = [],
-		$anchor,
-		afterAnchor,
-		node,
-		parentNode,
-		removals;
+	var i, length, removals, position, j, fragment,
+		args = [];
 
 	for ( i = 0, length = arguments.length; i < length; i++ ) {
 		args.push( arguments[ i ] );
@@ -181,45 +183,47 @@ ve.ce.BranchNode.prototype.onSplice = function ( index ) {
 	// Convert models to views and attach them to this node
 	if ( args.length >= 3 ) {
 		for ( i = 2, length = args.length; i < length; i++ ) {
-			args[ i ] = ve.ce.nodeFactory.create( args[ i ].getType(), args[ i ] );
+			args[ i ] = ve.ce.nodeFactory.createFromModel( args[ i ] );
 			args[ i ].model.connect( this, { update: 'onModelUpdate' } );
 		}
 	}
 	removals = this.children.splice.apply( this.children, args );
 	for ( i = 0, length = removals.length; i < length; i++ ) {
 		removals[ i ].model.disconnect( this, { update: 'onModelUpdate' } );
+		// Stop child listening to its model (e.g. for splice event)
+		removals[ i ].model.disconnect( removals[ i ] );
 		removals[ i ].setLive( false );
 		removals[ i ].detach();
 		removals[ i ].$element.detach();
+		// And fare thee weel a while
+		removals[ i ].destroy();
 	}
 	if ( args.length >= 3 ) {
-		if ( index ) {
-			// Get the element before the insertion point
-			$anchor = this.children[ index - 1 ].$element.last();
-		}
+		fragment = document.createDocumentFragment();
 		for ( i = args.length - 1; i >= 2; i-- ) {
 			args[ i ].attach( this );
-			if ( index ) {
-				// DOM equivalent of $anchor.after( args[i].$element );
-				afterAnchor = $anchor[ 0 ].nextSibling;
-				parentNode = $anchor[ 0 ].parentNode;
-				for ( j = 0, length = args[ i ].$element.length; j < length; j++ ) {
-					parentNode.insertBefore( args[ i ].$element[ j ], afterAnchor );
-				}
-			} else {
-				// DOM equivalent of this.$element.prepend( args[j].$element );
-				node = this.$element[ 0 ];
-				for ( j = args[ i ].$element.length - 1; j >= 0; j-- ) {
-					node.insertBefore( args[ i ].$element[ j ], node.firstChild );
-				}
+			for ( j = args[ i ].$element.length - 1; j >= 0; j-- ) {
+				fragment.insertBefore( args[ i ].$element[ j ], fragment.childNodes[ 0 ] || null );
 			}
+		}
+		if ( fragment.childNodes.length ) {
+			// Only calculate this if it's needed, this function looks expensive
+			position = this.getDomPosition( index );
+			position.node.insertBefore(
+				fragment,
+				position.node.children[ position.offset ] || null
+			);
+		}
+		for ( i = args.length - 1; i >= 2; i-- ) {
 			if ( this.live !== args[ i ].isLive() ) {
 				args[ i ].setLive( this.live );
 			}
 		}
 	}
 
+	// TODO: restructure to clarify the logic (exactly one of these is a no-op)
 	this.setupBlockSlugs();
+	this.setupInlineSlugs();
 };
 
 /**
@@ -243,6 +247,20 @@ ve.ce.BranchNode.prototype.setupInlineSlugs = function () {
 };
 
 /**
+ * Remove all slugs in this branch
+ */
+ve.ce.BranchNode.prototype.removeSlugs = function () {
+	var i;
+	// Remove all slugs in this branch
+	for ( i in this.slugNodes ) {
+		if ( this.slugNodes[ i ] !== undefined && this.slugNodes[ i ].parentNode ) {
+			this.slugNodes[ i ].parentNode.removeChild( this.slugNodes[ i ] );
+		}
+		delete this.slugNodes[ i ];
+	}
+};
+
+/**
  * Setup slugs where needed.
  *
  * Existing slugs will be removed before new ones are added.
@@ -253,13 +271,7 @@ ve.ce.BranchNode.prototype.setupSlugs = function ( isBlock ) {
 	var i, slugTemplate, slugNode, child, slugButton,
 		doc = this.getElementDocument();
 
-	// Remove all slugs in this branch
-	for ( i in this.slugNodes ) {
-		if ( this.slugNodes[ i ] !== undefined && this.slugNodes[ i ].parentNode ) {
-			this.slugNodes[ i ].parentNode.removeChild( this.slugNodes[ i ] );
-		}
-		delete this.slugNodes[ i ];
-	}
+	this.removeSlugs();
 
 	if ( isBlock ) {
 		slugTemplate = ve.ce.BranchNode.blockSlugTemplate;
@@ -271,8 +283,8 @@ ve.ce.BranchNode.prototype.setupSlugs = function ( isBlock ) {
 
 	for ( i in this.getModel().slugPositions ) {
 		slugNode = doc.importNode( slugTemplate, true );
-		// FIXME: InternalListNode has an empty $element, so we assume that the slug goes at the
-		// end instead. This is a hack and the internal list needs to die in a fire.
+		// FIXME T126019: InternalListNode has an empty $element, so we assume that the slug goes
+		// at the end instead. This is a hack and the internal list needs to die in a fire.
 		if ( this.children[ i ] && this.children[ i ].$element[ 0 ] ) {
 			child = this.children[ i ].$element[ 0 ];
 			// child.parentNode might not be equal to this.$element[ 0 ]: e.g. annotated inline nodes
@@ -282,7 +294,7 @@ ve.ce.BranchNode.prototype.setupSlugs = function ( isBlock ) {
 		}
 		this.slugNodes[ i ] = slugNode;
 		if ( isBlock ) {
-			slugButton = new OO.ui.ButtonWidget( {
+			slugButton = new ve.ui.NoFocusButtonWidget( {
 				label: ve.msg( 'visualeditor-slug-insert' ),
 				icon: 'add',
 				framed: false
@@ -321,6 +333,7 @@ ve.ce.BranchNode.prototype.getSlugAtOffset = function ( offset ) {
 			return this.slugNodes[ i + 1 ] || null;
 		}
 	}
+	return null;
 };
 
 /**
@@ -331,7 +344,9 @@ ve.ce.BranchNode.prototype.getSlugAtOffset = function ( offset ) {
  */
 ve.ce.BranchNode.prototype.setLive = function ( live ) {
 	var i;
-	ve.ce.Node.prototype.setLive.call( this, live );
+	// Parent method
+	ve.ce.BranchNode.super.prototype.setLive.apply( this, arguments );
+
 	for ( i = 0; i < this.children.length; i++ ) {
 		this.children[ i ].setLive( live );
 	}
@@ -346,5 +361,69 @@ ve.ce.BranchNode.prototype.destroy = function () {
 		this.children[ i ].destroy();
 	}
 
-	ve.ce.Node.prototype.destroy.call( this );
+	// Parent method
+	ve.ce.BranchNode.super.prototype.destroy.call( this );
+};
+
+/**
+ * Get the DOM position (node and offset) corresponding to a position in this node
+ *
+ * The node/offset have the same semantics as a DOM Selection focusNode/focusOffset
+ *
+ * @param {number} offset The offset inside this node of the required position
+ * @return {Object|null} The DOM position
+ * @return {Node} return.node DOM node; guaranteed to be this node's final DOM node
+ * @return {number} return.offset DOM offset
+ */
+ve.ce.BranchNode.prototype.getDomPosition = function ( offset ) {
+	var i, ceNode,
+		domNode = this.$element.last()[ 0 ];
+
+	// Step backwards past empty nodes
+	i = offset - 1;
+	while ( true ) {
+		ceNode = this.children[ i-- ];
+		if ( !ceNode ) {
+			// No preceding children with DOM nodes
+			return { node: domNode, offset: 0 };
+		}
+		if ( ceNode.$element && ceNode.$element.length > 0 ) {
+			// Preceding child with a DOM node
+			return {
+				node: domNode,
+				offset: Array.prototype.indexOf.call(
+					domNode.childNodes,
+					ceNode.$element.last()[ 0 ]
+				) + 1
+			};
+		}
+		if ( ceNode.getType() === 'text' ) {
+			break;
+		}
+	}
+	// Darn, we hit a text node. CE text nodes can contain varying annotations and so it is
+	// difficult to calculate how many childNodes to skip. Let's try stepping forward instead.
+	i = offset;
+	while ( true ) {
+		ceNode = this.children[ i++ ];
+		if ( !ceNode ) {
+			// No following children with DOM nodes
+			return { node: domNode, offset: domNode.childNodes.length };
+		}
+		if ( ceNode.$element && ceNode.$element.length > 0 ) {
+			// Following child with a DOM node
+			return {
+				node: domNode,
+				offset: Array.prototype.indexOf.call(
+					domNode.childNodes,
+					ceNode.$element.first()[ 0 ]
+				)
+			};
+		}
+		if ( ceNode.getType() === 'text' ) {
+			break;
+		}
+	}
+	// Oh no, there's a text node in both directions
+	throw new Error( 'Cannot calculate DOM position: adjacent text nodes' );
 };

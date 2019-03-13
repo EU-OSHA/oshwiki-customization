@@ -1,7 +1,7 @@
 /*!
  * VisualEditor Initialization Platform class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -72,9 +72,6 @@ ve.init.Platform.static.getSystemPlatform = function () {
 /**
  * Check whether we are running in Internet Explorer.
  *
- * HACK: This should not be needed, and it should eventually be removed. If this hasn't died
- * in a fire by the end of September 2015, Roan has failed.
- *
  * @static
  * @method
  * @inheritable
@@ -82,6 +79,18 @@ ve.init.Platform.static.getSystemPlatform = function () {
  */
 ve.init.Platform.static.isInternetExplorer = function () {
 	return $.client.profile().name === 'msie';
+};
+
+/**
+ * Check whether we are running in Edge.
+ *
+ * @static
+ * @method
+ * @inheritable
+ * @return {boolean} We are in Edge
+ */
+ve.init.Platform.static.isEdge = function () {
+	return $.client.profile().name === 'edge';
 };
 
 /**
@@ -119,6 +128,27 @@ ve.init.Platform.prototype.getExternalLinkUrlProtocolsRegExp = null;
 ve.init.Platform.prototype.getUnanchoredExternalLinkUrlProtocolsRegExp = null;
 
 /**
+ * Get a regular expression that matches IDs used only for linking document
+ * data to metadata. Use null if your document format does not have such IDs.
+ *
+ * @method
+ * @return {RegExp|null} Regular expression object
+ */
+ve.init.Platform.prototype.getMetadataIdRegExp = function () {
+	return null;
+};
+
+/**
+ * Show a read-only notification to the user.
+ *
+ * @method
+ * @abstract
+ * @param {jQuery|string} message Message
+ * @param {jQuery|string} [title] Title
+ */
+ve.init.Platform.prototype.notify = null;
+
+/**
  * Get a platform config value
  *
  * @method
@@ -149,6 +179,140 @@ ve.init.Platform.prototype.getUserConfig = null;
 ve.init.Platform.prototype.setUserConfig = null;
 
 /**
+ * Get a session storage value
+ *
+ * @method
+ * @abstract
+ * @param {string} key Key to get
+ * @return {string|null|boolean} Value, null if not set, false if storage not available
+ */
+ve.init.Platform.prototype.getSession = null;
+
+/**
+ * Set a session storage value
+ *
+ * @method
+ * @abstract
+ * @param {string} key Key to set value for
+ * @param {string} value Value to set
+ * @return {boolean} The value was set
+ */
+ve.init.Platform.prototype.setSession = null;
+
+/**
+ * Remove a session storage value
+ *
+ * @method
+ * @abstract
+ * @param {string} key Key to remove
+ * @return {boolean} Key was removed
+ */
+ve.init.Platform.prototype.removeSession = null;
+
+/**
+ * Get a session storage object
+ *
+ * Object must be JSON-able.
+ *
+ * @param {string} key Key to get
+ * @return {Object|null|boolean}  Value, null if not set, false if storage not available
+ */
+ve.init.Platform.prototype.getSessionObject = function ( key ) {
+	var value,
+		json = this.getSession( key );
+	if ( json ) {
+		try {
+			value = JSON.parse( json );
+			return value;
+		} catch ( e ) {}
+	}
+	return json;
+};
+
+/**
+ * Set a session storage object
+ *
+ * @param {string} key Key to set value for
+ * @param {Object} value Value to set
+ * @return {boolean} The value was set
+ */
+ve.init.Platform.prototype.setSessionObject = function ( key, value ) {
+	var json;
+	try {
+		json = JSON.stringify( value );
+		return this.setSession( key, json );
+	} catch ( e ) {}
+	return false;
+};
+
+/**
+ * Append a value to a list stored in session storage
+ *
+ * @method
+ * @param {string} key Key of list to set value for
+ * @param {string} value Value to set
+ * @return {boolean} The value was set
+ */
+ve.init.Platform.prototype.appendToSessionList = function ( key, value ) {
+	var length = this.getSessionListLength( key );
+
+	if ( this.setSession( key + '__' + length, value ) ) {
+		length++;
+		return this.setSession( key + '__length', length.toString() );
+	}
+	return false;
+};
+
+/**
+ * Get the length of a list in session storage
+ *
+ * @method
+ * @param {string} key Key of list
+ * @return {number} List length, 0 if the list doesn't exist
+ */
+ve.init.Platform.prototype.getSessionListLength = function ( key ) {
+	return +this.getSession( key + '__length' ) || 0;
+};
+
+/**
+ * Append a value to a list stored in session storage
+ *
+ * Internally this will use items with the keys:
+ *  - key__length
+ *  - key__0 … key__N
+ *
+ * @method
+ * @param {string} key Key of list
+ * @return {string[]} List
+ */
+ve.init.Platform.prototype.getSessionList = function ( key ) {
+	var i,
+		list = [],
+		length = this.getSessionListLength( key );
+
+	for ( i = 0; i < length; i++ ) {
+		list.push( this.getSession( key + '__' + i ) );
+	}
+	return list;
+};
+
+/**
+ * Remove a list stored in session storage
+ *
+ * @method
+ * @param {string} key Key of list
+ */
+ve.init.Platform.prototype.removeSessionList = function ( key ) {
+	var i,
+		length = this.getSessionListLength( key );
+
+	for ( i = 0; i < length; i++ ) {
+		this.removeSession( key + '__' + i );
+	}
+	this.removeSession( key + '__length' );
+};
+
+/**
  * Add multiple messages to the localization system.
  *
  * @method
@@ -167,6 +331,17 @@ ve.init.Platform.prototype.addMessages = null;
  * @return {string} Localized message, or key or '<' + key + '>' if message not found
  */
 ve.init.Platform.prototype.getMessage = null;
+
+/**
+ * Get an HTML message from the localization system, with HTML or DOM arguments
+ *
+ * @method
+ * @abstract
+ * @param {string} key Message key
+ * @param {...Mixed} [args] List of arguments which will be injected at $1, $2, etc. in the message
+ * @return {jQuery} Localized message, or key or '<' + key + '>' if message not found
+ */
+ve.init.Platform.prototype.getHtmlMessage = null;
 
 /**
  * Add multiple parsed messages to the localization system.
@@ -249,6 +424,7 @@ ve.init.Platform.prototype.getLanguageDirection = null;
 /**
  * Initialize the platform. The default implementation is to do nothing and return a resolved
  * promise. Subclasses should override this if they have asynchronous initialization work to do.
+ * The promise rejects if the platform is incompatible.
  *
  * External callers should not call this. Instead, call #getInitializedPromise.
  *
@@ -256,6 +432,9 @@ ve.init.Platform.prototype.getLanguageDirection = null;
  * @return {jQuery.Promise} Promise that will be resolved once initialization is done
  */
 ve.init.Platform.prototype.initialize = function () {
+	if ( !VisualEditorSupportCheck() ) {
+		return $.Deferred().reject().promise();
+	}
 	return $.Deferred().resolve().promise();
 };
 

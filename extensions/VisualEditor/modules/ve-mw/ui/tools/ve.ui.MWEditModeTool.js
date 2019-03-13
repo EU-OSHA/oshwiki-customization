@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MediaWiki UserInterface edit mode tool classes.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -10,60 +10,79 @@
  *
  * @class
  * @abstract
- * @extends ve.ui.Tool
- * @constructor
- * @param {OO.ui.ToolGroup} toolGroup
- * @param {Object} [config] Config options
  */
-ve.ui.MWEditModeTool = function VeUiMWEditModeTool( toolGroup, config ) {
-	ve.ui.Tool.call( this, toolGroup, config );
+ve.ui.MWEditModeTool = function VeUiMWEditModeTool() {
 };
 
 /* Inheritance */
 
-OO.inheritClass( ve.ui.MWEditModeTool, ve.ui.Tool );
-
-/* Static Properties */
-
-ve.ui.MWEditModeTool.static.group = 'editMode';
-
-ve.ui.MWEditModeTool.static.autoAddToCatchall = false;
-
-ve.ui.MWEditModeTool.static.autoAddToGroup = false;
+OO.initClass( ve.ui.MWEditModeTool );
 
 /* Methods */
 
-/** */
-ve.ui.MWEditModeTool.prototype.onUpdateState = function () {
-	// Parent method
-	ve.ui.MWEditModeTool.super.prototype.onUpdateState.apply( this, arguments );
+/**
+ * @inheritdoc mw.libs.ve.MWEditModeTool
+ */
+ve.ui.MWEditModeTool.prototype.getMode = function () {
+	return this.toolbar.getSurface().getMode();
+};
 
-	this.setActive( false );
-	this.setDisabled( false );
+/**
+ * @inheritdoc mw.libs.ve.MWEditModeTool
+ */
+ve.ui.MWEditModeTool.prototype.isModeAvailable = function ( mode ) {
+	// Source mode is always available
+	return mode === 'source' || this.toolbar.getTarget().isModeAvailable( mode );
 };
 
 /**
  * MediaWiki UserInterface edit mode source tool.
  *
  * @class
- * @extends ve.ui.MWEditModeTool
+ * @extends mw.libs.ve.MWEditModeSourceTool
+ * @mixins ve.ui.MWEditModeTool
  * @constructor
  * @param {OO.ui.ToolGroup} toolGroup
  * @param {Object} [config] Config options
  */
 ve.ui.MWEditModeSourceTool = function VeUiMWEditModeSourceTool() {
+	// Parent constructor
 	ve.ui.MWEditModeSourceTool.super.apply( this, arguments );
+	// Mixin constructor
+	ve.ui.MWEditModeTool.call( this );
 };
-OO.inheritClass( ve.ui.MWEditModeSourceTool, ve.ui.MWEditModeTool );
-ve.ui.MWEditModeSourceTool.static.name = 'editModeSource';
-ve.ui.MWEditModeSourceTool.static.icon = 'source';
-ve.ui.MWEditModeSourceTool.static.title =
-	OO.ui.deferMsg( 'visualeditor-mweditmodesource-tool' );
+OO.inheritClass( ve.ui.MWEditModeSourceTool, mw.libs.ve.MWEditModeSourceTool );
+OO.mixinClass( ve.ui.MWEditModeSourceTool, ve.ui.MWEditModeTool );
 /**
  * @inheritdoc
  */
-ve.ui.MWEditModeSourceTool.prototype.onSelect = function () {
+ve.ui.MWEditModeSourceTool.prototype.switch = function () {
 	this.toolbar.getTarget().editSource();
-	this.setActive( false );
 };
 ve.ui.toolFactory.register( ve.ui.MWEditModeSourceTool );
+
+/**
+ * MediaWiki UserInterface edit mode visual tool.
+ *
+ * @class
+ * @extends mw.libs.ve.MWEditModeVisualTool
+ * @mixins ve.ui.MWEditModeTool
+ * @constructor
+ * @param {OO.ui.ToolGroup} toolGroup
+ * @param {Object} [config] Config options
+ */
+ve.ui.MWEditModeVisualTool = function VeUiMWEditModeVisualTool() {
+	// Parent constructor
+	ve.ui.MWEditModeVisualTool.super.apply( this, arguments );
+	// Mixin constructor
+	ve.ui.MWEditModeTool.call( this );
+};
+OO.inheritClass( ve.ui.MWEditModeVisualTool, mw.libs.ve.MWEditModeVisualTool );
+OO.mixinClass( ve.ui.MWEditModeVisualTool, ve.ui.MWEditModeTool );
+/**
+ * @inheritdoc
+ */
+ve.ui.MWEditModeVisualTool.prototype.switch = function () {
+	this.toolbar.getTarget().switchToVisualEditor();
+};
+ve.ui.toolFactory.register( ve.ui.MWEditModeVisualTool );

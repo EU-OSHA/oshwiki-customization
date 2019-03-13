@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWTemplateSpecModel class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -29,6 +29,16 @@ ve.dm.MWTemplateSpecModel = function VeDmMWTemplateSpecModel( template ) {
 	this.fill();
 };
 
+OO.initClass( ve.dm.MWTemplateSpecModel );
+
+/* Static methods */
+
+ve.dm.MWTemplateSpecModel.static.getLocalValue = function ( stringOrObject, lang ) {
+	return stringOrObject && typeof stringOrObject === 'object' ?
+		OO.ui.getLocalValue( stringOrObject, lang ) :
+		stringOrObject;
+};
+
 /* Methods */
 
 /**
@@ -42,7 +52,7 @@ ve.dm.MWTemplateSpecModel = function VeDmMWTemplateSpecModel( template ) {
  * @param {string} [data.description] Template description
  * @param {string[]} [data.paramOrder] Canonically ordered parameter names
  * @param {Object} [data.params] Template param specs keyed by param name
- * @param {string[][]} [data.sets] Lists of param sets
+ * @param {Array} [data.sets] Lists of param sets
  */
 ve.dm.MWTemplateSpecModel.prototype.extend = function ( data ) {
 	var key, param, i, len;
@@ -53,7 +63,7 @@ ve.dm.MWTemplateSpecModel.prototype.extend = function ( data ) {
 	if ( Array.isArray( data.paramOrder ) ) {
 		this.paramOrder = data.paramOrder.slice();
 	}
-	if ( ve.isPlainObject( data.params ) ) {
+	if ( data.params ) {
 		for ( key in data.params ) {
 			// Pre-fill spec
 			if ( !this.params[ key ] ) {
@@ -79,7 +89,7 @@ ve.dm.MWTemplateSpecModel.prototype.extend = function ( data ) {
 /**
  * Fill from template.
  *
- * Filling is passive, so existing information is never overwitten. The spec should be re-filled
+ * Filling is passive, so existing information is never overwritten. The spec should be re-filled
  * after a parameter is added to ensure it's still complete, and this is safe because existing data
  * is never overwritten.
  */
@@ -103,7 +113,7 @@ ve.dm.MWTemplateSpecModel.prototype.getDefaultParameterSpec = function ( name ) 
 	return {
 		label: name,
 		description: null,
-		default: '',
+		'default': '',
 		type: 'string',
 		aliases: [],
 		name: name,
@@ -127,7 +137,7 @@ ve.dm.MWTemplateSpecModel.prototype.getLabel = function () {
 		try {
 			// Normalize and remove namespace prefix if in the Template: namespace
 			titleObj = new mw.Title( title );
-			title = titleObj.getRelativeText( 10 );
+			title = titleObj.getRelativeText( mw.config.get( 'wgNamespaceIds' ).template );
 		} catch ( e ) { }
 	}
 
@@ -141,8 +151,7 @@ ve.dm.MWTemplateSpecModel.prototype.getLabel = function () {
  * @return {string|null} Template description or null if not available
  */
 ve.dm.MWTemplateSpecModel.prototype.getDescription = function ( lang ) {
-	var value = this.description;
-	return ve.isPlainObject( value ) ? OO.ui.getLocalValue( value, lang ) : value;
+	return this.constructor.static.getLocalValue( this.description, lang );
 };
 
 /**
@@ -185,8 +194,7 @@ ve.dm.MWTemplateSpecModel.prototype.isParameterAlias = function ( name ) {
  * @return {string} Parameter label
  */
 ve.dm.MWTemplateSpecModel.prototype.getParameterLabel = function ( name, lang ) {
-	var value = this.params[ name ].label || name;
-	return ve.isPlainObject( value ) ? OO.ui.getLocalValue( value, lang ) : value;
+	return this.constructor.static.getLocalValue( this.params[ name ].label || name, lang );
 };
 
 /**
@@ -197,8 +205,7 @@ ve.dm.MWTemplateSpecModel.prototype.getParameterLabel = function ( name, lang ) 
  * @return {string|null} Parameter description
  */
 ve.dm.MWTemplateSpecModel.prototype.getParameterDescription = function ( name, lang ) {
-	var value = this.params[ name ].description;
-	return ve.isPlainObject( value ) ? OO.ui.getLocalValue( value, lang ) : value;
+	return this.constructor.static.getLocalValue( this.params[ name ].description, lang );
 };
 
 /**
@@ -219,8 +226,7 @@ ve.dm.MWTemplateSpecModel.prototype.getParameterDefaultValue = function ( name )
  * @return {string} Example parameter value
  */
 ve.dm.MWTemplateSpecModel.prototype.getParameterExampleValue = function ( name, lang ) {
-	var value = this.params[ name ].example;
-	return ve.isPlainObject( value ) ? OO.ui.getLocalValue( value, lang ) : value;
+	return this.constructor.static.getLocalValue( this.params[ name ].example, lang );
 };
 
 /**
@@ -276,7 +282,7 @@ ve.dm.MWTemplateSpecModel.prototype.isParameterRequired = function ( name ) {
 };
 
 /**
- * Check if parameter is suggsted.
+ * Check if parameter is suggested.
  *
  * @param {string} name Parameter name
  * @return {boolean} Parameter is suggested

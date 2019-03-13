@@ -1,7 +1,7 @@
 /*!
  * VisualEditor Linear Selection class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -57,13 +57,6 @@ ve.dm.LinearSelection.prototype.getDescription = function () {
 /**
  * @inheritdoc
  */
-ve.dm.LinearSelection.prototype.clone = function () {
-	return new this.constructor( this.getDocument(), this.getRange() );
-};
-
-/**
- * @inheritdoc
- */
 ve.dm.LinearSelection.prototype.collapseToStart = function () {
 	return new this.constructor( this.getDocument(), new ve.Range( this.getRange().start ) );
 };
@@ -99,8 +92,15 @@ ve.dm.LinearSelection.prototype.isCollapsed = function () {
 /**
  * @inheritdoc
  */
-ve.dm.Selection.prototype.translateByTransaction = function ( tx, excludeInsertion ) {
+ve.dm.LinearSelection.prototype.translateByTransaction = function ( tx, excludeInsertion ) {
 	return new this.constructor( this.getDocument(), tx.translateRange( this.getRange(), excludeInsertion ) );
+};
+
+/**
+ * @inheritdoc
+ */
+ve.dm.LinearSelection.prototype.translateByTransactionWithAuthor = function ( tx, authorId ) {
+	return new this.constructor( this.getDocument(), tx.translateRangeWithAuthor( this.getRange(), authorId ) );
 };
 
 /**
@@ -108,6 +108,13 @@ ve.dm.Selection.prototype.translateByTransaction = function ( tx, excludeInserti
  */
 ve.dm.LinearSelection.prototype.getRanges = function () {
 	return [ this.range ];
+};
+
+/**
+ * @inheritdoc
+ */
+ve.dm.LinearSelection.prototype.getCoveringRange = function () {
+	return this.range;
 };
 
 /**
@@ -123,9 +130,12 @@ ve.dm.LinearSelection.prototype.getRange = function () {
  * @inheritdoc
  */
 ve.dm.LinearSelection.prototype.equals = function ( other ) {
-	return other instanceof ve.dm.LinearSelection &&
+	return this === other || (
+		!!other &&
+		other.constructor === this.constructor &&
 		this.getDocument() === other.getDocument() &&
-		this.getRange().equals( other.getRange() );
+		this.getRange().equals( other.getRange() )
+	);
 };
 
 /* Registration */

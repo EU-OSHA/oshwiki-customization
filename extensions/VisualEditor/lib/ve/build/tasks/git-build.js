@@ -2,7 +2,7 @@
  * Change the in-memory package version to contain the git HEAD
  */
 
-/*jshint node:true */
+/* eslint-env node, es6 */
 module.exports = function ( grunt ) {
 
 	grunt.registerTask( 'git-build', function () {
@@ -14,7 +14,7 @@ module.exports = function ( grunt ) {
 				return;
 			}
 			grunt.config.set( 'pkg.version', grunt.config( 'pkg.version' ) + '-pre (' + stout.slice( 0, 10 ) + ')' );
-			grunt.verbose.writeln( 'Added git HEAD to pgk.version' );
+			grunt.verbose.writeln( 'Added git HEAD to pkg.version' );
 			done();
 		} );
 	} );

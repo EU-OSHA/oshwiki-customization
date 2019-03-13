@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface LanguageResultWidget class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -15,13 +15,13 @@
  */
 ve.ui.LanguageResultWidget = function VeUiLanguageResultWidget( config ) {
 	// Parent constructor
-	OO.ui.OptionWidget.call( this, config );
+	ve.ui.LanguageResultWidget.super.call( this, config );
 
 	// Initialization
 	this.$element.addClass( 've-ui-languageResultWidget' );
-	this.$name = $( '<div>' ).addClass( 've-ui-languageResultWidget-name' );
-	this.$otherMatch = $( '<div>' ).addClass( 've-ui-languageResultWidget-otherMatch' );
-	this.setLabel( this.$otherMatch.add( this.$name ) );
+	this.name = new OO.ui.LabelWidget( { classes: [ 've-ui-languageResultWidget-name' ] } );
+	this.otherMatch = new OO.ui.LabelWidget( { classes: [ 've-ui-languageResultWidget-otherMatch' ] } );
+	this.setLabel( this.otherMatch.$element.add( this.name.$element ) );
 };
 
 /* Inheritance */
@@ -30,28 +30,27 @@ OO.inheritClass( ve.ui.LanguageResultWidget, OO.ui.OptionWidget );
 
 /* Methods */
 
+// eslint-disable-next-line valid-jsdoc
 /**
  * Update labels based on query
  *
- * @param {string} [query] Query text which matched this result
- * @param {string} [matchedProperty] Data property which matched the query text
+ * @param {string} query Query text which matched this result
+ * @param {string} matchedProperty Data property which matched the query text
+ * @param {Function} [compare] String comparator
  * @chainable
  */
-ve.ui.LanguageResultWidget.prototype.updateLabel = function ( query, matchedProperty ) {
-	var $highlighted, data = this.getData();
+ve.ui.LanguageResultWidget.prototype.updateLabel = function ( query, matchedProperty, compare ) {
+	var data = this.getData();
 
-	// Reset text
-	this.$name.text( data.name );
-	this.$otherMatch.text( data.code );
-
-	// Highlight where applicable
-	if ( matchedProperty ) {
-		$highlighted = ve.highlightQuery( data[ matchedProperty ], query );
-		if ( matchedProperty === 'name' ) {
-			this.$name.empty().append( $highlighted );
-		} else {
-			this.$otherMatch.empty().append( $highlighted );
-		}
+	if ( matchedProperty === 'name' ) {
+		this.name.setHighlightedQuery( data.name, query, compare );
+	} else {
+		this.name.setLabel( data.name );
+	}
+	if ( matchedProperty === 'code' || matchedProperty === 'autonym' ) {
+		this.otherMatch.setHighlightedQuery( data[ matchedProperty ], query, compare );
+	} else {
+		this.otherMatch.setLabel( data.code );
 	}
 
 	return this;

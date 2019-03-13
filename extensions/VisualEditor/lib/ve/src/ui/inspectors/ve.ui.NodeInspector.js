@@ -1,7 +1,7 @@
 /*!
  * VisualEditor user interface NodeInspector class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -14,9 +14,9 @@
  * @constructor
  * @param {Object} [config] Configuration options
  */
-ve.ui.NodeInspector = function VeUiNodeInspector( config ) {
+ve.ui.NodeInspector = function VeUiNodeInspector() {
 	// Parent constructor
-	ve.ui.FragmentInspector.call( this, config );
+	ve.ui.NodeInspector.super.apply( this, arguments );
 
 	// Mixin constructor
 	ve.ui.NodeWindow.call( this );
@@ -27,6 +27,15 @@ ve.ui.NodeInspector = function VeUiNodeInspector( config ) {
 OO.inheritClass( ve.ui.NodeInspector, ve.ui.FragmentInspector );
 
 OO.mixinClass( ve.ui.NodeInspector, ve.ui.NodeWindow );
+
+/* Methods */
+
+/**
+ * @inheritdoc
+ */
+ve.ui.NodeInspector.prototype.getMode = function () {
+	return this.getSelectedNode() ? 'edit' : 'insert';
+};
 
 /**
  * @inheritdoc

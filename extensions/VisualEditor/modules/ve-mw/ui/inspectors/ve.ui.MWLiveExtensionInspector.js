@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface MWLiveExtensionInspector class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -19,8 +19,7 @@ ve.ui.MWLiveExtensionInspector = function VeUiMWLiveExtensionInspector() {
 	// Parent constructor
 	ve.ui.MWLiveExtensionInspector.super.apply( this, arguments );
 
-	// Late bind onChangeHandler to a debounced updatePreview
-	this.onChangeHandler = ve.debounce( this.updatePreview.bind( this ), 250 );
+	this.updatePreviewDebounced = ve.debounce( this.updatePreview.bind( this ), 250 );
 };
 
 /* Inheritance */
@@ -28,6 +27,17 @@ ve.ui.MWLiveExtensionInspector = function VeUiMWLiveExtensionInspector() {
 OO.inheritClass( ve.ui.MWLiveExtensionInspector, ve.ui.MWExtensionInspector );
 
 /* Methods */
+
+/**
+ * @inheritdoc
+ */
+ve.ui.MWLiveExtensionInspector.prototype.initialize = function () {
+	// Parent method
+	ve.ui.MWLiveExtensionInspector.super.prototype.initialize.call( this );
+
+	this.generatedContentsError = new ve.ui.MWExpandableErrorElement();
+	this.form.$element.append( this.generatedContentsError.$element );
+};
 
 /**
  * @inheritdoc
@@ -46,7 +56,8 @@ ve.ui.MWLiveExtensionInspector.prototype.getSetupProcess = function ( data ) {
 					element,
 					{ type: '/' + element.type }
 				] );
-				// Check if the node was inserted at a structural offset and wrapped in a paragraph
+				// Check if the node was inserted at a structural offset and
+				// wrapped in a paragraph
 				if ( this.getFragment().getSelection().getRange().getLength() === 4 ) {
 					this.fragment = this.getFragment().adjustLinearSelection( 1, -1 );
 				}
@@ -54,6 +65,12 @@ ve.ui.MWLiveExtensionInspector.prototype.getSetupProcess = function ( data ) {
 				this.selectedNode = this.getFragment().getSelectedNode();
 			}
 			this.input.on( 'change', this.onChangeHandler );
+			this.generatedContentsError.connect( this, {
+				update: 'updateSize'
+			} );
+			this.selectedNode.connect( this, {
+				generatedContentsError: 'showGeneratedContentsError'
+			} );
 		}, this );
 };
 
@@ -64,6 +81,9 @@ ve.ui.MWLiveExtensionInspector.prototype.getTeardownProcess = function ( data ) 
 	return ve.ui.MWLiveExtensionInspector.super.prototype.getTeardownProcess.call( this, data )
 		.first( function () {
 			this.input.off( 'change', this.onChangeHandler );
+			this.generatedContentsError.clear();
+			this.generatedContentsError.disconnect( this );
+			this.selectedNode.disconnect( this );
 			if ( data === undefined ) { // cancel
 				this.getFragment().getSurface().popStaging();
 			}
@@ -76,7 +96,10 @@ ve.ui.MWLiveExtensionInspector.prototype.getTeardownProcess = function ( data ) 
 ve.ui.MWLiveExtensionInspector.prototype.insertOrUpdateNode = function () {
 	// No need to call parent method as changes have already been made
 	// to the model in staging, just need to apply them.
+	this.updatePreview();
 	this.getFragment().getSurface().applyStaging();
+	// Force the selected node to re-render after staging has finished
+	this.selectedNode.emit( 'update', false );
 };
 
 /**
@@ -90,6 +113,16 @@ ve.ui.MWLiveExtensionInspector.prototype.removeNode = function () {
 };
 
 /**
+ * @inheritdoc
+ */
+ve.ui.MWLiveExtensionInspector.prototype.onChange = function () {
+	// Parent method
+	ve.ui.MWLiveExtensionInspector.super.prototype.onChange.call( this );
+
+	this.updatePreviewDebounced();
+};
+
+/**
  * Update the node rendering to reflect the current content in the inspector.
  */
 ve.ui.MWLiveExtensionInspector.prototype.updatePreview = function () {
@@ -97,7 +130,37 @@ ve.ui.MWLiveExtensionInspector.prototype.updatePreview = function () {
 
 	this.updateMwData( mwData );
 
+	this.hideGeneratedContentsError();
+
 	if ( this.visible ) {
 		this.getFragment().changeAttributes( { mw: mwData } );
 	}
+};
+
+/**
+ * Show the error container and set the error label to contain the error.
+ *
+ * @param {jQuery} $element Element containing the error
+ */
+ve.ui.MWLiveExtensionInspector.prototype.showGeneratedContentsError = function ( $element ) {
+	this.generatedContentsError.show( this.formatGeneratedContentsError( $element ) );
+};
+
+/**
+ * Hide the error and collapse the error container.
+ */
+ve.ui.MWLiveExtensionInspector.prototype.hideGeneratedContentsError = function () {
+	this.generatedContentsError.clear();
+};
+
+/**
+ * Format the error.
+ *
+ * Default behaviour returns the error with no modification.
+ *
+ * @param {jQuery} $element Element containing the error
+ * @return {jQuery} $element Element containing the error
+ */
+ve.ui.MWLiveExtensionInspector.prototype.formatGeneratedContentsError = function ( $element ) {
+	return $element;
 };

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel LinkAnnotation class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -30,6 +30,9 @@ ve.dm.LinkAnnotation.static.name = 'link';
 ve.dm.LinkAnnotation.static.matchTagNames = [ 'a' ];
 
 ve.dm.LinkAnnotation.static.toDataElement = function ( domElements ) {
+	if ( !domElements[ 0 ].hasAttribute( 'href' ) ) {
+		return ve.dm.SpanAnnotation.static.toDataElement.apply( ve.dm.SpanAnnotation.static, arguments );
+	}
 	return {
 		type: this.name,
 		attributes: {
@@ -42,6 +45,14 @@ ve.dm.LinkAnnotation.static.toDomElements = function ( dataElement, doc ) {
 	var domElement = doc.createElement( 'a' );
 	domElement.setAttribute( 'href', this.getHref( dataElement ) );
 	return [ domElement ];
+};
+
+ve.dm.LinkAnnotation.static.describeChange = function ( key, change ) {
+	if ( key === 'href' ) {
+		return ve.htmlMsg( 'visualeditor-changedesc-link-href', this.wrapText( 'del', change.from ), this.wrapText( 'ins', change.to ) );
+	}
+	// Parent method
+	return ve.dm.LinkAnnotation.parent.static.describeChange.apply( this, arguments );
 };
 
 /**
@@ -74,12 +85,26 @@ ve.dm.LinkAnnotation.prototype.getHref = function () {
 /**
  * Get the display title for this link
  *
- * Can be overriden by special link types.
+ * Can be overridden by special link types.
  *
  * @return {string} Display title
  */
 ve.dm.LinkAnnotation.prototype.getDisplayTitle = function () {
 	return this.getHref();
+};
+
+/**
+ * Get the fragment / hash for the current href
+ *
+ * @return {string|null} The fragment, or null if none is present
+ */
+ve.dm.LinkAnnotation.prototype.getFragment = function () {
+	var href = this.getHref(),
+		hash = href.indexOf( '#' );
+	if ( hash === -1 ) {
+		return null;
+	}
+	return href.slice( hash + 1 );
 };
 
 /**

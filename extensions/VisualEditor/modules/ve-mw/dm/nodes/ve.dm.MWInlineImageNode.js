@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWInlineImage class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -17,7 +17,7 @@
  */
 ve.dm.MWInlineImageNode = function VeDmMWInlineImageNode() {
 	// Parent constructor
-	ve.dm.LeafNode.apply( this, arguments );
+	ve.dm.MWInlineImageNode.super.apply( this, arguments );
 
 	// Mixin constructors
 	ve.dm.MWImageNode.call( this );
@@ -27,71 +27,62 @@ ve.dm.MWInlineImageNode = function VeDmMWInlineImageNode() {
 
 OO.inheritClass( ve.dm.MWInlineImageNode, ve.dm.LeafNode );
 
-// Need to mixin base class as well
+// Need to mixin base class as well (T92540)
 OO.mixinClass( ve.dm.MWInlineImageNode, ve.dm.GeneratedContentNode );
 
 OO.mixinClass( ve.dm.MWInlineImageNode, ve.dm.MWImageNode );
 
 /* Static Properties */
 
-ve.dm.MWInlineImageNode.static.rdfaToType = {
-	'mw:Image': 'none',
-	'mw:Image/Frameless': 'frameless'
-};
-
 ve.dm.MWInlineImageNode.static.isContent = true;
 
 ve.dm.MWInlineImageNode.static.name = 'mwInlineImage';
 
 ve.dm.MWInlineImageNode.static.preserveHtmlAttributes = function ( attribute ) {
-	var attributes = [ 'typeof', 'class', 'src', 'resource', 'width', 'height', 'href' ];
+	var attributes = [ 'typeof', 'class', 'src', 'resource', 'width', 'height', 'href', 'data-mw' ];
 	return attributes.indexOf( attribute ) === -1;
 };
 
-ve.dm.MWInlineImageNode.static.matchTagNames = [ 'span' ];
+// <span> is here for backwards compatibility with Parsoid content that may be
+// stored in RESTBase.  This is now generated as <figure-inline>.  It should
+// be safe to remove when verion 1.5 content is no longer acceptable.
+ve.dm.MWInlineImageNode.static.matchTagNames = [ 'span', 'figure-inline' ];
 
 ve.dm.MWInlineImageNode.static.blacklistedAnnotationTypes = [ 'link' ];
 
-ve.dm.MWInlineImageNode.static.getMatchRdfaTypes = function () {
-	return Object.keys( this.rdfaToType );
-};
-
-ve.dm.MWInlineImageNode.static.allowedRdfaTypes = [ 'mw:Error' ];
-
 ve.dm.MWInlineImageNode.static.toDataElement = function ( domElements, converter ) {
-	var dataElement, attributes,
-		$span = $( domElements[ 0 ] ),
-		$firstChild = $span.children().first(), // could be <span> or <a>
-		$img = $firstChild.children().first(),
-		typeofAttrs = $span.attr( 'typeof' ).split( ' ' ),
-		classes = $span.attr( 'class' ),
+	var dataElement, attributes, types,
+		figureInline = domElements[ 0 ],
+		imgWrapper = figureInline.children[ 0 ], // <a> or <span>
+		img = imgWrapper.children[ 0 ], // <img>, <video> or <audio>
+		typeofAttrs = ( figureInline.getAttribute( 'typeof' ) || '' ).trim().split( /\s+/ ),
+		mwDataJSON = figureInline.getAttribute( 'data-mw' ),
+		mwData = mwDataJSON ? JSON.parse( mwDataJSON ) : {},
+		classes = figureInline.getAttribute( 'class' ),
 		recognizedClasses = [],
 		errorIndex = typeofAttrs.indexOf( 'mw:Error' ),
-		width = $img.attr( 'width' ),
-		height = $img.attr( 'height' );
+		width = img.getAttribute( 'width' ),
+		height = img.getAttribute( 'height' );
 
 	if ( errorIndex !== -1 ) {
 		typeofAttrs.splice( errorIndex, 1 );
 	}
 
+	types = this.rdfaToTypes[ typeofAttrs[ 0 ] ];
+
 	attributes = {
-		type: this.rdfaToType[ typeofAttrs[ 0 ] ],
-		src: $img.attr( 'src' ),
-		resource: $img.attr( 'resource' ),
-		originalClasses: classes
+		mediaClass: types.mediaClass,
+		type: types.frameType,
+		src: img.getAttribute( 'src' ) || img.getAttribute( 'poster' ),
+		href: imgWrapper.getAttribute( 'href' ),
+		resource: img.getAttribute( 'resource' ),
+		originalClasses: classes,
+		width: width !== null && width !== '' ? +width : null,
+		height: height !== null && height !== '' ? +height : null,
+		alt: img.getAttribute( 'alt' ),
+		mw: mwData,
+		isError: errorIndex !== -1
 	};
-
-	if ( errorIndex !== -1 ) {
-		attributes.isError = true;
-	}
-
-	attributes.width = width !== undefined && width !== '' ? Number( width ) : null;
-	attributes.height = height !== undefined && height !== '' ? Number( height ) : null;
-
-	attributes.isLinked = $firstChild.is( 'a' );
-	if ( attributes.isLinked ) {
-		attributes.href = $firstChild.attr( 'href' );
-	}
 
 	// Extract individual classes
 	classes = typeof classes === 'string' ? classes.trim().split( /\s+/ ) : [];
@@ -101,34 +92,17 @@ ve.dm.MWInlineImageNode.static.toDataElement = function ( domElements, converter
 		attributes.borderImage = true;
 		recognizedClasses.push( 'mw-image-border' );
 	}
+
 	// Vertical alignment
-	if ( classes.indexOf( 'mw-valign-middle' ) !== -1 ) {
-		attributes.valign = 'middle';
-		recognizedClasses.push( 'mw-valign-middle' );
-	} else if ( classes.indexOf( 'mw-valign-baseline' ) !== -1 ) {
-		attributes.valign = 'baseline';
-		recognizedClasses.push( 'mw-valign-baseline' );
-	} else if ( classes.indexOf( 'mw-valign-sub' ) !== -1 ) {
-		attributes.valign = 'sub';
-		recognizedClasses.push( 'mw-valign-sub' );
-	} else if ( classes.indexOf( 'mw-valign-super' ) !== -1 ) {
-		attributes.valign = 'super';
-		recognizedClasses.push( 'mw-valign-super' );
-	} else if ( classes.indexOf( 'mw-valign-top' ) !== -1 ) {
-		attributes.valign = 'top';
-		recognizedClasses.push( 'mw-valign-top' );
-	} else if ( classes.indexOf( 'mw-valign-text-top' ) !== -1 ) {
-		attributes.valign = 'text-top';
-		recognizedClasses.push( 'mw-valign-text-top' );
-	} else if ( classes.indexOf( 'mw-valign-bottom' ) !== -1 ) {
-		attributes.valign = 'bottom';
-		recognizedClasses.push( 'mw-valign-bottom' );
-	} else if ( classes.indexOf( 'mw-valign-text-bottom' ) !== -1 ) {
-		attributes.valign = 'text-bottom';
-		recognizedClasses.push( 'mw-valign-text-bottom' );
-	} else {
-		attributes.valign = 'default';
-	}
+	attributes.valign = 'default';
+	[ 'midde', 'baseline', 'sub', 'super', 'top', 'text-top', 'bottom', 'text-bottom' ].some( function ( valign ) {
+		var className = 'mw-valign-' + valign;
+		if ( classes.indexOf( className ) !== -1 ) {
+			attributes.valign = valign;
+			recognizedClasses.push( className );
+			return true;
+		}
+	} );
 
 	// Border
 	if ( classes.indexOf( 'mw-image-border' ) !== -1 ) {
@@ -153,23 +127,24 @@ ve.dm.MWInlineImageNode.static.toDataElement = function ( domElements, converter
 };
 
 ve.dm.MWInlineImageNode.static.toDomElements = function ( data, doc ) {
-	var firstChild,
-		span = doc.createElement( 'span' ),
-		img = doc.createElement( 'img' ),
+	var firstChild, srcAttr,
+		mediaClass = data.attributes.mediaClass,
+		figureInline = doc.createElement( 'figure-inline' ),
+		img = doc.createElement( this.typesToTags[ mediaClass ] ),
 		classes = [],
-		originalClasses = data.attributes.originalClasses,
-		rdfa;
+		originalClasses = data.attributes.originalClasses;
 
-	ve.setDomAttributes( img, data.attributes, [ 'src', 'width', 'height', 'resource' ] );
-
-	if ( !this.typeToRdfa ) {
-		this.typeToRdfa = {};
-		for ( rdfa in this.rdfaToType ) {
-			this.typeToRdfa[ this.rdfaToType[ rdfa ] ] = rdfa;
-		}
+	ve.setDomAttributes( img, data.attributes, [ 'width', 'height', 'resource' ] );
+	srcAttr = this.typesToSrcAttrs[ mediaClass ];
+	if ( srcAttr ) {
+		img.setAttribute( srcAttr, data.attributes.src );
 	}
 
-	span.setAttribute( 'typeof', this.typeToRdfa[ data.attributes.type ] );
+	// RDFa type
+	figureInline.setAttribute( 'typeof', this.getRdfa( mediaClass, data.attributes.type ) );
+	if ( !ve.isEmptyObject( data.attributes.mw ) ) {
+		figureInline.setAttribute( 'data-mw', JSON.stringify( data.attributes.mw ) );
+	}
 
 	if ( data.attributes.defaultSize ) {
 		classes.push( 'mw-default-size' );
@@ -191,22 +166,22 @@ ve.dm.MWInlineImageNode.static.toDomElements = function ( data, doc ) {
 		originalClasses &&
 		ve.compare( originalClasses.trim().split( /\s+/ ).sort(), classes.sort() )
 	) {
-		span.className = originalClasses;
+		figureInline.className = originalClasses;
 	} else if ( classes.length > 0 ) {
-		span.className = classes.join( ' ' );
+		figureInline.className = classes.join( ' ' );
 	}
 
-	if ( data.attributes.isLinked ) {
+	if ( data.attributes.href ) {
 		firstChild = doc.createElement( 'a' );
 		firstChild.setAttribute( 'href', data.attributes.href );
 	} else {
 		firstChild = doc.createElement( 'span' );
 	}
 
-	span.appendChild( firstChild );
+	figureInline.appendChild( firstChild );
 	firstChild.appendChild( img );
 
-	return [ span ];
+	return [ figureInline ];
 };
 
 /* Registration */

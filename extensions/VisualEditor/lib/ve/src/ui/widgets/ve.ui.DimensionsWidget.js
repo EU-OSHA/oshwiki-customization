@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface DimensionsWidget class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -23,10 +23,14 @@ ve.ui.DimensionsWidget = function VeUiDimensionsWidget( config ) {
 	config = config || {};
 
 	// Parent constructor
-	OO.ui.Widget.call( this, config );
+	ve.ui.DimensionsWidget.super.call( this, config );
 
-	this.widthInput = new OO.ui.TextInputWidget( { validate: config.validate } );
-	this.heightInput = new OO.ui.TextInputWidget( { validate: config.validate } );
+	this.widthInput = new OO.ui.TextInputWidget( {
+		validate: config.validate || $.isNumeric
+	} );
+	this.heightInput = new OO.ui.TextInputWidget( {
+		validate: config.validate || $.isNumeric
+	} );
 
 	this.defaults = config.defaults || { width: '', height: '' };
 	this.renderDefaults();
@@ -183,24 +187,27 @@ ve.ui.DimensionsWidget.prototype.setDimensions = function ( dimensions ) {
  */
 ve.ui.DimensionsWidget.prototype.getDimensions = function () {
 	return {
-		width: this.widthInput.getValue(),
-		height: this.heightInput.getValue()
+		width: +this.widthInput.getValue(),
+		height: +this.heightInput.getValue()
 	};
 };
 
 /**
  * Disable or enable the inputs
  *
- * @param {boolean} isDisabled Set disabled or enabled
+ * @param {boolean} disabled Set disabled or enabled
  */
-ve.ui.DimensionsWidget.prototype.setDisabled = function ( isDisabled ) {
+ve.ui.DimensionsWidget.prototype.setDisabled = function ( disabled ) {
+	// Parent method
+	ve.ui.DimensionsWidget.super.prototype.setDisabled.call( this, disabled );
+
 	// The 'setDisabled' method runs in the constructor before the
 	// inputs are initialized
 	if ( this.widthInput ) {
-		this.widthInput.setDisabled( isDisabled );
+		this.widthInput.setDisabled( disabled );
 	}
 	if ( this.heightInput ) {
-		this.heightInput.setDisabled( isDisabled );
+		this.heightInput.setDisabled( disabled );
 	}
 };
 

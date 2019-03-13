@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface MWAlienExtensionInspector class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -31,7 +31,7 @@ OO.inheritClass( ve.ui.MWAlienExtensionInspector, ve.ui.MWExtensionInspector );
 
 ve.ui.MWAlienExtensionInspector.static.name = 'alienExtension';
 
-ve.ui.MWAlienExtensionInspector.static.icon = 'alienextension';
+ve.ui.MWAlienExtensionInspector.static.allowedEmpty = true;
 
 ve.ui.MWAlienExtensionInspector.static.modelClasses = [
 	ve.dm.MWAlienInlineExtensionNode,
@@ -45,7 +45,7 @@ ve.ui.MWAlienExtensionInspector.static.modelClasses = [
  */
 ve.ui.MWAlienExtensionInspector.prototype.initialize = function () {
 	// Parent method
-	ve.ui.MWExtensionInspector.prototype.initialize.apply( this, arguments );
+	ve.ui.MWAlienExtensionInspector.super.prototype.initialize.apply( this, arguments );
 
 	this.$attributes = $( '<div>' ).addClass( 've-ui-mwAlienExtensionInspector-attributes' );
 	this.form.$element.append( this.$attributes );
@@ -65,6 +65,7 @@ ve.ui.MWAlienExtensionInspector.prototype.getSetupProcess = function ( data ) {
 					attributeInput = new OO.ui.TextInputWidget( {
 						value: attributes[ key ]
 					} );
+					attributeInput.connect( this, { change: 'onChangeHandler' } );
 					this.attributeInputs[ key ] = attributeInput;
 					field = new OO.ui.FieldLayout(
 						attributeInput,
@@ -92,7 +93,9 @@ ve.ui.MWAlienExtensionInspector.prototype.getTeardownProcess = function ( data )
 		}, this );
 };
 
-/** */
+/**
+ * @inheritdoc ve.ui.MWExtensionWindow
+ */
 ve.ui.MWAlienExtensionInspector.prototype.updateMwData = function ( mwData ) {
 	var key;
 

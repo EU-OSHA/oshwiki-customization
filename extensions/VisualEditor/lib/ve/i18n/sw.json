@@ -2,7 +2,8 @@
 	"@metadata": {
 		"authors": [
 			"Lloffiwr",
-			"Muddyb Blast Producer"
+			"Muddyb Blast Producer",
+			"Muddyb"
 		]
 	},
 	"visualeditor": "VisualEditor",
@@ -47,7 +48,6 @@
 	"visualeditor-languageinspector-widget-label-direction": "Mwongozo",
 	"visualeditor-languageinspector-widget-label-langcode": "Msimbo wa lugha",
 	"visualeditor-languageinspector-widget-label-language": "Lugha",
-	"visualeditor-linkinspector-open": "Fungua",
 	"visualeditor-linkinspector-title": "Kiungo",
 	"visualeditor-listbutton-bullet-tooltip": "Orodha zenye alama",
 	"visualeditor-listbutton-number-tooltip": "Orodha zenye namba",

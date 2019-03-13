@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface MWLinkNodeInspector class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -14,9 +14,9 @@
  * @constructor
  * @param {Object} [config] Configuration options
  */
-ve.ui.MWLinkNodeInspector = function VeUiMWLinkNodeInspector( config ) {
+ve.ui.MWLinkNodeInspector = function VeUiMWLinkNodeInspector() {
 	// Parent constructor
-	ve.ui.NodeInspector.call( this, config );
+	ve.ui.MWLinkNodeInspector.super.apply( this, arguments );
 };
 
 /* Inheritance */
@@ -26,8 +26,6 @@ OO.inheritClass( ve.ui.MWLinkNodeInspector, ve.ui.NodeInspector );
 /* Static properties */
 
 ve.ui.MWLinkNodeInspector.static.name = 'linkNode';
-
-ve.ui.MWLinkNodeInspector.static.icon = 'link';
 
 ve.ui.MWLinkNodeInspector.static.title = OO.ui.deferMsg( 'visualeditor-linknodeinspector-title' );
 
@@ -102,6 +100,7 @@ ve.ui.MWLinkNodeInspector.prototype.getTeardownProcess = function ( data ) {
 	return ve.ui.MWLinkNodeInspector.super.prototype.getTeardownProcess.call( this, data )
 		.first( function () {
 			var content, annotation, annotations,
+				surfaceView = this.manager.getSurface().getView(),
 				surfaceModel = this.getFragment().getSurface(),
 				doc = surfaceModel.getDocument(),
 				nodeRange = this.selectedNode.getOuterRange(),
@@ -118,7 +117,7 @@ ve.ui.MWLinkNodeInspector.prototype.getTeardownProcess = function ( data ) {
 
 			if ( remove ) {
 				surfaceModel.change(
-					ve.dm.Transaction.newFromRemoval( doc, nodeRange )
+					ve.dm.TransactionBuilder.static.newFromRemoval( doc, nodeRange )
 				);
 			} else if ( convert ) {
 				annotation = new ve.dm.MWExternalLinkAnnotation( {
@@ -132,11 +131,28 @@ ve.ui.MWLinkNodeInspector.prototype.getTeardownProcess = function ( data ) {
 				content = value.split( '' );
 				ve.dm.Document.static.addAnnotationsToData( content, annotations );
 				surfaceModel.change(
-					ve.dm.Transaction.newFromReplacement( doc, nodeRange, content )
+					ve.dm.TransactionBuilder.static.newFromReplacement( doc, nodeRange, content )
 				);
+				setTimeout( function () {
+					// This just removed the node and turned it into an annotation. Thus, this inspector
+					// is about to go away. It'll be replaced by a context popup for the new annotation,
+					// because the cursor will still be contained within it. Before it goes away, adjust
+					// the selection to make _sure_ that if the user just starts typing, it won't delete
+					// the entire link. We need to manually fiddle the selection a little, because
+					// annotations mean that the LinearSelection can't granularly say whether the
+					// selection starts inside or outside of the node.
+					// If you can think of a test function for "the selection has stabilised", this could
+					// be moved to ve.scheduler.
+					// Note: we can't rely on surfaceView.activeAnnotations, because the selection-focus created
+					// by the transaction might be outside the link node. As such, get the node immediately
+					// after the offset where we inserted the annotation, and then get the closest link
+					// annotation to it.
+					var node = surfaceView.getDocument().getNodeAndOffset( nodeRange.start + 1 ).node;
+					surfaceView.selectNodeContents( $( node ).closest( '.ve-ce-linkAnnotation' )[ 0 ] );
+				} );
 			} else {
 				surfaceModel.change(
-					ve.dm.Transaction.newFromAttributeChanges(
+					ve.dm.TransactionBuilder.static.newFromAttributeChanges(
 						doc, nodeRange.start, { href: value }
 					)
 				);

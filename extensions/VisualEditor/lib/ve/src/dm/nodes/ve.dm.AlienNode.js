@@ -1,7 +1,7 @@
 /*!
- * VisualEditor DataModel AlienNode, AlienBlockNode and AlienInlineNode classes.
+ * VisualEditor DataModel AlienNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -11,7 +11,6 @@
  * @abstract
  * @extends ve.dm.LeafNode
  * @mixins ve.dm.FocusableNode
- * @mixins ve.dm.TableCellableNode
  *
  * @constructor
  * @param {Object} [element] Reference to element in linear model
@@ -20,9 +19,8 @@ ve.dm.AlienNode = function VeDmAlienNode() {
 	// Parent constructor
 	ve.dm.AlienNode.super.apply( this, arguments );
 
-	// Mixin constructors
+	// Mixin constructor
 	ve.dm.FocusableNode.call( this );
-	ve.dm.TableCellableNode.call( this );
 };
 
 /* Inheritance */
@@ -30,8 +28,6 @@ ve.dm.AlienNode = function VeDmAlienNode() {
 OO.inheritClass( ve.dm.AlienNode, ve.dm.LeafNode );
 
 OO.mixinClass( ve.dm.AlienNode, ve.dm.FocusableNode );
-
-OO.mixinClass( ve.dm.AlienNode, ve.dm.TableCellableNode );
 
 /* Static members */
 
@@ -44,21 +40,58 @@ ve.dm.AlienNode.static.enableAboutGrouping = true;
 ve.dm.AlienNode.static.matchRdfaTypes = [ 've:Alien' ];
 
 ve.dm.AlienNode.static.toDataElement = function ( domElements, converter ) {
-	var element,
+	var element, attributes,
 		isInline = this.isHybridInline( domElements, converter ),
 		type = isInline ? 'alienInline' : 'alienBlock';
 
-	element = { type: type };
-
 	if ( domElements.length === 1 && [ 'td', 'th' ].indexOf( domElements[ 0 ].nodeName.toLowerCase() ) !== -1 ) {
-		element.attributes = { cellable: true };
-		ve.dm.TableCellableNode.static.setAttributes( element.attributes, domElements );
+		attributes = {};
+		ve.dm.TableCellableNode.static.setAttributes( attributes, domElements );
+		element = {
+			type: 'alienTableCell',
+			attributes: attributes
+		};
+	} else {
+		element = { type: type };
 	}
+
 	return element;
 };
 
-ve.dm.AlienNode.static.toDomElements = function ( dataElement, doc ) {
-	return ve.copyDomElements( dataElement.originalDomElements, doc );
+ve.dm.AlienNode.static.toDomElements = function ( dataElement, doc, converter ) {
+	return ve.copyDomElements( converter.getStore().value( dataElement.originalDomElementsHash ) || [], doc );
+};
+
+/**
+ * @inheritdoc
+ */
+ve.dm.AlienNode.static.isDiffComparable = function ( element, other, elementStore, otherStore ) {
+	var elementOriginalDomElements, otherOriginalDomElements;
+	if ( element.type === other.type && element.originalDomElementsHash === other.originalDomElementsHash ) {
+		return true;
+	}
+
+	// HACK: We can't strip 'about' attributes before converting, as we need them
+	// for about grouping, but we should ignore them for diffing as they can be
+	// non-persistent in historical diffs.
+
+	function removeAboutAttributes( element ) {
+		Array.prototype.forEach.call( element.querySelectorAll( '[about]' ), function ( el ) {
+			el.removeAttribute( 'about' );
+		} );
+	}
+
+	// Deep copy DOM nodes from store
+	elementOriginalDomElements = ve.copy( elementStore.value( element.originalDomElementsHash ) );
+	otherOriginalDomElements = ve.copy( otherStore.value( other.originalDomElementsHash ) );
+	// Remove about attributes
+	elementOriginalDomElements.forEach( removeAboutAttributes );
+	otherOriginalDomElements.forEach( removeAboutAttributes );
+	// Compare DOM trees
+	return ve.compare(
+		ve.copy( elementOriginalDomElements, ve.convertDomElements ),
+		ve.copy( otherOriginalDomElements, ve.convertDomElements )
+	);
 };
 
 /**
@@ -67,61 +100,8 @@ ve.dm.AlienNode.static.toDomElements = function ( dataElement, doc ) {
 ve.dm.AlienNode.static.getHashObject = function ( dataElement ) {
 	return {
 		type: dataElement.type,
-		attributes: dataElement.attributes,
-		originalDomElements: dataElement.originalDomElements &&
-			dataElement.originalDomElements.map( function ( el ) {
-				return el.outerHTML;
-			} ).join( '' )
+		// Some comparison methods ignore the originalDomElementsHash
+		// property. Rename it so it doesn't get ignored for alien nodes.
+		alienDomElementsHash: dataElement.originalDomElementsHash
 	};
 };
-
-/* Methods */
-
-ve.dm.AlienNode.prototype.isCellable = function () {
-	return !!this.getAttribute( 'cellable' );
-};
-
-/* Concrete subclasses */
-
-/**
- * DataModel alienBlock node.
- *
- * @class
- * @extends ve.dm.AlienNode
- *
- * @constructor
- * @param {Object} [element] Reference to element in linear model
- */
-ve.dm.AlienBlockNode = function VeDmAlienBlockNode() {
-	// Parent constructor
-	ve.dm.AlienBlockNode.super.apply( this, arguments );
-};
-
-OO.inheritClass( ve.dm.AlienBlockNode, ve.dm.AlienNode );
-
-ve.dm.AlienBlockNode.static.name = 'alienBlock';
-
-/**
- * DataModel alienInline node.
- *
- * @class
- * @extends ve.dm.AlienNode
- *
- * @constructor
- * @param {Object} [element] Reference to element in linear model
- */
-ve.dm.AlienInlineNode = function VeDmAlienInlineNode() {
-	// Parent constructor
-	ve.dm.AlienInlineNode.super.apply( this, arguments );
-};
-
-OO.inheritClass( ve.dm.AlienInlineNode, ve.dm.AlienNode );
-
-ve.dm.AlienInlineNode.static.name = 'alienInline';
-
-ve.dm.AlienInlineNode.static.isContent = true;
-
-/* Registration */
-
-ve.dm.modelRegistry.register( ve.dm.AlienBlockNode );
-ve.dm.modelRegistry.register( ve.dm.AlienInlineNode );

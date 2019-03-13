@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable ContentBranchNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -15,7 +15,7 @@
  * @param {ve.dm.BranchNode} model Model to observe
  * @param {Object} [config] Configuration options
  */
-ve.ce.ContentBranchNode = function VeCeContentBranchNode( model, config ) {
+ve.ce.ContentBranchNode = function VeCeContentBranchNode() {
 	// Properties
 	this.lastTransaction = null;
 	// Parent constructor calls renderContents, so this must be set first
@@ -24,12 +24,16 @@ ve.ce.ContentBranchNode = function VeCeContentBranchNode( model, config ) {
 	this.unicorns = null;
 
 	// Parent constructor
-	ve.ce.BranchNode.call( this, model, config );
+	ve.ce.ContentBranchNode.super.apply( this, arguments );
 
 	this.onClickHandler = this.onClick.bind( this );
 
+	// DOM changes (keep in sync with #onSetup)
+	this.$element.addClass( 've-ce-contentBranchNode' );
+
 	// Events
 	this.connect( this, { childUpdate: 'onChildUpdate' } );
+	this.model.connect( this, { detach: 'onModelDetach' } );
 	// Some browsers allow clicking links inside contenteditable, such as in iOS Safari when the
 	// keyboard is closed
 	this.$element.on( 'click', this.onClickHandler );
@@ -83,6 +87,17 @@ ve.ce.ContentBranchNode.static.appendRenderedContents = function ( container, wr
 /* Methods */
 
 /**
+ * @inheritdoc
+ */
+ve.ce.ContentBranchNode.prototype.onSetup = function () {
+	// Parent method
+	ve.ce.ContentBranchNode.super.prototype.onSetup.apply( this, arguments );
+
+	// DOM changes (duplicated from constructor in case this.$element is replaced)
+	this.$element.addClass( 've-ce-contentBranchNode' );
+};
+
+/**
  * Handle click events.
  *
  * @param {jQuery.Event} e Click event
@@ -109,6 +124,7 @@ ve.ce.ContentBranchNode.prototype.onClick = function ( e ) {
  * This is used to automatically render contents.
  *
  * @method
+ * @param {ve.dm.Transaction} transaction Transaction
  */
 ve.ce.ContentBranchNode.prototype.onChildUpdate = function ( transaction ) {
 	if ( transaction === null || transaction === this.lastTransaction ) {
@@ -123,12 +139,12 @@ ve.ce.ContentBranchNode.prototype.onChildUpdate = function ( transaction ) {
  */
 ve.ce.ContentBranchNode.prototype.onSplice = function ( index, howmany ) {
 	// Parent method
-	ve.ce.BranchNode.prototype.onSplice.apply( this, arguments );
+	ve.ce.ContentBranchNode.super.prototype.onSplice.apply( this, arguments );
 
-	// HACK: adjust slugNodes indexes if isRenderingLocked. This should be sufficient to
-	// keep this.slugNodes valid - only text changes can occur, which cannot create a
-	// requirement for a new slug (it can make an existing slug redundant, but it is
-	// harmless to leave it there).
+	// FIXME T126025: adjust slugNodes indexes if isRenderingLocked. This should be
+	// sufficient to keep this.slugNodes valid - only text changes can occur, which
+	// cannot create a requirement for a new slug (it can make an existing slug
+	// redundant, but it is harmless to leave it there).
 	if (
 		this.root instanceof ve.ce.DocumentNode &&
 		this.root.getSurface().isRenderingLocked
@@ -140,16 +156,36 @@ ve.ce.ContentBranchNode.prototype.onSplice = function ( index, howmany ) {
 	this.renderContents();
 };
 
-/** @inheritdoc */
+/**
+ * @inheritdoc
+ */
 ve.ce.ContentBranchNode.prototype.setupBlockSlugs = function () {
 	// Respect render lock
+	// TODO: Can this check be moved into the parent method?
 	if (
 		this.root instanceof ve.ce.DocumentNode &&
 		this.root.getSurface().isRenderingLocked()
 	) {
 		return;
 	}
-	ve.ce.BranchNode.prototype.setupBlockSlugs.apply( this, arguments );
+	// Parent method
+	ve.ce.ContentBranchNode.super.prototype.setupBlockSlugs.apply( this, arguments );
+};
+
+/**
+ * @inheritdoc
+ */
+ve.ce.ContentBranchNode.prototype.setupInlineSlugs = function () {
+	// Respect render lock
+	// TODO: Can this check be moved into the parent method?
+	if (
+		this.root instanceof ve.ce.DocumentNode &&
+		this.root.getSurface().isRenderingLocked()
+	) {
+		return;
+	}
+	// Parent method
+	ve.ce.ContentBranchNode.super.prototype.setupInlineSlugs.apply( this, arguments );
 };
 
 /**
@@ -165,7 +201,7 @@ ve.ce.ContentBranchNode.prototype.setupBlockSlugs = function () {
  */
 ve.ce.ContentBranchNode.prototype.getRenderedContents = function () {
 	var i, ilen, j, jlen, item, itemAnnotations, clone, dmSurface, dmSelection, relCursor,
-		unicorn, img1, img2, annotationsChanged, childLength, offset, htmlItem, ceSurface,
+		unicorn, preUnicorn, postUnicorn, annotationsChanged, childLength, offset, htmlItem, ceSurface,
 		store = this.model.doc.getStore(),
 		annotationSet = new ve.dm.AnnotationSet( store ),
 		annotatedHtml = [],
@@ -174,7 +210,11 @@ ve.ce.ContentBranchNode.prototype.getRenderedContents = function () {
 		current = wrapper,
 		annotationStack = [],
 		nodeStack = [],
-		unicornInfo = {},
+		unicornInfo = {
+			hasCursor: false,
+			annotations: null,
+			unicorns: null
+		},
 		buffer = '',
 		node = this;
 
@@ -190,6 +230,7 @@ ve.ce.ContentBranchNode.prototype.getRenderedContents = function () {
 			buffer = '';
 		}
 		// Create a new DOM node and descend into it
+		annotation.store = store;
 		ann = ve.ce.annotationFactory.create( annotation.getType(), annotation, node );
 		ann.appendTo( current );
 		annotationStack.push( ann );
@@ -227,7 +268,7 @@ ve.ce.ContentBranchNode.prototype.getRenderedContents = function () {
 		dmSurface = ceSurface.getModel();
 		dmSelection = dmSurface.getTranslatedSelection();
 		if ( dmSelection instanceof ve.dm.LinearSelection && dmSelection.isCollapsed() ) {
-			// subtract 1 for CBN opening tag
+			// Subtract 1 for CBN opening tag
 			relCursor = dmSelection.getRange().start - this.getOffset() - 1;
 		}
 	}
@@ -244,8 +285,8 @@ ve.ce.ContentBranchNode.prototype.getRenderedContents = function () {
 			childLength = ( typeof htmlItem === 'string' ) ? 1 : 2;
 			if ( offset <= relCursor && relCursor < offset + childLength ) {
 				unicorn = [
-					{}, // unique object, for testing object equality later
-					dmSurface.getInsertionAnnotations().storeIndexes
+					{}, // Unique object, for testing object equality later
+					dmSurface.getInsertionAnnotations().storeHashes
 				];
 				annotatedHtml.splice( i, 0, unicorn );
 				break;
@@ -255,8 +296,8 @@ ve.ce.ContentBranchNode.prototype.getRenderedContents = function () {
 		// Special case for final position
 		if ( i === ilen && offset === relCursor ) {
 			unicorn = [
-				{}, // unique object, for testing object equality later
-				dmSurface.getInsertionAnnotations().storeIndexes
+				{}, // Unique object, for testing object equality later
+				dmSurface.getInsertionAnnotations().storeHashes
 			];
 			annotatedHtml.push( unicorn );
 		}
@@ -287,29 +328,27 @@ ve.ce.ContentBranchNode.prototype.getRenderedContents = function () {
 					current.appendChild( doc.createTextNode( buffer ) );
 					buffer = '';
 				}
-				img1 = doc.createElement( 'img' );
-				img2 = doc.createElement( 'img' );
-				img1.className = 've-ce-unicorn ve-ce-pre-unicorn';
-				img2.className = 've-ce-unicorn ve-ce-post-unicorn';
-				$( img1 ).data( 'dmOffset', ( this.getOffset() + 1 + i ) );
-				$( img2 ).data( 'dmOffset', ( this.getOffset() + 1 + i ) );
+				preUnicorn = doc.createElement( 'img' );
+				postUnicorn = doc.createElement( 'img' );
+				preUnicorn.className = 've-ce-unicorn ve-ce-pre-unicorn';
+				postUnicorn.className = 've-ce-unicorn ve-ce-post-unicorn';
+				$( preUnicorn ).data( 'modelOffset', ( this.getOffset() + 1 + i ) );
+				$( postUnicorn ).data( 'modelOffset', ( this.getOffset() + 1 + i ) );
 				if ( ve.inputDebug ) {
-					img1.setAttribute( 'src', ve.ce.unicornImgDataUri );
-					img2.setAttribute( 'src', ve.ce.unicornImgDataUri );
+					preUnicorn.setAttribute( 'src', ve.ce.unicornImgDataUri );
+					postUnicorn.setAttribute( 'src', ve.ce.unicornImgDataUri );
+					preUnicorn.className += ' ve-ce-unicorn-debug';
+					postUnicorn.className += ' ve-ce-unicorn-debug';
 				} else {
-					img1.setAttribute( 'src', ve.ce.minImgDataUri );
-					img2.setAttribute( 'src', ve.ce.minImgDataUri );
-					img1.style.width = '0px';
-					img2.style.width = '0px';
-					img1.style.height = '0px';
-					img2.style.height = '0px';
+					preUnicorn.setAttribute( 'src', ve.ce.minImgDataUri );
+					postUnicorn.setAttribute( 'src', ve.ce.minImgDataUri );
 				}
-				current.appendChild( img1 );
-				current.appendChild( img2 );
+				current.appendChild( preUnicorn );
+				current.appendChild( postUnicorn );
 				unicornInfo.annotations = dmSurface.getInsertionAnnotations();
-				unicornInfo.unicorns = [ img1, img2 ];
+				unicornInfo.unicorns = [ preUnicorn, postUnicorn ];
 			} else {
-				unicornInfo.unicornAnnotations = null;
+				unicornInfo.annotations = null;
 				unicornInfo.unicorns = null;
 			}
 		} else {
@@ -338,6 +377,12 @@ ve.ce.ContentBranchNode.prototype.getRenderedContents = function () {
 	return wrapper;
 };
 
+ve.ce.ContentBranchNode.prototype.onModelDetach = function () {
+	if ( this.root instanceof ve.ce.DocumentNode ) {
+		this.root.getSurface().setContentBranchNodeChanged();
+	}
+};
+
 /**
  * Render contents.
  *
@@ -360,7 +405,6 @@ ve.ce.ContentBranchNode.prototype.renderContents = function () {
 
 	rendered = this.getRenderedContents();
 	unicornInfo = rendered.unicornInfo;
-	delete rendered.unicornInfo;
 
 	// Return if unchanged. Test by building the new version and checking DOM-equality.
 	// However we have to normalize to cope with consecutive text nodes. We can't normalize
@@ -370,8 +414,14 @@ ve.ce.ContentBranchNode.prototype.renderContents = function () {
 	if ( this.rendered ) {
 		oldWrapper = this.$element[ 0 ].cloneNode( true );
 		$( oldWrapper )
-			.find( '.ve-ce-linkAnnotation-active' )
-			.removeClass( 've-ce-linkAnnotation-active' );
+			.find( '.ve-ce-annotation-active' )
+			.removeClass( 've-ce-annotation-active' );
+		$( oldWrapper )
+			.find( '.ve-ce-branchNode-inlineSlug' )
+			.children()
+			.unwrap()
+			.filter( '.ve-ce-chimera' )
+			.remove();
 		newWrapper = this.$element[ 0 ].cloneNode( false );
 		while ( rendered.firstChild ) {
 			newWrapper.appendChild( rendered.firstChild );
@@ -409,34 +459,34 @@ ve.ce.ContentBranchNode.prototype.renderContents = function () {
 			this.getRoot().getSurface().setNotUnicorningAll( this );
 		}
 	}
-	this.hasCursor = null;
 
 	// Add slugs
 	this.setupInlineSlugs();
 
 	// Highlight the node in debug mode
-	if ( ve.debug && !ve.test ) {
+	if ( ve.inputDebug ) {
 		this.$element.css( 'backgroundColor', '#eee' );
 		setTimeout( function () {
 			node.$element.css( 'backgroundColor', '' );
-		}, 500 );
+		}, 300 );
 	}
 
 	return true;
 };
 
 /**
- * Handle teardown event.
- *
- * @method
+ * @inheritdoc
  */
-ve.ce.ContentBranchNode.prototype.onTeardown = function () {
-	var ceSurface = this.getRoot().getSurface();
+ve.ce.ContentBranchNode.prototype.detach = function () {
+	if ( this.getRoot() ) {
+		// This should be true, as the root is removed in the parent detach
+		// method which hasn't run yet. However, just in case a node gets
+		// double-detached…
+		this.getRoot().getSurface().setNotUnicorning( this );
+	}
 
 	// Parent method
-	ve.ce.BranchNode.prototype.onTeardown.call( this );
-
-	ceSurface.setNotUnicorning( this );
+	ve.ce.ContentBranchNode.super.prototype.detach.call( this );
 };
 
 /**
@@ -444,4 +494,7 @@ ve.ce.ContentBranchNode.prototype.onTeardown = function () {
  */
 ve.ce.ContentBranchNode.prototype.destroy = function () {
 	this.$element.off( 'click', this.onClickHandler );
+
+	// Parent method
+	ve.ce.ContentBranchNode.super.prototype.destroy.call( this );
 };

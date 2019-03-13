@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable ResizableNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -24,7 +24,6 @@ ve.ce.ResizableNode = function VeCeResizableNode( $resizable, config ) {
 	// Properties
 	this.$resizable = $resizable || this.$element;
 	this.resizing = false;
-	this.enabled = !!this.$resizable.length;
 	this.$resizeHandles = $( '<div>' );
 	this.snapToGrid = config.snapToGrid !== undefined ? config.snapToGrid : 10;
 	this.outline = !!config.outline;
@@ -38,9 +37,6 @@ ve.ce.ResizableNode = function VeCeResizableNode( $resizable, config ) {
 	}
 	this.resizableOffset = null;
 	this.resizableSurface = null;
-	if ( !this.enabled ) {
-		return;
-	}
 
 	// Events
 	this.connect( this, {
@@ -96,6 +92,15 @@ OO.initClass( ve.ce.ResizableNode );
 /* Methods */
 
 /**
+ * Check if the node is resizable in its current state
+ *
+ * @return {boolean} The node is currently resizable
+ */
+ve.ce.ResizableNode.prototype.isResizable = function () {
+	return this.$resizable && !!this.$resizable.length && !OO.ui.isMobile();
+};
+
+/**
  * Get and cache the relative offset of the $resizable node
  *
  * @return {Object} Position coordinates, containing top & left
@@ -109,11 +114,15 @@ ve.ce.ResizableNode.prototype.getResizableOffset = function () {
 	return this.resizableOffset;
 };
 
-/** */
+/**
+ * Set the original dimensions of the scalable object
+ *
+ * @param {Object} dimensions Dimensions
+ */
 ve.ce.ResizableNode.prototype.setOriginalDimensions = function ( dimensions ) {
 	var scalable;
 
-	if ( !this.enabled ) {
+	if ( !this.isResizable() ) {
 		return;
 	}
 
@@ -133,7 +142,7 @@ ve.ce.ResizableNode.prototype.setOriginalDimensions = function ( dimensions ) {
 ve.ce.ResizableNode.prototype.hideSizeLabel = function () {
 	var node = this;
 
-	if ( !this.enabled ) {
+	if ( !this.isResizable() ) {
 		return;
 	}
 
@@ -153,7 +162,7 @@ ve.ce.ResizableNode.prototype.hideSizeLabel = function () {
  */
 ve.ce.ResizableNode.prototype.updateSizeLabel = function () {
 	var top, height, scalable, dimensions, offset, minWidth;
-	if ( !this.enabled ) {
+	if ( !this.isResizable() ) {
 		return;
 	}
 	if ( !this.showSizeLabel && !this.canShowScaleLabel ) {
@@ -210,7 +219,7 @@ ve.ce.ResizableNode.prototype.showHandles = function ( handles ) {
 		remove = [],
 		allDirections = [ 'nw', 'ne', 'sw', 'se' ];
 
-	if ( !this.enabled ) {
+	if ( !this.isResizable() ) {
 		return;
 	}
 
@@ -233,6 +242,9 @@ ve.ce.ResizableNode.prototype.showHandles = function ( handles ) {
  * @method
  */
 ve.ce.ResizableNode.prototype.onResizableFocus = function () {
+	if ( !this.isResizable() ) {
+		return;
+	}
 	this.$resizeHandles.appendTo( this.resizableSurface.getSurface().$controls );
 	if ( this.$sizeLabel ) {
 		this.$sizeLabel.appendTo( this.resizableSurface.getSurface().$controls );
@@ -245,16 +257,16 @@ ve.ce.ResizableNode.prototype.onResizableFocus = function () {
 
 	this.$resizeHandles
 		.find( '.ve-ce-resizableNode-neHandle' )
-			.css( { marginRight: -this.$resizable.width() } )
-			.end()
+		.css( { marginRight: -this.$resizable.width() } );
+	this.$resizeHandles
 		.find( '.ve-ce-resizableNode-swHandle' )
-			.css( { marginBottom: -this.$resizable.height() } )
-			.end()
+		.css( { marginBottom: -this.$resizable.height() } );
+	this.$resizeHandles
 		.find( '.ve-ce-resizableNode-seHandle' )
-			.css( {
-				marginRight: -this.$resizable.width(),
-				marginBottom: -this.$resizable.height()
-			} );
+		.css( {
+			marginRight: -this.$resizable.width(),
+			marginBottom: -this.$resizable.height()
+		} );
 
 	this.$resizeHandles.children()
 		.off( '.ve-ce-resizableNode' )
@@ -292,6 +304,10 @@ ve.ce.ResizableNode.prototype.onResizableBlur = function () {
  * @param {string} align Alignment
  */
 ve.ce.ResizableNode.prototype.onResizableAlign = function ( align ) {
+	if ( !this.isResizable() ) {
+		return;
+	}
+
 	switch ( align ) {
 		case 'right':
 			this.showHandles( [ 'sw' ] );
@@ -346,6 +362,9 @@ ve.ce.ResizableNode.prototype.onResizableTeardown = function () {
  * @param {Object} dimensions Dimension object containing width & height
  */
 ve.ce.ResizableNode.prototype.onResizableResizing = function ( dimensions ) {
+	if ( !this.isResizable() ) {
+		return;
+	}
 	// Clear cached resizable offset position as it may have changed
 	this.resizableOffset = null;
 	this.model.getScalable().setCurrentDimensions( dimensions );
@@ -364,10 +383,11 @@ ve.ce.ResizableNode.prototype.onResizableResizing = function ( dimensions ) {
  * @param {string} from Old value
  * @param {string} to New value
  */
-ve.ce.ResizableNode.prototype.onResizableAttributeChange = function ( key, from, to ) {
-	if ( key === 'width' || key === 'height' ) {
-		this.$resizable.css( key, to );
+ve.ce.ResizableNode.prototype.onResizableAttributeChange = function () {
+	if ( !this.isResizable() ) {
+		return;
 	}
+	this.$resizable.css( this.model.getCurrentDimensions() );
 };
 
 /**
@@ -419,7 +439,7 @@ ve.ce.ResizableNode.prototype.onResizeHandlesCornerMouseDown = function ( e ) {
 	} );
 	this.emit( 'resizeStart' );
 
-	return false;
+	e.preventDefault();
 };
 
 /**
@@ -429,7 +449,7 @@ ve.ce.ResizableNode.prototype.onResizeHandlesCornerMouseDown = function ( e ) {
  */
 ve.ce.ResizableNode.prototype.setResizableHandlesSizeAndPosition = function () {
 	var width, height;
-	if ( !this.enabled ) {
+	if ( !this.isResizable() ) {
 		return;
 	}
 
@@ -447,16 +467,16 @@ ve.ce.ResizableNode.prototype.setResizableHandlesSizeAndPosition = function () {
 			height: 0
 		} )
 		.find( '.ve-ce-resizableNode-neHandle' )
-			.css( { marginRight: -width } )
-			.end()
+		.css( { marginRight: -width } );
+	this.$resizeHandles
 		.find( '.ve-ce-resizableNode-swHandle' )
-			.css( { marginBottom: -height } )
-			.end()
+		.css( { marginBottom: -height } );
+	this.$resizeHandles
 		.find( '.ve-ce-resizableNode-seHandle' )
-			.css( {
-				marginRight: -width,
-				marginBottom: -height
-			} );
+		.css( {
+			marginRight: -width,
+			marginBottom: -height
+		} );
 };
 
 /**
@@ -466,7 +486,7 @@ ve.ce.ResizableNode.prototype.setResizableHandlesSizeAndPosition = function () {
  */
 ve.ce.ResizableNode.prototype.setResizableHandlesPosition = function () {
 	var offset;
-	if ( !this.enabled ) {
+	if ( !this.isResizable() ) {
 		return;
 	}
 
@@ -555,12 +575,8 @@ ve.ce.ResizableNode.prototype.onDocumentMouseMove = function ( e ) {
  */
 ve.ce.ResizableNode.prototype.onDocumentMouseUp = function () {
 	var attrChanges,
-		offset = this.model.getOffset(),
 		width = this.$resizeHandles.outerWidth(),
-		height = this.$resizeHandles.outerHeight(),
-		surfaceModel = this.resizableSurface.getModel(),
-		documentModel = surfaceModel.getDocument(),
-		selection = surfaceModel.getSelection();
+		height = this.$resizeHandles.outerHeight();
 
 	this.$resizeHandles.removeClass( 've-ce-resizableNode-handles-resizing' );
 	$( this.getElementDocument() ).off( '.ve-ce-resizableNode' );
@@ -571,10 +587,7 @@ ve.ce.ResizableNode.prototype.onDocumentMouseUp = function () {
 	// Apply changes to the model
 	attrChanges = this.getAttributeChanges( width, height );
 	if ( !ve.isEmptyObject( attrChanges ) ) {
-		surfaceModel.change(
-			ve.dm.Transaction.newFromAttributeChanges( documentModel, offset, attrChanges ),
-			selection
-		);
+		this.resizableSurface.getModel().getFragment().changeAttributes( attrChanges );
 	}
 
 	// Update the context menu. This usually happens with the redraw, but not if the
@@ -592,12 +605,13 @@ ve.ce.ResizableNode.prototype.onDocumentMouseUp = function () {
  * @return {Object} Attribute changes
  */
 ve.ce.ResizableNode.prototype.getAttributeChanges = function ( width, height ) {
-	var attrChanges = {};
+	var attrChanges = {},
+		currentDimensions = this.model.getCurrentDimensions();
 
-	if ( this.model.getAttribute( 'width' ) !== width ) {
+	if ( currentDimensions.width !== width ) {
 		attrChanges.width = width;
 	}
-	if ( this.model.getAttribute( 'height' ) !== height ) {
+	if ( currentDimensions.height !== height ) {
 		attrChanges.height = height;
 	}
 	return attrChanges;

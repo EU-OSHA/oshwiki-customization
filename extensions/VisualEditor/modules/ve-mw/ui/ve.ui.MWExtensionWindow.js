@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface MWExtensionWindow class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -17,6 +17,9 @@
 ve.ui.MWExtensionWindow = function VeUiMWExtensionWindow() {
 	this.whitespace = null;
 	this.input = null;
+	this.originalMwData = null;
+
+	this.onChangeHandler = ve.debounce( this.onChange.bind( this ) );
 };
 
 /* Inheritance */
@@ -33,6 +36,17 @@ OO.initClass( ve.ui.MWExtensionWindow );
  * @inheritable
  */
 ve.ui.MWExtensionWindow.static.allowedEmpty = false;
+
+/**
+ * Tell Parsoid to self-close tags when the body is empty
+ *
+ * i.e. `<foo></foo>` -> `<foo/>`
+ *
+ * @static
+ * @property {boolean}
+ * @inheritable
+ */
+ve.ui.MWExtensionWindow.static.selfCloseEmptyBody = false;
 
 /**
  * Inspector's directionality, 'ltr' or 'rtl'
@@ -53,9 +67,8 @@ ve.ui.MWExtensionWindow.static.dir = null;
 ve.ui.MWExtensionWindow.prototype.initialize = function () {
 	this.input = new ve.ui.WhitespacePreservingTextInputWidget( {
 		limit: 1,
-		multiline: true
+		classes: [ 've-ui-mwExtensionWindow-input' ]
 	} );
-	this.input.$element.addClass( 've-ui-mwExtensionWindow-input' );
 };
 
 /**
@@ -73,13 +86,16 @@ ve.ui.MWExtensionWindow.prototype.getInputPlaceholder = function () {
 ve.ui.MWExtensionWindow.prototype.getSetupProcess = function ( data, process ) {
 	data = data || {};
 	return process.next( function () {
-		var dir;
+		var dir, mwData;
 
 		// Initialization
 		this.whitespace = [ '', '' ];
 
 		if ( this.selectedNode ) {
-			this.input.setValueAndWhitespace( this.selectedNode.getAttribute( 'mw' ).body.extsrc );
+			mwData = this.selectedNode.getAttribute( 'mw' );
+			// mwData.body can be null in <selfclosing/> extensions
+			this.input.setValueAndWhitespace( ( mwData.body && mwData.body.extsrc ) || '' );
+			this.originalMwData = mwData;
 		} else {
 			if ( !this.constructor.static.modelClasses[ 0 ].static.isContent ) {
 				// New nodes should use linebreaks for blocks
@@ -91,7 +107,10 @@ ve.ui.MWExtensionWindow.prototype.getSetupProcess = function ( data, process ) {
 		this.input.$input.attr( 'placeholder', this.getInputPlaceholder() );
 
 		dir = this.constructor.static.dir || data.dir;
-		this.input.setRTL( dir === 'rtl' );
+		this.input.setDir( dir );
+
+		this.actions.setAbilities( { done: false } );
+		this.input.connect( this, { change: 'onChangeHandler' } );
 	}, this );
 };
 
@@ -106,7 +125,11 @@ ve.ui.MWExtensionWindow.prototype.getReadyProcess = function ( data, process ) {
  * @inheritdoc OO.ui.Window
  */
 ve.ui.MWExtensionWindow.prototype.getTeardownProcess = function ( data, process ) {
-	return process;
+	return process.next( function () {
+		// Don't hold on to the original data, it's only refreshed on setup for existing nodes
+		this.originalMwData = null;
+		this.input.disconnect( this, { change: 'onChangeHandler' } );
+	}, this );
 };
 
 /**
@@ -115,7 +138,7 @@ ve.ui.MWExtensionWindow.prototype.getTeardownProcess = function ( data, process 
 ve.ui.MWExtensionWindow.prototype.getActionProcess = function ( action, process ) {
 	return process.first( function () {
 		if ( action === 'done' ) {
-			if ( this.constructor.static.allowedEmpty || this.input.getInnerValue() !== '' ) {
+			if ( this.constructor.static.allowedEmpty || this.input.getValue() !== '' ) {
 				this.insertOrUpdateNode();
 			} else if ( this.selectedNode && !this.constructor.static.allowedEmpty ) {
 				// Content has been emptied on a node which isn't allowed to
@@ -124,6 +147,38 @@ ve.ui.MWExtensionWindow.prototype.getActionProcess = function ( action, process 
 			}
 		}
 	}, this );
+};
+
+/**
+ * Handle change event.
+ */
+ve.ui.MWExtensionWindow.prototype.onChange = function () {
+	this.updateActions();
+};
+
+/**
+ * Update the 'done' action according to whether there are changes
+ */
+ve.ui.MWExtensionWindow.prototype.updateActions = function () {
+	this.actions.setAbilities( { done: this.isModified() } );
+};
+
+/**
+ * Check if mwData would be modified if window contents were applied
+ *
+ * @return {boolean} mwData would be modified
+ */
+ve.ui.MWExtensionWindow.prototype.isModified = function () {
+	var mwDataCopy, modified;
+
+	if ( this.originalMwData ) {
+		mwDataCopy = ve.copy( this.originalMwData );
+		this.updateMwData( mwDataCopy );
+		modified = !ve.compare( this.originalMwData, mwDataCopy );
+	} else {
+		modified = true;
+	}
+	return modified;
 };
 
 /**
@@ -159,7 +214,7 @@ ve.ui.MWExtensionWindow.prototype.insertOrUpdateNode = function () {
 		mwData = ve.copy( this.selectedNode.getAttribute( 'mw' ) );
 		this.updateMwData( mwData );
 		surfaceModel.change(
-			ve.dm.Transaction.newFromAttributeChanges(
+			ve.dm.TransactionBuilder.static.newFromAttributeChanges(
 				surfaceModel.getDocument(),
 				this.selectedNode.getOuterRange().start,
 				{ mw: mwData }
@@ -185,18 +240,23 @@ ve.ui.MWExtensionWindow.prototype.removeNode = function () {
 };
 
 /**
- * Update mwData object with the new values from the inspector
+ * Update mwData object with the new values from the inspector or dialog
  *
  * @param {Object} mwData MediaWiki data object
  */
 ve.ui.MWExtensionWindow.prototype.updateMwData = function ( mwData ) {
 	var tagName = mwData.name,
-		value = this.input.getValue();
+		value = this.input.getValueAndWhitespace();
 
 	// XML-like tags in wikitext are not actually XML and don't expect their contents to be escaped.
 	// This means that it is not possible for a tag '<foo>…</foo>' to contain the string '</foo>'.
-	// Prevent that by escaping the first angle bracket '<' to '&lt;'. (bug 57429)
+	// Prevent that by escaping the first angle bracket '<' to '&lt;'. (T59429)
 	value = value.replace( new RegExp( '<(/' + tagName + '\\s*>)', 'gi' ), '&lt;$1' );
 
-	mwData.body.extsrc = this.whitespace[ 0 ] + value + this.whitespace[ 1 ];
+	if ( value.trim() === '' && this.constructor.static.selfCloseEmptyBody ) {
+		delete mwData.body;
+	} else {
+		mwData.body = mwData.body || {};
+		mwData.body.extsrc = value;
+	}
 };

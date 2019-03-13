@@ -1,31 +1,15 @@
 /*!
  * VisualEditor UserInterface Actions TableAction tests.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.ui.TableAction' );
 
 /* Tests */
 
-function runTableActionTest( assert, html, method, args, selection, expectedData, expectedSelection, msg ) {
-	var surface = ve.test.utils.createModelOnlySurfaceFromHtml( html || ve.dm.example.html ),
-		tableAction = new ve.ui.TableAction( surface ),
-		data = ve.copy( surface.getModel().getDocument().getFullData() );
-
-	expectedData( data );
-	surface.getModel().setSelection( ve.dm.Selection.static.newFromJSON( surface.getModel().getDocument(), selection ) );
-	tableAction[ method ].apply( tableAction, args );
-
-	assert.equalLinearData( surface.getModel().getDocument().getFullData(), data, msg + ': data models match' );
-	if ( expectedSelection ) {
-		assert.deepEqual( surface.getModel().getSelection().toJSON(), expectedSelection, msg + ': selections match' );
-	}
-}
-
-QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption', function ( assert ) {
+QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / moveRelative', function ( assert ) {
 	var i,
-		expected = 0,
 		tableCellTail = [
 			{ type: 'paragraph', internal: { generated: 'wrapper' } },
 			{ type: '/paragraph' },
@@ -53,10 +37,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 		].concat( tableCellTail ),
 		cases = [
 			{
-				selection: {
-					type: 'linear',
-					range: new ve.Range( 0 )
-				},
+				rangeOrSelection: new ve.Range( 0 ),
 				method: 'create',
 				args: [ {
 					cols: 1,
@@ -78,7 +59,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 						]
 					) );
 				},
-				expectedSelection: {
+				expectedRangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 10 ),
 					fromCol: 0,
@@ -89,10 +70,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 				msg: 'create single cell table with attributes'
 			},
 			{
-				selection: {
-					type: 'linear',
-					range: new ve.Range( 0 )
-				},
+				rangeOrSelection: new ve.Range( 0 ),
 				method: 'create',
 				args: [ {
 					cols: 3,
@@ -134,7 +112,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 			},
 			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 5,
@@ -153,7 +131,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 					data.splice.apply( data, [ 56, 0 ].concat( tableData ) );
 					data.splice.apply( data, [ 33, 0 ].concat( tableData ) );
 				},
-				expectedSelection: {
+				expectedRangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 199 ),
 					fromCol: 5,
@@ -165,7 +143,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 			},
 			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 3,
@@ -185,8 +163,42 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 				msg: 'insert column in middle of table'
 			},
 			{
+				html: '<table><tr></tr><tr><td>A</td><td>B</td></tr></table>',
+				rangeOrSelection: {
+					type: 'table',
+					tableRange: new ve.Range( 0, 18 ),
+					fromCol: 0,
+					fromRow: 1,
+					toCol: 0,
+					toRow: 1
+				},
+				method: 'insert',
+				args: [ 'col', 'after' ],
+				expectedData: function ( data ) {
+					data.splice.apply( data, [ 10, 0 ].concat( tableData ) );
+				},
+				msg: 'insert column at middle of table with sparse row'
+			},
+			{
+				html: '<table><tr></tr><tr><td>A</td><td>B</td></tr></table>',
+				rangeOrSelection: {
+					type: 'table',
+					tableRange: new ve.Range( 0, 18 ),
+					fromCol: 1,
+					fromRow: 1,
+					toCol: 1,
+					toRow: 1
+				},
+				method: 'insert',
+				args: [ 'col', 'after' ],
+				expectedData: function ( data ) {
+					data.splice.apply( data, [ 15, 0 ].concat( tableData ) );
+				},
+				msg: 'insert column at end of table with sparse row'
+			},
+			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 0,
@@ -216,7 +228,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 			},
 			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 0,
@@ -246,7 +258,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 			},
 			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 0,
@@ -268,7 +280,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 			},
 			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 1,
@@ -289,7 +301,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 			},
 			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 0,
@@ -308,7 +320,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 			},
 			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 0,
@@ -332,8 +344,27 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 				msg: 'merge full columns'
 			},
 			{
+				html: '<table><tr><td></td><td>A</td></tr><tr><td></td><td></td></tr></table>',
+				rangeOrSelection: {
+					type: 'table',
+					tableRange: new ve.Range( 0, 25 ),
+					fromCol: 0,
+					fromRow: 0,
+					toCol: 1,
+					toRow: 0
+				},
+				method: 'mergeCells',
+				args: [],
+				expectedData: function ( data ) {
+					data.splice( 3, 4 );
+					data[ 3 ].attributes.colspan = 2;
+					data[ 3 ].attributes.rowspan = 1;
+				},
+				msg: 'merge when first cell is empty'
+			},
+			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 0,
@@ -353,7 +384,7 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 			},
 			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 0,
@@ -366,7 +397,9 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 				expectedData: function ( data ) {
 					data[ 90 ].attributes.rowspan = 2;
 					data[ 45 ].attributes.rowspan = 3;
-					data.splice( 110, 0,
+					data.splice(
+						110,
+						0,
 						{
 							type: 'tableCell',
 							attributes: {
@@ -382,12 +415,12 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 					);
 					data.splice( 83, 20 );
 				},
-				expectedSelection: { type: 'null' },
+				expectedRangeOrSelection: { type: 'null' },
 				msg: 'delete row'
 			},
 			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 3,
@@ -402,12 +435,12 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 					data.splice( 150, 6 );
 					data.splice( 18, 5 );
 				},
-				expectedSelection: { type: 'null' },
+				expectedRangeOrSelection: { type: 'null' },
 				msg: 'delete column'
 			},
 			{
 				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				rangeOrSelection: {
 					type: 'table',
 					tableRange: new ve.Range( 0, 171 ),
 					fromCol: 1,
@@ -425,74 +458,142 @@ QUnit.test( 'create / insert / mergeCells / delete / changeCellStyle / caption',
 				msg: 'change style to header'
 			},
 			{
-				html: ve.dm.example.mergedCellsHtml,
-				selection: {
+				html: ve.dm.example.annotatedTableHtml,
+				rangeOrSelection: {
 					type: 'table',
-					tableRange: new ve.Range( 0, 171 ),
+					tableRange: new ve.Range( 0, 52 ),
+					fromCol: 0,
+					fromRow: 1,
+					toCol: 0,
+					toRow: 1
+				},
+				method: 'moveRelative',
+				args: [ 'row', 'before' ],
+				expectedData: function ( data ) {
+					var row = data.splice( 25, 25 );
+					data.splice.apply( data, [ 2, 0 ].concat( row ) );
+				},
+				expectedRangeOrSelection: {
+					type: 'table',
+					tableRange: new ve.Range( 0, 52 ),
 					fromCol: 0,
 					fromRow: 0,
 					toCol: 0,
 					toRow: 0
 				},
-				method: 'caption',
-				args: [],
-				expectedData: function ( data ) {
-					data.splice( 1, 0,
-						{ type: 'tableCaption' },
-						{ type: 'paragraph', internal: { generated: 'wrapper' } },
-						{ type: '/paragraph' },
-						{ type: '/tableCaption' }
-					);
-				},
-				expectedSelection: {
-					type: 'linear',
-					range: new ve.Range( 3 )
-				},
-				msg: 'add caption'
+				msg: 'move row before'
 			},
 			{
-				html: '<table><caption>Foo</caption><tr><td>Bar</td></tr></table>',
-				selection: {
+				html: ve.dm.example.annotatedTableHtml,
+				rangeOrSelection: {
 					type: 'table',
-					tableRange: new ve.Range( 0, 20 ),
+					tableRange: new ve.Range( 0, 52 ),
 					fromCol: 0,
 					fromRow: 0,
 					toCol: 0,
 					toRow: 0
 				},
-				method: 'caption',
-				args: [],
+				method: 'moveRelative',
+				args: [ 'row', 'after' ],
 				expectedData: function ( data ) {
-					data.splice( 1, 7 );
+					var row = data.splice( 25, 25 );
+					data.splice.apply( data, [ 2, 0 ].concat( row ) );
 				},
-				msg: 'remove caption from table selection'
+				expectedRangeOrSelection: {
+					type: 'table',
+					tableRange: new ve.Range( 0, 52 ),
+					fromCol: 0,
+					fromRow: 1,
+					toCol: 0,
+					toRow: 1
+				},
+				msg: 'move row after'
 			},
 			{
-				html: '<table><caption>Foo</caption><tr><td>Bar</td></tr></table>',
-				selection: {
-					type: 'linear',
-					range: new ve.Range( 5 )
+				html: ve.dm.example.annotatedTableHtml,
+				rangeOrSelection: {
+					type: 'table',
+					tableRange: new ve.Range( 0, 52 ),
+					fromCol: 1,
+					fromRow: 0,
+					toCol: 1,
+					toRow: 0
 				},
-				method: 'caption',
-				args: [],
+				method: 'moveRelative',
+				args: [ 'col', 'before' ],
 				expectedData: function ( data ) {
-					data.splice( 1, 7 );
+					var cell2 = data.splice( 34, 8 ),
+						cell1 = data.splice( 10, 7 );
+
+					data.splice.apply( data, [ 26 - cell1.length, 0 ].concat( cell2 ) );
+					data.splice.apply( data, [ 3, 0 ].concat( cell1 ) );
 				},
-				msg: 'remove caption from linear selection inside caption'
+				expectedRangeOrSelection: {
+					type: 'table',
+					tableRange: new ve.Range( 0, 52 ),
+					fromCol: 0,
+					fromRow: 0,
+					toCol: 0,
+					toRow: 0
+				},
+				msg: 'move column before'
+			},
+			{
+				html: ve.dm.example.annotatedTableHtml,
+				rangeOrSelection: {
+					type: 'table',
+					tableRange: new ve.Range( 0, 52 ),
+					fromCol: 0,
+					fromRow: 0,
+					toCol: 0,
+					toRow: 0
+				},
+				method: 'moveRelative',
+				args: [ 'col', 'after' ],
+				expectedData: function ( data ) {
+					var cell2 = data.splice( 26, 8 ),
+						cell1 = data.splice( 3, 7 );
+
+					data.splice.apply( data, [ 42 - cell1.length - cell2.length, 0 ].concat( cell2 ) );
+					data.splice.apply( data, [ 17 - cell1.length, 0 ].concat( cell1 ) );
+				},
+				expectedRangeOrSelection: {
+					type: 'table',
+					tableRange: new ve.Range( 0, 52 ),
+					fromCol: 1,
+					fromRow: 0,
+					toCol: 1,
+					toRow: 0
+				},
+				msg: 'move column after'
+			},
+			{
+				html: '<table><tr></tr><tr><td>A</td></tr></table>',
+				rangeOrSelection: {
+					type: 'table',
+					tableRange: new ve.Range( 0, 13 ),
+					fromCol: 0,
+					fromRow: 1,
+					toCol: 0,
+					toRow: 1
+				},
+				method: 'moveRelative',
+				args: [ 'row', 'before' ],
+				expectedData: function ( data ) {
+					var row = data.splice( 4, 7 );
+					data.splice.apply( data, [ 2, 0 ].concat( row ) );
+				},
+				msg: 'move row adjacent to sparse row'
 			}
 		];
 
 	for ( i = 0; i < cases.length; i++ ) {
-		expected++;
-		if ( cases[ i ].expectedSelection ) {
-			expected++;
-		}
-	}
-	QUnit.expect( expected );
-	for ( i = 0; i < cases.length; i++ ) {
-		runTableActionTest(
-			assert, cases[ i ].html, cases[ i ].method, cases[ i ].args, cases[ i ].selection,
-			cases[ i ].expectedData, cases[ i ].expectedSelection, cases[ i ].msg
+		ve.test.utils.runActionTest(
+			'table', assert, cases[ i ].html, false, cases[ i ].method, cases[ i ].args, cases[ i ].rangeOrSelection, cases[ i ].msg,
+			{
+				expectedData: cases[ i ].expectedData,
+				expectedRangeOrSelection: cases[ i ].expectedRangeOrSelection
+			}
 		);
 	}
 } );

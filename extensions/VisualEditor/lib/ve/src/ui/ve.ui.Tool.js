@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface Tool classes.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -15,9 +15,9 @@
  * @param {OO.ui.ToolGroup} toolGroup
  * @param {Object} [config] Configuration options
  */
-ve.ui.Tool = function VeUiTool( toolGroup, config ) {
+ve.ui.Tool = function VeUiTool() {
 	// Parent constructor
-	OO.ui.Tool.call( this, toolGroup, config );
+	ve.ui.Tool.super.apply( this, arguments );
 
 	// Disable initially
 	this.setDisabled( true );
@@ -51,12 +51,37 @@ ve.ui.Tool.static.commandName = null;
 ve.ui.Tool.static.deactivateOnSelect = true;
 
 /**
+ * If this tool is used to create a ve.ui.ToolContextItem, should that item be embeddable
+ *
+ * @static
+ * @property {boolean}
+ * @inheritable
+ */
+ve.ui.Tool.static.makesEmbeddableContextItem = true;
+
+/**
  * Get the symbolic command name for this tool.
  *
- * @return {ve.ui.Command}
+ * @static
+ * @return {string|null}
  */
 ve.ui.Tool.static.getCommandName = function () {
 	return this.commandName;
+};
+
+/**
+ * Get the command for this tool in a given surface context
+ *
+ * @static
+ * @param {ve.ui.Surface} surface Surface
+ * @return {ve.ui.Command|null|undefined} Undefined means command not found, null means no command set
+ */
+ve.ui.Tool.static.getCommand = function ( surface ) {
+	var commandName = this.getCommandName();
+	if ( commandName === null ) {
+		return null;
+	}
+	return surface.commandRegistry.lookup( commandName );
 };
 
 /* Methods */
@@ -79,12 +104,33 @@ ve.ui.Tool.prototype.onUpdateState = function ( fragment ) {
  * @inheritdoc
  */
 ve.ui.Tool.prototype.onSelect = function () {
-	var command = this.getCommand();
+	var contextClosePromise,
+		command = this.getCommand(),
+		surface = this.toolbar.getSurface(),
+		tool = this;
+
 	if ( command instanceof ve.ui.Command ) {
-		command.execute( this.toolbar.getSurface() );
+		if ( surface.context.inspector ) {
+			contextClosePromise = surface.context.inspector.close().closed;
+		} else {
+			contextClosePromise = $.Deferred().resolve().promise();
+		}
 	}
 	if ( this.constructor.static.deactivateOnSelect ) {
+		// It's fine to call setActive here before the promise resolves; it
+		// just disables the button, stopping double-clicks and making it feel more responsive
+		// if the promise is slow.
 		this.setActive( false );
+	}
+	if ( contextClosePromise ) {
+		// N.B. If contextClosePromise is already resolved, then the handler is called
+		// before the call to .done returns
+		contextClosePromise.done( function () {
+			if ( !command.execute( surface ) ) {
+				// If the command fails, ensure the tool is not active
+				tool.setActive( false );
+			}
+		} );
 	}
 };
 
@@ -94,8 +140,5 @@ ve.ui.Tool.prototype.onSelect = function () {
  * @return {ve.ui.Command|null|undefined} Undefined means command not found, null means no command set
  */
 ve.ui.Tool.prototype.getCommand = function () {
-	if ( this.constructor.static.commandName === null ) {
-		return null;
-	}
-	return ve.init.target.commandRegistry.lookup( this.constructor.static.commandName );
+	return this.constructor.static.getCommand( this.toolbar.getSurface() );
 };

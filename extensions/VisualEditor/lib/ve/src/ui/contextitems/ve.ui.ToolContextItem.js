@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ToolContextItem class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -38,7 +38,7 @@ OO.inheritClass( ve.ui.ToolContextItem, ve.ui.LinearContextItem );
  * @inheritdoc
  */
 ve.ui.ToolContextItem.prototype.getCommand = function () {
-	return ve.init.target.commandRegistry.lookup( this.tool.static.commandName );
+	return this.tool.static.getCommand( this.context.getSurface() );
 };
 
 /**

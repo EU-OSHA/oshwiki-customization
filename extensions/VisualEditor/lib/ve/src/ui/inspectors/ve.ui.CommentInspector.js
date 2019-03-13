@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface CommentInspector class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -13,9 +13,9 @@
  * @constructor
  * @param {Object} [config] Configuration options
  */
-ve.ui.CommentInspector = function VeUiCommentInspector( config ) {
+ve.ui.CommentInspector = function VeUiCommentInspector() {
 	// Parent constructor
-	ve.ui.NodeInspector.call( this, config );
+	ve.ui.CommentInspector.super.apply( this, arguments );
 };
 
 /* Inheritance */
@@ -25,8 +25,6 @@ OO.inheritClass( ve.ui.CommentInspector, ve.ui.NodeInspector );
 /* Static properties */
 
 ve.ui.CommentInspector.static.name = 'comment';
-
-ve.ui.CommentInspector.static.icon = 'notice';
 
 ve.ui.CommentInspector.static.title =
 	OO.ui.deferMsg( 'visualeditor-commentinspector-title' );
@@ -42,7 +40,9 @@ ve.ui.CommentInspector.static.actions = [
 		flags: 'destructive',
 		modes: 'edit'
 	}
-].concat( ve.ui.FragmentInspector.static.actions );
+].concat( ve.ui.CommentInspector.super.static.actions );
+
+/* Methods */
 
 /**
  * Handle frame ready events.
@@ -54,26 +54,12 @@ ve.ui.CommentInspector.prototype.initialize = function () {
 	ve.ui.CommentInspector.super.prototype.initialize.call( this );
 
 	this.textWidget = new ve.ui.WhitespacePreservingTextInputWidget( {
-		multiline: true,
 		autosize: true
 	} );
-	this.previousTextWidgetHeight = 0;
-
-	this.textWidget.connect( this, { change: 'onTextInputWidgetChange' } );
+	this.textWidget.connect( this, { resize: 'updateSize' } );
 
 	this.$content.addClass( 've-ui-commentInspector-content' );
 	this.form.$element.append( this.textWidget.$element );
-};
-
-/**
- * Called when the text input widget value has changed.
- */
-ve.ui.CommentInspector.prototype.onTextInputWidgetChange = function () {
-	var height = this.textWidget.$element.height();
-	if ( height !== this.previousTextWidgetHeight ) {
-		this.updateSize();
-		this.previousTextWidgetHeight = height;
-	}
 };
 
 /**
@@ -93,6 +79,7 @@ ve.ui.CommentInspector.prototype.getActionProcess = function ( action ) {
  *
  * @method
  * @param {Object} [data] Inspector opening data
+ * @return {OO.ui.Process}
  */
 ve.ui.CommentInspector.prototype.getSetupProcess = function ( data ) {
 	return ve.ui.CommentInspector.super.prototype.getSetupProcess.call( this, data )
@@ -110,7 +97,7 @@ ve.ui.CommentInspector.prototype.getSetupProcess = function ( data ) {
 						attributes: { text: '' }
 					},
 					{ type: '/comment' }
-				] );
+				] ).select();
 				this.commentNode = this.getSelectedNode();
 			}
 		}, this );
@@ -122,7 +109,6 @@ ve.ui.CommentInspector.prototype.getSetupProcess = function ( data ) {
 ve.ui.CommentInspector.prototype.getReadyProcess = function ( data ) {
 	return ve.ui.CommentInspector.super.prototype.getReadyProcess.call( this, data )
 		.next( function () {
-			this.getFragment().getSurface().enable();
 			this.textWidget.focus();
 		}, this );
 };
@@ -134,18 +120,18 @@ ve.ui.CommentInspector.prototype.getTeardownProcess = function ( data ) {
 	data = data || {};
 	return ve.ui.CommentInspector.super.prototype.getTeardownProcess.call( this, data )
 		.first( function () {
-			var surfaceModel = this.getFragment().getSurface(),
-				text = this.textWidget.getValue(),
-				innerText = this.textWidget.getInnerValue();
+			var surfaceModel = this.getFragment().getSurface();
 
-			if ( data.action === 'remove' || innerText === '' ) {
-				surfaceModel.popStaging();
-				// If popStaging removed the node then this will be a no-op
-				this.getFragment().removeContent();
-			} else {
+			// data.action can be 'done', 'remove' or undefined (cancel)
+			if ( data.action === 'done' && this.textWidget.getValue() !== '' ) {
 				// Edit comment node
-				this.getFragment().changeAttributes( { text: text } );
+				this.getFragment().changeAttributes( { text: this.textWidget.getValueAndWhitespace() } );
 				surfaceModel.applyStaging();
+			} else {
+				surfaceModel.popStaging();
+				if ( data.action === 'remove' || data.action === 'done' ) {
+					this.getFragment().removeContent();
+				}
 			}
 
 			// Reset inspector

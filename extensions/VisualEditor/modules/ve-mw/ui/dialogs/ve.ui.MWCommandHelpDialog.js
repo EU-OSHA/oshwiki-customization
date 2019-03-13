@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface MWCommandHelpDialog class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -23,27 +23,21 @@ ve.ui.MWCommandHelpDialog = function VeUiMWCommandHelpDialog( config ) {
 
 OO.inheritClass( ve.ui.MWCommandHelpDialog, ve.ui.CommandHelpDialog );
 
-/* Static methods */
+/* Static properties */
 
-/**
- * @inheritdoc
- */
-ve.ui.MWCommandHelpDialog.static.getCommandGroups = function () {
-	var commandGroups = ve.ui.MWCommandHelpDialog.super.static.getCommandGroups.call( this ),
-		accessKeyPrefix = mw.util.tooltipAccessKeyPrefix.toUpperCase().replace( /-/g, ' + ' ),
-		save = ve.msg( 'accesskey-save' );
-
-	if ( save !== '-' && save !== '' ) {
-		commandGroups.other.commands.push(
-			{
-				shortcuts: [ accessKeyPrefix + save.toUpperCase() ],
-				msg: 'visualeditor-savedialog-label-save'
-			}
-		);
+ve.ui.MWCommandHelpDialog.static.commandGroups = ve.extendObject( {}, ve.ui.MWCommandHelpDialog.static.commandGroups, {
+	insert: {
+		title: OO.ui.deferMsg( 'visualeditor-shortcuts-insert' ),
+		promote: [ 'ref', 'template', 'table' ],
+		demote: [ 'horizontalRule' ]
 	}
+} );
 
-	return commandGroups;
-};
+ve.ui.MWCommandHelpDialog.static.commandGroupsOrder = [
+	'textStyle', 'clipboard', 'history', 'dialog',
+	'formatting', 'insert',
+	'other'
+];
 
 /* Registration */
 

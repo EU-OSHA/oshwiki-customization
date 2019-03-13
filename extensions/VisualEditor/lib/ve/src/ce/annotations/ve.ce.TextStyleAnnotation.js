@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable TextStyleAnnotation class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -33,6 +33,9 @@ ve.ce.TextStyleAnnotation.static.name = 'textStyle';
 
 /* Methods */
 
+/**
+ * @inheritdoc
+ */
 ve.ce.TextStyleAnnotation.prototype.getTagName = function () {
 	return this.getModel().getAttribute( 'nodeName' ) || this.constructor.static.tagName;
 };

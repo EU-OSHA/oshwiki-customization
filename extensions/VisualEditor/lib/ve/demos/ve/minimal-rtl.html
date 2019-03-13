@@ -4,7 +4,7 @@
 	/*!
 	 * VisualEditor minimal demo
 	 *
-	 * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+	 * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
 	 */
 	-->
 	<head>
@@ -13,11 +13,18 @@
 		<title>VisualEditor Standalone Demo</title>
 
 		<!-- oojs-ui-apex -->
-		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex.vector.rtl.css">
-		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-editing-core.vector.rtl.css">
-		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-editing-advanced.vector.rtl.css">
-		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-editing-styling.vector.rtl.css">
-		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-editing-list.vector.rtl.css">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-alerts.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-content.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-interactions.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-layout.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-moderation.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-movement.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-user.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-editing-core.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-editing-advanced.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-editing-styling.rtl.css" class="stylesheet-read">
+		<link rel=stylesheet href="../../lib/oojs-ui/oojs-ui-apex-icons-editing-list.rtl.css" class="stylesheet-read">
 
 		<!-- visualEditor.dist.apex -->
 		<link rel=stylesheet href="../../dist/visualEditor-apex.rtl.css" class="stylesheet-ve">
@@ -31,10 +38,7 @@
 	</head>
 	<body dir="rtl">
 		<div class="ve-instance"></div>
-		<div class="ve-demo-output">
-			<input type="button" class="ve-demo-convert" value="&darr; Convert to HTML">
-			<textarea class="ve-demo-html"></textarea>
-		</div>
+		<div class="ve-demo-output"></div>
 
 		<!-- jquery -->
 		<script src="../../lib/jquery/jquery.js"></script>
@@ -43,7 +47,10 @@
 		<script src="../../lib/oojs/oojs.jquery.js"></script>
 
 		<!-- oojs-ui -->
-		<script src="../../lib/oojs-ui/oojs-ui.js"></script>
+		<script src="../../lib/oojs-ui/oojs-ui-core.js"></script>
+		<script src="../../lib/oojs-ui/oojs-ui-widgets.js"></script>
+		<script src="../../lib/oojs-ui/oojs-ui-toolbars.js"></script>
+		<script src="../../lib/oojs-ui/oojs-ui-windows.js"></script>
 
 		<!-- jquery.i18n.dist -->
 		<script src="../../dist/lib/jquery.i18n.js"></script>
@@ -64,7 +71,10 @@
 		<script src="../../dist/visualEditor.js"></script>
 
 		<script>
-			ve.messagePaths = ["../../dist/i18n/","../../lib/oojs-ui/i18n/"];
+			ve.messagePaths = [
+				'../../dist/i18n/',
+				'../../lib/oojs-ui/i18n/'
+			];
 		</script>
 
 		<!-- visualEditor.minimal.standalone.demo -->

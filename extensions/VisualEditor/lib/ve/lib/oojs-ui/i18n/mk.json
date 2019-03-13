@@ -12,6 +12,7 @@
 	"ooui-toolbar-more": "Повеќе",
 	"ooui-toolgroup-expand": "Повеќе",
 	"ooui-toolgroup-collapse": "Помалку",
+	"ooui-item-remove": "Отстрани",
 	"ooui-dialog-message-accept": "ОК",
 	"ooui-dialog-message-reject": "Откажи",
 	"ooui-dialog-process-error": "Нешто не е во ред",
@@ -21,5 +22,6 @@
 	"ooui-selectfile-button-select": "Одберете податотека",
 	"ooui-selectfile-not-supported": "Изборот на податотеки не е поддржан",
 	"ooui-selectfile-placeholder": "Немате одбрано податотека",
-	"ooui-selectfile-dragdrop-placeholder": "Тука пуштете ја податотеката"
+	"ooui-selectfile-dragdrop-placeholder": "Тука пуштете ја податотеката",
+	"ooui-field-help": "Помош"
 }

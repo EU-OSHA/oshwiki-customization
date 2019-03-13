@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface LinkAction class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -13,9 +13,9 @@
  * @constructor
  * @param {ve.ui.Surface} surface Surface to act on
  */
-ve.ui.LinkAction = function VeUiLinkAction( surface ) {
+ve.ui.LinkAction = function VeUiLinkAction() {
 	// Parent constructor
-	ve.ui.Action.call( this, surface );
+	ve.ui.LinkAction.super.apply( this, arguments );
 };
 
 /* Inheritance */
@@ -56,7 +56,7 @@ ve.ui.LinkAction.prototype.autolinkUrl = function () {
 		// Make sure we still have a real URL after trail removal, and not
 		// a bare protocol (or no protocol at all, if we stripped the last
 		// colon from the protocol)
-		return ve.ui.LinkAction.static.autolinkRegExp.test( linktext + ' ' );
+		return ve.ui.LinkAction.static.autolinkRegExp.test( linktext );
 	} );
 };
 
@@ -71,9 +71,21 @@ ve.ui.LinkAction.prototype.autolinkUrl = function () {
  *   Linktext with trailing whitespace and punctuation stripped.
  * @param {boolean} validateFunc.return
  *   True iff the given linktext is valid.  If false, no linking will be done.
+ * @param {Function} [txFunc]
+ *   An optional function to create a transaction to perform the autolink.
+ *   If not provided, a transaction will be created which applies the
+ *   annotations returned by {@link ve.ui.LinkAction#getLinkAnnotation}.
+ * @param {ve.dm.Document} txFunc.documentModel
+ *   The document model to modify.
+ * @param {ve.Range} txFunc.range
+ *   The range to autolink.
+ * @param {string} txFunc.linktext
+ *   The text string to autolink.
+ * @param {ve.dm.Transaction} txFunc.return
+ *   The transaction to perform the autolink operation.
  * @return {boolean} Selection was valid and link action was executed.
  */
-ve.ui.LinkAction.prototype.autolink = function ( validateFunc ) {
+ve.ui.LinkAction.prototype.autolink = function ( validateFunc, txFunc ) {
 	var range, rangeEnd, linktext, i,
 		surfaceModel = this.surface.getModel(),
 		documentModel = surfaceModel.getDocument(),
@@ -107,6 +119,15 @@ ve.ui.LinkAction.prototype.autolink = function ( validateFunc ) {
 	// Shrink range to match new linktext.
 	range = range.truncate( linktext.length );
 
+	// If there are word characters (but not punctuation) immediately past the range, don't autolink.
+	// The user did something silly like type a link in the middle of a word.
+	if (
+		range.end + 1 < documentModel.data.getLength() &&
+		/\w/.test( documentModel.data.getText( true, new ve.Range( range.end, range.end + 1 ) ) )
+	) {
+		return false;
+	}
+
 	// Check that none of the range has an existing link annotation.
 	// Otherwise we could autolink an internal link, which would be ungood.
 	for ( i = range.start; i < range.end; i++ ) {
@@ -117,18 +138,16 @@ ve.ui.LinkAction.prototype.autolink = function ( validateFunc ) {
 	}
 
 	// Make sure `undo` doesn't expose the selected linktext.
-	surfaceModel.setLinearSelection( new ve.Range( rangeEnd, rangeEnd ) );
+	surfaceModel.setLinearSelection( new ve.Range( rangeEnd ) );
 
 	// Annotate the (previous) range.
-	surfaceModel.change(
-		ve.dm.Transaction.newFromAnnotation(
-			documentModel,
-			range,
-			'set',
-			this.getLinkAnnotation( linktext )
-		),
-		surfaceModel.getSelection()
-	);
+	if ( txFunc ) {
+		// TODO: Change this API so that 'txFunc' is given a surface fragment
+		// as an argument, and uses the fragment to directly edit the document.
+		surfaceModel.change( txFunc( documentModel, range, linktext ) );
+	} else {
+		surfaceModel.getLinearFragment( range, true ).annotateContent( 'set', this.getLinkAnnotation( linktext ) );
+	}
 
 	return true;
 };
@@ -146,9 +165,8 @@ ve.ui.LinkAction.prototype.autolink = function ( validateFunc ) {
  *   A regular expression matching trailing punctuation which will be
  *   stripped from an autolink.
  */
-ve.ui.LinkAction.prototype.getTrailingPunctuation = function ( candidate ) {
-	/* jshint unused: false */
-	return /[,;.:!?)\]\}"'”’»]+$/;
+ve.ui.LinkAction.prototype.getTrailingPunctuation = function () {
+	return /[,;.:!?)\]}"'”’»]+$/;
 };
 
 /**
@@ -176,11 +194,11 @@ ve.init.Platform.static.initializedPromise.then( function () {
 
 	ve.ui.LinkAction.static.autolinkRegExp =
 		new RegExp(
-			'\\b' + ve.init.platform.getUnanchoredExternalLinkUrlProtocolsRegExp().source + '\\S+(\\s|\\n\\n)$',
+			'\\b' + ve.init.platform.getUnanchoredExternalLinkUrlProtocolsRegExp().source + '\\S+$',
 			'i'
 		);
 
 	ve.ui.sequenceRegistry.register(
-		new ve.ui.Sequence( 'autolinkUrl', 'autolinkUrl', ve.ui.LinkAction.static.autolinkRegExp, 0, true )
+		new ve.ui.Sequence( 'autolinkUrl', 'autolinkUrl', ve.ui.LinkAction.static.autolinkRegExp, 0, true, true )
 	);
 } );

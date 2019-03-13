@@ -1,28 +1,28 @@
 /*!
  * VisualEditor DataModel Null Selection tests.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.dm.NullSelection' );
 
 /* Tests */
 
-QUnit.test( 'Construction and getters (getDocument, getRanges)', 2, function ( assert ) {
+QUnit.test( 'Construction and getters (getDocument, getRanges)', function ( assert ) {
 	var dummyDoc = { a: 1 },
 		selection = new ve.dm.NullSelection( dummyDoc );
 
 	assert.strictEqual( selection.getDocument(), dummyDoc, 'getDocument' );
 	assert.deepEqual( selection.getRanges(), [], 'getRanges' );
+	assert.strictEqual( selection.getName(), 'null', 'getName' );
 } );
 
-QUnit.test( 'Basic methods (clone, collapse*, isCollased, equals, isNull)', 9, function ( assert ) {
+QUnit.test( 'Basic methods (collapse*, isCollased, equals, isNull)', function ( assert ) {
 	var dummyDoc = { a: 1 },
 		dummyDoc2 = { a: 1 },
 		selection = new ve.dm.NullSelection( dummyDoc ),
 		selection2 = new ve.dm.NullSelection( dummyDoc2 );
 
-	assert.deepEqual( selection.clone(), selection, 'clone' );
 	assert.deepEqual( selection.collapseToStart(), selection, 'collapseToStart' );
 	assert.deepEqual( selection.collapseToEnd(), selection, 'collapseToEnd' );
 	assert.deepEqual( selection.collapseToFrom(), selection, 'collapseToFrom' );
@@ -33,7 +33,7 @@ QUnit.test( 'Basic methods (clone, collapse*, isCollased, equals, isNull)', 9, f
 	assert.strictEqual( selection.isNull(), true, 'null' );
 } );
 
-QUnit.test( 'Factory methods & serialization (newFromJSON, toJSON, getDescription)', 3, function ( assert ) {
+QUnit.test( 'Factory methods & serialization (newFromJSON, toJSON, getDescription)', function ( assert ) {
 	var dummyDoc = { a: 1 },
 		selection = new ve.dm.NullSelection( dummyDoc );
 
@@ -43,7 +43,7 @@ QUnit.test( 'Factory methods & serialization (newFromJSON, toJSON, getDescriptio
 		selection,
 		'newFromJSON'
 	);
-	assert.deepEqual( selection.getDescription(), 'Null', 'getDescription' );
+	assert.strictEqual( selection.getDescription(), 'Null', 'getDescription' );
 } );
 
 // TODO: translateByTransaction

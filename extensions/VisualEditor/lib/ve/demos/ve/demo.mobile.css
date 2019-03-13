@@ -1,7 +1,7 @@
 /*!
  * VisualEditor mobile demo
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /* Demo */
@@ -14,25 +14,10 @@
 	padding-left: 1.5em;
 }
 
+.ve-demo-surfaceWrapper,
+.ve-init-sa-target-toolbar > .oo-ui-toolbar-bar,
 .ve-demo-read {
-	border-top: 1px solid #ccc;
-}
-
-/* Editor */
-
-.ve-ui-surface {
-	border-bottom: 1px solid #ccc;
-}
-
-.ve-init-sa-target-toolbar > .oo-ui-toolbar-bar {
-	border-top: 1px solid #ccc;
-	border-bottom: 1px solid #ccc;
-}
-
-.ve-init-sa-target-toolbar.ve-ui-toolbar-floating > .oo-ui-toolbar-bar {
-	border-top: none;
-}
-
-.ve-ui-debugBar {
-	border-bottom: 1px solid #ccc;
+	border-radius: 0;
+	border-left: 0;
+	border-right: 0;
 }

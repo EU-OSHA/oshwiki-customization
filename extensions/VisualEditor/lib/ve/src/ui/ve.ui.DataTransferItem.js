@@ -1,3 +1,5 @@
+/* global Uint8Array */
+
 /**
  * Data transfer item wrapper
  *
@@ -16,9 +18,9 @@
 ve.ui.DataTransferItem = function VeUiDataTransferItem( kind, type, data, name ) {
 	this.kind = kind;
 	this.type = type;
-	this.data = data;
+	this.data = data || {};
 	this.blob = this.data.blob || null;
-	this.stringData = this.data.stringData || ve.getProp( this.blob, 'name' ) || null;
+	this.stringData = this.data.stringData || ve.getProp( this.blob, 'name' ) || '';
 	this.name = name;
 };
 
@@ -55,7 +57,7 @@ ve.ui.DataTransferItem.static.newFromDataUri = function ( dataUri, htmlStringDat
  * Create a data transfer item from string data.
  *
  * @param {string} stringData Native string data
- * @param {string} type Native MIME type
+ * @param {string} [type] Native MIME type
  * @param {string} [htmlStringData] HTML string representation of data transfer
  * @return {ve.ui.DataTransferItem} New data transfer item
  */

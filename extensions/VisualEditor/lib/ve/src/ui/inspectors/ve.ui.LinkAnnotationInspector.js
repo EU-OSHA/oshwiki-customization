@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface LinkAnnotationInspector class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -13,9 +13,9 @@
  * @constructor
  * @param {Object} [config] Configuration options
  */
-ve.ui.LinkAnnotationInspector = function VeUiLinkAnnotationInspector( config ) {
+ve.ui.LinkAnnotationInspector = function VeUiLinkAnnotationInspector() {
 	// Parent constructor
-	ve.ui.AnnotationInspector.call( this, config );
+	ve.ui.LinkAnnotationInspector.super.apply( this, arguments );
 };
 
 /* Inheritance */
@@ -29,14 +29,6 @@ ve.ui.LinkAnnotationInspector.static.name = 'link';
 ve.ui.LinkAnnotationInspector.static.title = OO.ui.deferMsg( 'visualeditor-linkinspector-title' );
 
 ve.ui.LinkAnnotationInspector.static.modelClasses = [ ve.dm.LinkAnnotation ];
-
-ve.ui.LinkAnnotationInspector.static.actions = ve.ui.LinkAnnotationInspector.super.static.actions.concat( [
-	{
-		action: 'open',
-		label: OO.ui.deferMsg( 'visualeditor-linkinspector-open' ),
-		modes: [ 'edit', 'insert' ]
-	}
-] );
 
 /* Methods */
 
@@ -53,16 +45,18 @@ ve.ui.LinkAnnotationInspector.prototype.onAnnotationInputChange = function () {
  * Update the actions based on the annotation state
  */
 ve.ui.LinkAnnotationInspector.prototype.updateActions = function () {
-	var inspector = this,
+	var isValid = false,
+		inspector = this,
 		annotation = this.annotationInput.getAnnotation();
 
-	this.annotationInput.text.isValid().done( function ( isValid ) {
-		isValid = isValid && !!annotation;
-		inspector.actions.forEach( { actions: [ 'open', 'done', 'insert' ] }, function ( action ) {
-			action.setDisabled( !isValid );
+	this.annotationInput.getTextInputWidget().getValidity()
+		.then( function () { isValid = true; } )
+		.always( function () {
+			isValid = isValid && !!annotation;
+			inspector.actions.forEach( { actions: [ 'done', 'insert' ] }, function ( action ) {
+				action.setDisabled( !isValid );
+			} );
 		} );
-	} );
-
 };
 
 /**
@@ -143,11 +137,11 @@ ve.ui.LinkAnnotationInspector.prototype.getSetupProcess = function ( data ) {
 ve.ui.LinkAnnotationInspector.prototype.getReadyProcess = function ( data ) {
 	return ve.ui.LinkAnnotationInspector.super.prototype.getReadyProcess.call( this, data )
 		.next( function () {
-			this.annotationInput.text.focus().select();
+			this.annotationInput.getTextInputWidget().focus().select();
 			this.getFragment().getSurface().enable();
 
 			// Clear validation state, so that we don't get "invalid" state immediately on focus
-			this.annotationInput.text.setValidityFlag( true );
+			this.annotationInput.getTextInputWidget().setValidityFlag( true );
 		}, this );
 };
 
@@ -157,7 +151,7 @@ ve.ui.LinkAnnotationInspector.prototype.getReadyProcess = function ( data ) {
 ve.ui.LinkAnnotationInspector.prototype.getHoldProcess = function ( data ) {
 	return ve.ui.LinkAnnotationInspector.super.prototype.getHoldProcess.call( this, data )
 		.next( function () {
-			this.annotationInput.text.blur();
+			this.annotationInput.getTextInputWidget().blur();
 		}, this );
 };
 
@@ -169,17 +163,6 @@ ve.ui.LinkAnnotationInspector.prototype.getTeardownProcess = function ( data ) {
 		.next( function () {
 			this.annotationInput.setAnnotation( null );
 		}, this );
-};
-
-/**
- * @inheritdoc
- */
-ve.ui.LinkAnnotationInspector.prototype.getActionProcess = function ( action ) {
-	if ( action === 'open' ) {
-		window.open( this.annotationInput.getHref() );
-	}
-
-	return ve.ui.LinkAnnotationInspector.super.prototype.getActionProcess.call( this, action );
 };
 
 /* Registration */

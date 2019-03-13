@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface namespace.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -13,6 +13,7 @@
 ve.ui = {
 	// 'actionFactory' instantiated in ve.ui.ActionFactory.js
 	// 'commandRegistry' instantiated in ve.ui.CommandRegistry.js
+	// 'commandHelpRegistry' instantiated in ve.ui.CommandHelpRegistry.js
 	// 'triggerRegistry' instantiated in ve.ui.TriggerRegistry.js
 	// 'toolFactory' instantiated in ve.ui.ToolFactory.js
 	// 'contextItemFactory' instantiated in ve.ui.ContextItemFactory.js

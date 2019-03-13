@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel Node class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -9,6 +9,7 @@
  *
  * @abstract
  * @extends ve.dm.Model
+ * @mixins OO.EventEmitter
  * @mixins ve.Node
  *
  * @constructor
@@ -16,7 +17,7 @@
  */
 ve.dm.Node = function VeDmNode( element ) {
 	// Parent constructor
-	ve.dm.Model.call( this, element );
+	ve.dm.Node.super.apply( this, arguments );
 
 	// Mixin constructors
 	ve.Node.call( this );
@@ -25,7 +26,6 @@ ve.dm.Node = function VeDmNode( element ) {
 	// Properties
 	this.length = 0;
 	this.element = element;
-	this.doc = undefined;
 };
 
 /**
@@ -35,6 +35,7 @@ ve.dm.Node = function VeDmNode( element ) {
 
 /**
  * @event update
+ * @param {boolean} staged Transaction was applied in staging mode
  */
 
 /* Inheritance */
@@ -78,6 +79,16 @@ ve.dm.Node.static.handlesOwnChildren = false;
 ve.dm.Node.static.ignoreChildren = false;
 
 /**
+ * Whether this node can be deleted. If false, ve.dm.Transaction#newFromRemoval will silently
+ * ignore any attepts to delete this node.
+ *
+ * @static
+ * @property {boolean}
+ * @inheritable
+ */
+ve.dm.Node.static.isDeletable = true;
+
+/**
  * Whether this node type is internal. Internal node types are ignored by the converter.
  *
  * @static
@@ -97,6 +108,15 @@ ve.dm.Node.static.isInternal = false;
 ve.dm.Node.static.isWrapped = true;
 
 /**
+ * Whether this node type can be unwrapped by user input (e.g. backspace to unwrap a list item)
+ *
+ * @static
+ * @property {boolean}
+ * @inheritable
+ */
+ve.dm.Node.static.isUnwrappable = true;
+
+/**
  * Whether this node type is a content node type. This means the node represents content, cannot
  * have children, and can only appear as children of a content container node. Content nodes are
  * also known as inline nodes.
@@ -106,6 +126,27 @@ ve.dm.Node.static.isWrapped = true;
  * @inheritable
  */
 ve.dm.Node.static.isContent = false;
+
+/**
+ * Whether this node type is a metadata node. This means the node represents a leaf node that
+ * has no explicit view representation, and should be treated differently for the purposes of
+ * round-tripping, copy/paste etc.
+ *
+ * @static
+ * @property {boolean}
+ * @inheritable
+ */
+ve.dm.Node.static.isMetaData = false;
+
+/**
+ * For a non-content node type, whether this node type can be serialized in a content
+ * position (e.g. for round tripping). This value is ignored if isContent is true.
+ *
+ * @static
+ * @property {boolean}
+ * @inheritable
+ */
+ve.dm.Node.static.canSerializeAsContent = false;
 
 /**
  * Whether this node type can be focused. Focusable nodes react to selections differently.
@@ -143,6 +184,24 @@ ve.dm.Node.static.isCellable = false;
  * @inheritable
  */
 ve.dm.Node.static.canContainContent = false;
+
+/**
+ * Whether this node type behaves like a list when diffing.
+ *
+ * @static
+ * @property {boolean}
+ * @inheritable
+ */
+ve.dm.Node.static.isDiffedAsList = false;
+
+/**
+ * Whether this node type behaves like a leaf when diffing.
+ *
+ * @static
+ * @property {boolean}
+ * @inheritable
+ */
+ve.dm.Node.static.isDiffedAsLeaf = false;
 
 /**
  * Whether this node type has significant whitespace. Only applies to content container nodes
@@ -218,18 +277,11 @@ ve.dm.Node.static.blacklistedAnnotationTypes = [];
 ve.dm.Node.static.defaultAttributes = {};
 
 /**
- * Remap the store indexes stored in a linear model data element.
+ * Sanitize the node's linear model data, typically if it was generated from an external source (e.g. copied HTML)
  *
- * The default implementation is empty. Nodes should override this if they store store indexes in
- * attributes. To remap, do something like
- * dataElement.attributes.foo = mapping[dataElement.attributes.foo];
- *
- * @static
- * @inheritable
- * @param {Object} dataElement Data element (opening) to remap. Will be modified.
- * @param {Object} mapping Object mapping old store indexes to new store indexes
+ * @param {Object} dataElement Linear model element, modified in place
  */
-ve.dm.Node.static.remapStoreIndexes = function () {
+ve.dm.Node.static.sanitize = function () {
 };
 
 /**
@@ -301,15 +353,35 @@ ve.dm.Node.static.isHybridInline = function ( domElements, converter ) {
  *
  * @static
  * @param {Object} element Element object
+ * @param {ve.dm.HashValueStore} store Hash-value store used by element
  * @param {boolean} preserveGenerated Preserve internal.generated property of element
  * @return {Object} Cloned element object
  */
-ve.dm.Node.static.cloneElement = function ( element, preserveGenerated ) {
-	var clone = ve.copy( element );
-	if ( !preserveGenerated && clone.internal ) {
-		delete clone.internal.generated;
-		if ( ve.isEmptyObject( clone.internal ) ) {
-			delete clone.internal;
+ve.dm.Node.static.cloneElement = function ( element, store, preserveGenerated ) {
+	var about, originalDomElements, domElements,
+		modified = false,
+		clone = ve.copy( element );
+
+	if ( !preserveGenerated ) {
+		ve.deleteProp( clone, 'internal', 'generated' );
+	}
+	originalDomElements = store.value( clone.originalDomElementsHash );
+	// Generate a new about attribute to prevent about grouping of cloned nodes
+	if ( originalDomElements ) {
+		// TODO: The '#mwtNNN' is required by Parsoid. Make the name used here
+		// more generic and specify the #mwt pattern in MW code.
+		about = '#mwt' + Math.floor( 1000000000 * Math.random() );
+		domElements = originalDomElements.map( function ( el ) {
+			var elClone = el.cloneNode( true );
+			// Check for hasAttribute as comments don't have them
+			if ( elClone.hasAttribute && elClone.hasAttribute( 'about' ) ) {
+				elClone.setAttribute( 'about', about );
+				modified = true;
+			}
+			return elClone;
+		} );
+		if ( modified ) {
+			clone.originalDomElementsHash = store.hash( domElements, domElements.map( ve.getNodeHtml ).join( '' ) );
 		}
 	}
 	return clone;
@@ -318,12 +390,25 @@ ve.dm.Node.static.cloneElement = function ( element, preserveGenerated ) {
 /* Methods */
 
 /**
+ * @inheritdoc
+ */
+ve.dm.Node.prototype.getStore = function () {
+	return this.doc && this.doc.store;
+};
+
+/**
  * @see #static-cloneElement
+ * Implementations should override the static method, not this one
+ *
  * @param {boolean} preserveGenerated Preserve internal.generated property of element
  * @return {Object} Cloned element object
  */
 ve.dm.Node.prototype.getClonedElement = function ( preserveGenerated ) {
-	return this.constructor.static.cloneElement( this.element, preserveGenerated );
+	var store = this.getStore();
+	if ( !store ) {
+		throw new Error( 'Node must be attached to the document to be cloned.' );
+	}
+	return this.constructor.static.cloneElement( this.element, store, preserveGenerated );
 };
 
 /**
@@ -362,10 +447,7 @@ ve.dm.Node.prototype.canHaveChildrenNotContent = function () {
 };
 
 /**
- * Check if the node is an internal node
- *
- * @method
- * @return {boolean} Node is an internal node
+ * @inheritdoc ve.Node
  */
 ve.dm.Node.prototype.isInternal = function () {
 	return this.constructor.static.isInternal;
@@ -374,8 +456,22 @@ ve.dm.Node.prototype.isInternal = function () {
 /**
  * @inheritdoc ve.Node
  */
+ve.dm.Node.prototype.isMetaData = function () {
+	return this.constructor.static.isMetaData;
+};
+
+/**
+ * @inheritdoc ve.Node
+ */
 ve.dm.Node.prototype.isWrapped = function () {
 	return this.constructor.static.isWrapped;
+};
+
+/**
+ * @inheritdoc ve.Node
+ */
+ve.dm.Node.prototype.isUnwrappable = function () {
+	return this.isWrapped() && this.constructor.static.isUnwrappable;
 };
 
 /**
@@ -421,6 +517,20 @@ ve.dm.Node.prototype.isCellEditable = function () {
 };
 
 /**
+ * @inheritdoc ve.Node
+ */
+ve.dm.Node.prototype.isDiffedAsList = function () {
+	return this.constructor.static.isDiffedAsList;
+};
+
+/**
+ * @inheritdoc ve.Node
+ */
+ve.dm.Node.prototype.isDiffedAsLeaf = function () {
+	return this.constructor.static.isDiffedAsLeaf;
+};
+
+/**
  * Check if the node can have a slug before it.
  *
  * @method
@@ -463,6 +573,8 @@ ve.dm.Node.prototype.shouldIgnoreChildren = function () {
  * Check if the node has an ancestor with matching type and attribute values.
  *
  * @method
+ * @param {string} type Node type to match
+ * @param {Object} [attributes] Node attributes to match
  * @return {boolean} Node has an ancestor with matching type and attribute values
  */
 ve.dm.Node.prototype.hasMatchingAncestor = function ( type, attributes ) {
@@ -482,6 +594,8 @@ ve.dm.Node.prototype.hasMatchingAncestor = function ( type, attributes ) {
  * Check if the node matches type and attribute values.
  *
  * @method
+ * @param {string} type Node type to match
+ * @param {Object} [attributes] Node attributes to match
  * @return {boolean} Node matches type and attribute values
  */
 ve.dm.Node.prototype.matches = function ( type, attributes ) {

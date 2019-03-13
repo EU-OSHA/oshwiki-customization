@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable Document class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -16,12 +16,13 @@
  */
 ve.ce.Document = function VeCeDocument( model, surface ) {
 	// Parent constructor
-	ve.Document.call( this, new ve.ce.DocumentNode( model.getDocumentNode(), surface ) );
+	ve.ce.Document.super.call( this, new ve.ce.DocumentNode( model.getDocumentNode(), surface ) );
 
-	this.getDocumentNode().$element.prop( {
-		lang: model.getLang(),
-		dir: model.getDir()
-	} );
+	this.lang = null;
+	this.dir = null;
+
+	this.setLang( model.getLang() );
+	this.setDir( model.getDir() );
 
 	// Properties
 	this.model = model;
@@ -31,7 +32,55 @@ ve.ce.Document = function VeCeDocument( model, surface ) {
 
 OO.inheritClass( ve.ce.Document, ve.Document );
 
+/* Events */
+
+/**
+ * Language or direction changed
+ *
+ * @event langChange
+ */
+
 /* Methods */
+
+/**
+ * Set the document view language
+ *
+ * @param {string} lang Language code
+ */
+ve.ce.Document.prototype.setLang = function ( lang ) {
+	this.getDocumentNode().$element.prop( 'lang', lang );
+	this.lang = lang;
+	this.emit( 'langChange' );
+};
+
+/**
+ * Set the document view directionality
+ *
+ * @param {string} dir Directionality (ltr/rtl)
+ */
+ve.ce.Document.prototype.setDir = function ( dir ) {
+	this.getDocumentNode().$element.prop( 'dir', dir );
+	this.dir = dir;
+	this.emit( 'langChange' );
+};
+
+/**
+ * Get the document view language
+ *
+ * @return {string} Language code
+ */
+ve.ce.Document.prototype.getLang = function () {
+	return this.lang;
+};
+
+/**
+ * Get the document view directionality
+ *
+ * @return {string} Directionality (ltr/rtl)
+ */
+ve.ce.Document.prototype.getDir = function () {
+	return this.dir;
+};
 
 /**
  * Get a slug at an offset.
@@ -46,241 +95,277 @@ ve.ce.Document.prototype.getSlugAtOffset = function ( offset ) {
 };
 
 /**
- * Calculate the DOM location corresponding to a DM offset
+ * Calculate the DOM position corresponding to a DM offset
  *
- * @param {number} offset Linear model offset
- * @return {Object} DOM location
- * @return {Node} return.node location node
- * @return {number} return.offset location offset within the node
- * @throws {Error} Offset could not be translated to a DOM element and offset
- */
-ve.ce.Document.prototype.getNodeAndOffset = function ( offset ) {
-	var nao, currentNode, nextNode, previousNode;
-
-	// Get the un-unicorn-adjusted result. If it is:
-	// - just before pre unicorn, then return the cursor location just after it
-	// - just after the post unicorn, then return the cursor location just before it
-	// - anywhere else, then return the result unmodified
-
-	function getNext( node ) {
-		while ( node.nextSibling === null ) {
-			node = node.parentNode;
-			if ( node === null ) {
-				return null;
-			}
-		}
-		node = node.nextSibling;
-		while ( node.firstChild ) {
-			node = node.firstChild;
-		}
-		return node;
-	}
-	function getPrevious( node ) {
-		while ( node.previousSibling === null ) {
-			node = node.parentNode;
-			if ( node === null ) {
-				return null;
-			}
-		}
-		node = node.previousSibling;
-		while ( node.lastChild ) {
-			node = node.lastChild;
-		}
-		return node;
-	}
-
-	nao = this.getNodeAndOffsetUnadjustedForUnicorn( offset );
-	currentNode = nao.node;
-	nextNode = getNext( currentNode );
-	previousNode = getPrevious( currentNode );
-
-	// Adjust for unicorn if necessary, then return
-	if (
-		( (
-			currentNode.nodeType === Node.TEXT_NODE &&
-			nao.offset === currentNode.data.length
-		) || (
-			currentNode.nodeType === Node.ELEMENT_NODE &&
-			currentNode.classList.contains( 've-ce-branchNode-inlineSlug' )
-		) ) &&
-		nextNode &&
-		nextNode.nodeType === Node.ELEMENT_NODE &&
-		nextNode.classList.contains( 've-ce-pre-unicorn' )
-	) {
-		// At text offset or slug just before the pre unicorn; return the point just after it
-		return ve.ce.nextCursorOffset( nextNode );
-	} else if ( currentNode.nodeType === Node.ELEMENT_NODE &&
-		currentNode.childNodes.length > nao.offset &&
-		currentNode.childNodes[ nao.offset ].nodeType === Node.ELEMENT_NODE &&
-		currentNode.childNodes[ nao.offset ].classList.contains( 've-ce-pre-unicorn' )
-	) {
-		// At element offset just before the pre unicorn; return the point just after it
-		return { node: nao.node, offset: nao.offset + 1 };
-	} else if (
-		( (
-			currentNode.nodeType === Node.TEXT_NODE &&
-			nao.offset === 0
-		) || (
-			currentNode.nodeType === Node.ELEMENT_NODE &&
-			currentNode.classList.contains( 've-ce-branchNode-inlineSlug' )
-		) ) &&
-		previousNode &&
-		previousNode.nodeType === Node.ELEMENT_NODE &&
-		previousNode.classList.contains( 've-ce-post-unicorn' )
-	) {
-		// At text offset or slug just after the post unicorn; return the point just before it
-		return ve.ce.previousCursorOffset( previousNode );
-	} else if ( currentNode.nodeType === Node.ELEMENT_NODE &&
-		nao.offset > 0 &&
-		currentNode.childNodes[ nao.offset - 1 ].nodeType === Node.ELEMENT_NODE &&
-		currentNode.childNodes[ nao.offset - 1 ].classList.contains( 've-ce-post-unicorn' )
-	) {
-		// At element offset just after the post unicorn; return the point just before it
-		return { node: nao.node, offset: nao.offset - 1 };
-	} else {
-		return nao;
-	}
-};
-
-/**
- * Calculate the DOM location corresponding to a DM offset (without unicorn adjustments)
+ * If there are multiple DOM locations, heuristically pick the best one for cursor placement
  *
  * @private
  * @param {number} offset Linear model offset
- * @return {Object} location
- * @return {Node} return.node location node
- * @return {number} return.offset location offset within the node
+ * @return {Object} position
+ * @return {Node} return.node position node
+ * @return {number} return.offset position offset within the node
+ * @throws {Error} Offset could not be translated to a DOM element and offset
  */
-ve.ce.Document.prototype.getNodeAndOffsetUnadjustedForUnicorn = function ( offset ) {
-	var node, startOffset, current, stack, item, $item, length, model,
-		countedNodes = [],
-		slug = this.getSlugAtOffset( offset );
+ve.ce.Document.prototype.getNodeAndOffset = function ( offset ) {
+	var branchNode, count, i, ceChild, position, step, node, model, steps, found, prevNode,
+		$viewNodes,
+		countedNodes = [];
 
-	// If we're a block slug, or an empty inline slug, return its location
-	// Start at the current branch node; get its start offset
-	// Walk the tree, summing offsets until the sum reaches the desired offset value
-	// - If a whole branch is entirely before the offset, then don't descend into it
-	// - If the desired offset is in a text node, return that node and the correct remainder offset
-	// - If the desired offset is between an empty unicorn pair, return inter-unicorn location
-	// - Assume no other outcome is possible (because we would be inside a slug)
+	// 1. Step with ve.adjacentDomPosition( …, { stop: function () { return true; } } )
+	// until we hit a position at the correct offset (which is guaranteed to be the first
+	// such position in document order).
+	// 2. Use ve.adjacentDomPosition( …, { stop: … } ) once to return all
+	// subsequent positions at the same offset.
+	// 3. Look at the possible positions and pick as follows:
+	//   - If there is a unicorn, return just inside it
+	//   - Else if there is a nail, return just outside it
+	//   - Else if there is a text node, return an offset in it
+	//   - Else return the first matching offset
+	//
+	// Offsets of DOM nodes are counted to match their model equivalents.
+	//
+	// TODO: take the following into account:
+	// Unfortunately, there is no way to avoid slugless block nodes with no DM length: an
+	// IME can remove all the text from a node at a time when it is unsafe to fixup the node
+	// contents. In this case, a maximally deep element gives better bounding rectangle
+	// coordinates than any of its containers.
 
-	// Check for a slug that is empty (apart from a chimera) or a block slug
-	if ( slug && (
-		!slug.firstChild ||
-		$( slug ).hasClass( 've-ce-branchNode-blockSlug' ) ||
-		$( slug.firstChild ).hasClass( 've-ce-chimera' )
-	) ) {
-		return { node: slug, offset: 0 };
+	branchNode = this.getBranchNodeFromOffset( offset );
+	count = branchNode.getOffset() + ( ( branchNode.isWrapped() ) ? 1 : 0 );
+
+	if ( !( branchNode instanceof ve.ce.ContentBranchNode ) ) {
+		// The cursor does not lie in a ContentBranchNode, so we can determine
+		// everything from the DM tree
+		for ( i = 0; ; i++ ) {
+			ceChild = branchNode.children[ i ];
+			if ( count === offset ) {
+				break;
+			}
+			if ( !ceChild ) {
+				throw new Error( 'Offset lies beyond branchNode' );
+			}
+			count += ceChild.getOuterLength();
+			if ( count > offset ) {
+				if ( ceChild.getOuterLength() !== 2 ) {
+					throw new Error( 'Offset lies inside child of strange size' );
+				}
+				node = ceChild.$element[ 0 ];
+				if ( node ) {
+					return { node: node, offset: 0 };
+				}
+				// Else ceChild has no DOM representation; step forwards
+				break;
+			}
+		}
+		// Offset lies directly in branchNode, just before ceChild
+		node = branchNode.$element[ 0 ];
+		while ( ceChild && !ceChild.$element[ 0 ] ) {
+			// Node does not have a DOM representation; move forwards past it
+			i++;
+			ceChild = branchNode.children[ i ];
+		}
+		if ( !ceChild || !ceChild.$element[ 0 ] ) {
+			// Offset lies just at the end of branchNode
+			return { node: node, offset: node.childNodes.length };
+		}
+		return {
+			node: node,
+			offset: Array.prototype.indexOf.call(
+				node.childNodes,
+				ceChild.$element[ 0 ]
+			)
+		};
 	}
-	node = this.getBranchNodeFromOffset( offset );
-	startOffset = node.getOffset() + ( ( node.isWrapped() ) ? 1 : 0 );
-	current = [ node.$element.contents(), 0 ];
-	stack = [ current ];
-	while ( stack.length > 0 ) {
-		if ( current[ 1 ] >= current[ 0 ].length ) {
-			stack.pop();
-			current = stack[ stack.length - 1 ];
+
+	// Else the cursor lies in a ContentBranchNode, so we must traverse the DOM, keeping
+	// count of the corresponding DM position until it reaches offset.
+	position = { node: branchNode.$element[ 0 ], offset: 0 };
+
+	function noDescend() {
+		return this.classList.contains( 've-ce-branchNode-blockSlug' ) ||
+			ve.rejectsCursor( this );
+	}
+
+	while ( true ) {
+		if ( count === offset ) {
+			break;
+		}
+		position = ve.adjacentDomPosition(
+			position,
+			1,
+			{
+				noDescend: noDescend,
+				stop: function () { return true; }
+			}
+		);
+		step = position.steps[ 0 ];
+		node = step.node;
+		if ( node.nodeType === Node.TEXT_NODE ) {
+			if ( step.type === 'leave' ) {
+				// Skip without incrementing
+				continue;
+			}
+			// else the code below always breaks or skips over the text node;
+			// therefore it is guaranteed that step.type === 'enter' (we just
+			// stepped in)
+			// TODO: what about zero-length text nodes?
+			if ( offset <= count + node.data.length ) {
+				// Match the appropriate offset in the text node
+				position = { node: node, offset: offset - count };
+				break;
+			} else {
+				// Skip over the text node
+				count += node.data.length;
+				position = { node: node, offset: node.data.length };
+				continue;
+			}
+		} // else it is an element node (TODO: handle comment etc)
+
+		if ( !(
+			node.classList.contains( 've-ce-branchNode' ) ||
+			node.classList.contains( 've-ce-leafNode' )
+		) ) {
+			// Nodes like b, inline slug, browser-generated br that doesn't have
+			// class ve-ce-leafNode: continue walk without incrementing
 			continue;
 		}
-		item = current[ 0 ][ current[ 1 ] ];
-		if ( item.nodeType === Node.TEXT_NODE ) {
-			length = item.textContent.length;
-			if ( offset >= startOffset && offset <= startOffset + length ) {
-				return {
-					node: item,
-					offset: offset - startOffset
-				};
-			} else {
-				startOffset += length;
-			}
-		} else if ( item.nodeType === Node.ELEMENT_NODE ) {
-			$item = current[ 0 ].eq( current[ 1 ] );
-			if ( $item.hasClass( 've-ce-unicorn' ) ) {
-				if ( offset === startOffset ) {
-					// Return if empty unicorn pair at the correct offset
-					if ( $( $item[ 0 ].previousSibling ).hasClass( 've-ce-unicorn' ) ) {
-						return {
-							node: $item[ 0 ].parentNode,
-							offset: current[ 1 ] - 1
-						};
-					} else if ( $( $item[ 0 ].nextSibling ).hasClass( 've-ce-unicorn' ) ) {
-						return {
-							node: $item[ 0 ].parentNode,
-							offset: current[ 1 ] + 1
-						};
-					}
-					// Else algorithm will/did descend into unicorned range
-				}
-				// Else algorithm will skip this unicorn
-			} else if ( $item.is( '.ve-ce-branchNode, .ve-ce-leafNode' ) ) {
-				model = $item.data( 'view' ).model;
-				// DM nodes can render as multiple elements in the view, so check
-				// we haven't already counted it.
-				if ( countedNodes.indexOf( model ) === -1 ) {
-					length = model.getOuterLength();
-					countedNodes.push( model );
-					if ( offset >= startOffset && offset < startOffset + length ) {
-						stack.push( [ $item.contents(), 0 ] );
-						current[ 1 ]++;
-						current = stack[ stack.length - 1 ];
-						continue;
-					} else {
-						startOffset += length;
-					}
-				}
-			} else if ( $item.hasClass( 've-ce-branchNode-blockSlug' ) ) {
-				// This is unusual: generated wrappers usually mean that the return
-				// value of getBranchNodeFromOffset will not have block slugs or
-				// block slug ancestors before the offset position. However, there
-				// are some counterexamples; e.g., if the DM offset is just before
-				// the internalList then the start node will be the document node.
-				//
-				// Skip contents without incrementing offset.
-				current[ 1 ]++;
-				continue;
-			} else if ( $item.hasClass( 've-ce-nail' ) ) {
-				// Skip contents without incrementing offset.
-				current[ 1 ]++;
-				continue;
-			} else {
-				// Any other type of node (e.g. b, inline slug, img): descend
-				stack.push( [ $item.contents(), 0 ] );
-				current[ 1 ]++;
-				current = stack[ stack.length - 1 ];
-				continue;
-			}
+
+		if ( step.type === 'leave' ) {
+			// Below we'll guarantee that .ve-ce-branchNode/.ve-ce-leafNode elements
+			// are only entered if their open/close tags take up a model offset, so
+			// we can increment unconditionally here
+			count++;
+			continue;
+		} // else step.type === 'enter' || step.type === 'cross'
+
+		model = $.data( node, 'view' ).model;
+
+		if ( countedNodes.indexOf( model ) !== -1 ) {
+			// This DM node is rendered as multiple DOM elements, and we have already
+			// counted it as part of an earlier element. Skip past without incrementing
+			position = { node: node.parentNode, offset: ve.parentIndex( node ) + 1 };
+			continue;
 		}
-		current[ 1 ]++;
+		countedNodes.push( model );
+		if ( offset >= count + model.getOuterLength() ) {
+			// Offset doesn't lie inside the node. Skip past and count length
+			// skip past the whole node
+			position = { node: node.parentNode, offset: ve.parentIndex( node ) + 1 };
+			count += model.getOuterLength();
+		} else if ( step.type === 'cross' ) {
+			if ( offset === count + 1 ) {
+				// The offset lies inside the crossed node
+				position = { node: node, offset: 0 };
+				break;
+			}
+			count += 2;
+		} else {
+			count += 1;
+		}
 	}
-	throw new Error( 'Offset could not be translated to a DOM element and offset: ' + offset );
+	// Now "position" is the first DOM position (in document order) at the correct
+	// model offset.
+
+	// If the position is exactly after the first of multiple view nodes sharing a model,
+	// then jump to the position exactly after the final such view node.
+	prevNode = position.node.childNodes[ position.offset - 1 ];
+	if ( prevNode && prevNode.nodeType === Node.ELEMENT_NODE && (
+		prevNode.classList.contains( 've-ce-branchNode' ) ||
+		prevNode.classList.contains( 've-ce-leafNode' )
+	) ) {
+		$viewNodes = $.data( prevNode, 'view' ).$element;
+		if ( $viewNodes.length > 1 ) {
+			position.node = $viewNodes.get( -1 ).parentNode;
+			position.offset = 1 + ve.parentIndex( $viewNodes.get( -1 ) );
+		}
+	}
+
+	// Find all subsequent DOM positions at the same model offset
+	found = {};
+	function stop( step ) {
+		var model;
+		if ( step.node.nodeType === Node.TEXT_NODE ) {
+			return step.type === 'internal';
+		}
+
+		if (
+			step.node.classList.contains( 've-ce-branchNode' ) ||
+			step.node.classList.contains( 've-ce-leafNode' )
+		) {
+			model = $.data( step.node, 'view' ).model;
+			if ( countedNodes.indexOf( model ) !== -1 ) {
+				return false;
+			}
+			countedNodes.push( model );
+			return true;
+		}
+		return false;
+	}
+	steps = ve.adjacentDomPosition( position, 1, { stop: stop, noDescend: noDescend } ).steps;
+	steps.slice( 0, -1 ).forEach( function ( step ) {
+		// Step type cannot be "internal", else the offset would have incremented
+		var hasClass = function ( className ) {
+			return step.node.nodeType === Node.ELEMENT_NODE &&
+				step.node.classList.contains( className );
+		};
+		found.preUnicorn = found.preUnicorn || ( hasClass( 've-ce-pre-unicorn' ) && step );
+		found.postUnicorn = found.postUnicorn || ( hasClass( 've-ce-post-unicorn' ) && step );
+		found.preOpenNail = found.preOpenNail || ( hasClass( 've-ce-nail-pre-open' ) && step );
+		found.postOpenNail = found.postOpenNail || ( hasClass( 've-ce-nail-post-open' ) && step );
+		found.preCloseNail = found.preCloseNail || ( hasClass( 've-ce-nail-pre-close' ) && step );
+		found.postCloseNail = found.postCloseNail || ( hasClass( 've-ce-nail-post-close' ) && step );
+		found.focusableNode = found.focusableNode || ( hasClass( 've-ce-focusableNode' ) && step );
+		found.text = found.text || ( step.node.nodeType === Node.TEXT_NODE && step );
+	} );
+
+	// If there is a unicorn, it should be a unique pre/post-Unicorn pair containing text or
+	// nothing return the position just inside.
+	if ( found.preUnicorn ) {
+		return ve.ce.nextCursorOffset( found.preUnicorn.node );
+	}
+	if ( found.postUnicorn ) {
+		return ve.ce.previousCursorOffset( found.postUnicorn.node );
+	}
+
+	if ( found.preOpenNail ) {
+		// This will also cover the case where there is a post-open nail, as there will
+		// be no offset difference between them
+		return ve.ce.previousCursorOffset( found.preOpenNail.node );
+	}
+	if ( found.postCloseNail ) {
+		// This will also cover the case where there is a pre-close nail, as there will
+		// be no offset difference between them
+		return ve.ce.nextCursorOffset( found.postCloseNail.node );
+	}
+	if ( found.text ) {
+		if ( position.node.nodeType === Node.TEXT_NODE ) {
+			return position;
+		}
+		// We must either have entered or left the text node
+		return { node: found.text.node, offset: 0 };
+	}
+	return position;
 };
 
 /**
- * Get the directionality of some selection.
+ * Get the block directionality of some range
+ *
+ * Uses the computed CSS direction value of the current node
  *
  * @method
- * @param {ve.dm.Selection} selection Selection
- * @return {string|null} 'rtl', 'ltr' or null if unknown
+ * @param {ve.Range} range Range
+ * @return {string} 'rtl', 'ltr'
  */
-ve.ce.Document.prototype.getDirectionFromSelection = function ( selection ) {
-	var effectiveNode, range, selectedNodes;
-
-	if ( selection instanceof ve.dm.LinearSelection ) {
-		range = selection.getRange();
-	} else if ( selection instanceof ve.dm.TableSelection ) {
-		range = selection.tableRange;
-	} else {
-		return null;
-	}
-
-	selectedNodes = this.selectNodes( range, 'covered' );
+ve.ce.Document.prototype.getDirectionFromRange = function ( range ) {
+	var effectiveNode,
+		selectedNodes = this.selectNodes( range, 'covered' );
 
 	if ( selectedNodes.length > 1 ) {
 		// Selection of multiple nodes
 		// Get the common parent node
 		effectiveNode = this.selectNodes( range, 'siblings' )[ 0 ].node.getParent();
 	} else {
-		// selection of a single node
+		// Selection of a single node
 		effectiveNode = selectedNodes[ 0 ].node;
 
 		while ( effectiveNode.isContent() ) {

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface ModeledFactory class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -41,7 +41,7 @@ ve.ui.ModeledFactory.prototype.getRelatedItems = function ( models ) {
 	 * Collect the most specific compatible classes for a model.
 	 *
 	 * @private
-	 * @param {Object} model Model to find compatability with
+	 * @param {Object} model Model to find compatibility with
 	 * @return {Function[]} List of compatible classes
 	 */
 	function collect( model ) {

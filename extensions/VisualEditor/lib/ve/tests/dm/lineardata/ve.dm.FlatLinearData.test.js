@@ -1,7 +1,7 @@
 /*!
  * VisualEditor FlatLinearData tests.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.dm.FlatLinearData' );
@@ -10,7 +10,7 @@ QUnit.module( 've.dm.FlatLinearData' );
 
 QUnit.test( 'getType/isOpenElementData/isCloseElementData', function ( assert ) {
 	var i,
-		data = new ve.dm.FlatLinearData( new ve.dm.IndexValueStore(), [
+		data = new ve.dm.FlatLinearData( new ve.dm.HashValueStore(), [
 			{ type: 'paragraph' },
 			'a', [ 'b', [ 0 ] ],
 			{ type: '/paragraph' }
@@ -19,7 +19,6 @@ QUnit.test( 'getType/isOpenElementData/isCloseElementData', function ( assert ) 
 		isOpen = [ 0 ],
 		isClose = [ 3 ];
 
-	QUnit.expect( data.getLength() * 3 );
 	for ( i = 0; i < data.getLength(); i++ ) {
 		assert.strictEqual( data.getType( i ), types[ i ], 'Type at offset ' + i );
 		assert.strictEqual( data.isOpenElementData( i ), isOpen.indexOf( i ) !== -1, 'isOpen ' + i );
@@ -27,9 +26,9 @@ QUnit.test( 'getType/isOpenElementData/isCloseElementData', function ( assert ) 
 	}
 } );
 
-QUnit.test( 'isElementData', 1, function ( assert ) {
+QUnit.test( 'isElementData', function ( assert ) {
 	var i,
-		data = new ve.dm.FlatLinearData( new ve.dm.IndexValueStore(), [
+		data = new ve.dm.FlatLinearData( new ve.dm.HashValueStore(), [
 			{ type: 'heading' },
 			'a',
 			{ type: 'inlineImage' },
@@ -52,7 +51,7 @@ QUnit.test( 'isElementData', 1, function ( assert ) {
 		] ),
 		cases = [
 			{ msg: 'left of document', expected: true },
-			{ msg: 'begining of content branch', expected: false },
+			{ msg: 'beginning of content branch', expected: false },
 			{ msg: 'left of non-text inline leaf', expected: true },
 			{ msg: 'inside non-text inline leaf', expected: true },
 			{ msg: 'right of non-text inline leaf', expected: false },
@@ -61,7 +60,7 @@ QUnit.test( 'isElementData', 1, function ( assert ) {
 			{ msg: 'between content branches', expected: true },
 			{ msg: 'inside emtpy content branch', expected: true },
 			{ msg: 'between content branches', expected: true },
-			{ msg: 'begining of content branch, left of inline leaf', expected: true },
+			{ msg: 'beginning of content branch, left of inline leaf', expected: true },
 			{ msg: 'inside content branch with non-text leaf', expected: true },
 			{ msg: 'end of content branch, right of inline leaf', expected: true },
 			{ msg: 'between content, non-content branches', expected: true },
@@ -72,13 +71,13 @@ QUnit.test( 'isElementData', 1, function ( assert ) {
 			{ msg: 'inside non-content leaf', expected: true },
 			{ msg: 'right of document', expected: false }
 		];
-	QUnit.expect( data.getLength() + 1 );
+
 	for ( i = 0; i < cases.length; i++ ) {
 		assert.strictEqual( data.isElementData( i ), cases[ i ].expected, cases[ i ].msg );
 	}
 } );
 
-QUnit.test( 'containsElementData', 1, function ( assert ) {
+QUnit.test( 'containsElementData', function ( assert ) {
 	var i, data,
 		cases = [
 			{
@@ -102,9 +101,9 @@ QUnit.test( 'containsElementData', 1, function ( assert ) {
 				expected: true
 			}
 		];
-	QUnit.expect( cases.length );
+
 	for ( i = 0; i < cases.length; i++ ) {
-		data = new ve.dm.FlatLinearData( new ve.dm.IndexValueStore(), cases[ i ].data );
+		data = new ve.dm.FlatLinearData( new ve.dm.HashValueStore(), cases[ i ].data );
 		assert.strictEqual(
 			data.containsElementData(), cases[ i ].expected, cases[ i ].msg
 		);

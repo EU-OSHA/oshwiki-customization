@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface LanguageInspector class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -13,9 +13,9 @@
  * @constructor
  * @param {Object} [config] Configuration options
  */
-ve.ui.LanguageInspector = function VeUiLanguageInspector( config ) {
+ve.ui.LanguageInspector = function VeUiLanguageInspector() {
 	// Parent constructor
-	ve.ui.AnnotationInspector.call( this, config );
+	ve.ui.LanguageInspector.super.apply( this, arguments );
 };
 
 /* Inheritance */
@@ -68,6 +68,8 @@ ve.ui.LanguageInspector.prototype.getAnnotationFromFragment = function ( fragmen
  * @inheritdoc
  */
 ve.ui.LanguageInspector.prototype.initialize = function () {
+	var languageField;
+
 	// Parent method
 	ve.ui.LanguageInspector.super.prototype.initialize.call( this );
 
@@ -76,8 +78,14 @@ ve.ui.LanguageInspector.prototype.initialize = function () {
 		dialogManager: this.manager.getSurface().getDialogs()
 	} );
 
+	languageField = new OO.ui.FieldLayout( this.languageInput, {
+		align: 'left',
+		classes: [ 've-ui-languageInspector-languageField' ],
+		label: ve.msg( 'visualeditor-languageinspector-widget-label-language' )
+	} );
+
 	// Initialization
-	this.form.$element.append( this.languageInput.$element );
+	this.form.$element.append( languageField.$element );
 };
 
 /**

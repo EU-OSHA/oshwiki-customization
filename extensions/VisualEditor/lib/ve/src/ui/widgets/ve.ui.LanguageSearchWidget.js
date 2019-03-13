@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface LanguageSearchWidget class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -22,7 +22,7 @@ ve.ui.LanguageSearchWidget = function VeUiLanguageSearchWidget( config ) {
 	}, config );
 
 	// Parent constructor
-	OO.ui.SearchWidget.call( this, config );
+	ve.ui.LanguageSearchWidget.super.call( this, config );
 
 	// Properties
 	this.languageResultWidgets = [];
@@ -59,7 +59,7 @@ OO.inheritClass( ve.ui.LanguageSearchWidget, OO.ui.SearchWidget );
  */
 ve.ui.LanguageSearchWidget.prototype.onQueryChange = function () {
 	// Parent method
-	OO.ui.SearchWidget.prototype.onQueryChange.call( this );
+	ve.ui.LanguageSearchWidget.super.prototype.onQueryChange.apply( this, arguments );
 
 	// Populate
 	this.addResults();
@@ -96,7 +96,9 @@ ve.ui.LanguageSearchWidget.prototype.addResults = function () {
 	var i, iLen, j, jLen, languageResult, data, matchedProperty,
 		matchProperties = [ 'name', 'autonym', 'code' ],
 		query = this.query.getValue().trim(),
-		matcher = new RegExp( '^' + this.constructor.static.escapeRegex( query ), 'i' ),
+		compare = ve.supportsIntl ?
+			new Intl.Collator( this.lang, { sensitivity: 'base' } ).compare :
+			function ( a, b ) { return a.toLowerCase() === b.toLowerCase() ? 0 : 1; },
 		hasQuery = !!query.length,
 		items = [];
 
@@ -108,7 +110,7 @@ ve.ui.LanguageSearchWidget.prototype.addResults = function () {
 		matchedProperty = null;
 
 		for ( j = 0, jLen = matchProperties.length; j < jLen; j++ ) {
-			if ( matcher.test( data[ matchProperties[ j ] ] ) ) {
+			if ( data[ matchProperties[ j ] ] && compare( data[ matchProperties[ j ] ].slice( 0, query.length ), query ) === 0 ) {
 				matchedProperty = matchProperties[ j ];
 				break;
 			}
@@ -117,7 +119,7 @@ ve.ui.LanguageSearchWidget.prototype.addResults = function () {
 		if ( query === '' || matchedProperty ) {
 			items.push(
 				languageResult
-					.updateLabel( query, matchedProperty )
+					.updateLabel( query, matchedProperty, compare )
 					.setSelected( false )
 					.setHighlighted( false )
 			);
@@ -126,18 +128,6 @@ ve.ui.LanguageSearchWidget.prototype.addResults = function () {
 
 	this.results.addItems( items );
 	if ( hasQuery ) {
-		this.results.highlightItem( this.results.getFirstSelectableItem() );
+		this.results.highlightItem( this.results.findFirstSelectableItem() );
 	}
-};
-
-/**
- * Escape regex.
- *
- * Ported from Languagefilter#escapeRegex in jquery.uls.
- *
- * @param {string} value Text
- * @return {string} Text escaped for use in regex
- */
-ve.ui.LanguageSearchWidget.static.escapeRegex = function ( value ) {
-	return value.replace( /[\-\[\]{}()*+?.,\\\^$\|#\s]/g, '\\$&' );
 };

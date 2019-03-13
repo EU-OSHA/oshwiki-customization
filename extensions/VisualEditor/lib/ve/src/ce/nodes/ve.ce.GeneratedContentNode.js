@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable GeneratedContentNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -15,6 +15,7 @@
 ve.ce.GeneratedContentNode = function VeCeGeneratedContentNode() {
 	// Properties
 	this.generatingPromise = null;
+	this.generatedContentsInvalid = null;
 
 	// Events
 	this.model.connect( this, { update: 'onGeneratedContentNodeUpdate' } );
@@ -47,6 +48,41 @@ OO.initClass( ve.ce.GeneratedContentNode );
 // We handle rendering ourselves, no need to render attributes from originalDomElements
 ve.ce.GeneratedContentNode.static.renderHtmlAttributes = false;
 
+/* Static methods */
+
+/**
+ * Wait for all content-generation within a given node to finish
+ *
+ * If no GeneratedContentNodes are within the node, a resolved promise will be
+ * returned.
+ *
+ * @param  {ve.ce.View} view Any view node
+ * @return {jQuery.Promise} Promise, resolved when content is generated
+ */
+ve.ce.GeneratedContentNode.static.awaitGeneratedContent = function ( view ) {
+	var promises = [];
+
+	function queueNode( node ) {
+		var promise;
+		if ( typeof node.generateContents === 'function' ) {
+			if ( node.isGenerating() ) {
+				promise = $.Deferred();
+				node.once( 'rerender', promise.resolve );
+				promises.push( promise );
+			}
+		}
+	}
+
+	// Traverse children to see when they are all rerendered
+	if ( view instanceof ve.ce.BranchNode ) {
+		view.traverse( queueNode );
+	} else {
+		queueNode( view );
+	}
+
+	return $.when.apply( $, promises );
+};
+
 /* Abstract methods */
 
 /**
@@ -77,9 +113,11 @@ ve.ce.GeneratedContentNode.prototype.generateContents = null;
 
 /**
  * Handler for the update event
+ *
+ * @param {boolean} staged Update happened in staging mode
  */
-ve.ce.GeneratedContentNode.prototype.onGeneratedContentNodeUpdate = function () {
-	this.update();
+ve.ce.GeneratedContentNode.prototype.onGeneratedContentNodeUpdate = function ( staged ) {
+	this.update( undefined, staged );
 };
 
 /**
@@ -92,75 +130,94 @@ ve.ce.GeneratedContentNode.prototype.onGeneratedContentNodeUpdate = function () 
  * implementation, otherwise you should call the parent implementation first and modify its
  * return value.
  *
- * @param {HTMLElement[]} domElements Clones of the DOM elements from the store
+ * @param {Node[]} domElements Clones of the DOM elements from the store
  * @return {HTMLElement[]} Clones of the DOM elements in the right document, with modifications
  */
 ve.ce.GeneratedContentNode.prototype.getRenderedDomElements = function ( domElements ) {
-	var i, len, $rendering,
+	var rendering,
 		doc = this.getElementDocument();
 
-	// Clone the elements into the target document
-	$rendering = $( ve.copyDomElements( domElements, doc ) );
+	rendering = this.filterRenderedDomElements(
+		// Clone the elements into the target document
+		ve.copyDomElements( domElements, doc )
+	);
 
-	// Filter out link and style tags for bug 50043
-	// Previously filtered out meta tags, but restore these as they
-	// can be made visible.
-	$rendering = $rendering.not( 'link, style' );
-	// Also remove link and style tags nested inside other tags
-	$rendering.find( 'link, style' ).remove();
-
-	if ( $rendering.length ) {
+	if ( rendering.length ) {
 		// Span wrap root text nodes so they can be measured
-		for ( i = 0, len = $rendering.length; i < len; i++ ) {
-			if ( $rendering[ i ].nodeType === Node.TEXT_NODE ) {
-				$rendering[ i ] = $( '<span>' ).append( $rendering[ i ] )[ 0 ];
+		rendering = rendering.map( function ( node ) {
+			var span;
+			if ( node.nodeType === Node.TEXT_NODE ) {
+				span = document.createElement( 'span' );
+				span.appendChild( node );
+				return span;
 			}
-		}
+			return node;
+		} );
 	} else {
-		$rendering = $( '<span>' );
+		rendering = [ document.createElement( 'span' ) ];
 	}
 
 	// Render the computed values of some attributes
 	ve.resolveAttributes(
-		$rendering,
+		rendering,
 		domElements[ 0 ].ownerDocument,
 		ve.dm.Converter.static.computedAttributes
 	);
 
-	return $rendering.toArray();
+	return rendering;
+};
+
+/**
+ * Filter out elemements from the rendered content which we don't want to display in the CE.
+ *
+ * @param {Node[]} domElements Clones of the DOM elements from the store, already copied into the document
+ * @return {Node[]} DOM elements to keep
+ */
+ve.ce.GeneratedContentNode.prototype.filterRenderedDomElements = function ( domElements ) {
+	return ve.filterMetaElements( domElements );
 };
 
 /**
  * Rerender the contents of this node.
  *
  * @param {Object|string|Array} generatedContents Generated contents, in the default case an HTMLElement array
+ * @param {boolean} [staged] Update happened in staging mode
  * @fires setup
  * @fires teardown
  */
-ve.ce.GeneratedContentNode.prototype.render = function ( generatedContents ) {
+ve.ce.GeneratedContentNode.prototype.render = function ( generatedContents, staged ) {
 	var $newElements;
 	if ( this.live ) {
 		this.emit( 'teardown' );
 	}
 	$newElements = $( this.getRenderedDomElements( ve.copyDomElements( generatedContents ) ) );
-	if ( !this.$element[ 0 ].parentNode ) {
-		// this.$element hasn't been attached yet, so just overwrite it
-		this.$element = $newElements;
+	this.generatedContentsInvalid = !this.validateGeneratedContents( $( generatedContents ) );
+	if ( !staged || !this.generatedContentsInvalid ) {
+		if ( !this.$element[ 0 ].parentNode ) {
+			// this.$element hasn't been attached yet, so just overwrite it
+			this.$element = $newElements;
+		} else {
+			// Switch out this.$element (which can contain multiple siblings) in place
+			this.$element.first().replaceWith( $newElements );
+			this.$element.remove();
+			this.$element = $newElements;
+		}
 	} else {
-		// Switch out this.$element (which can contain multiple siblings) in place
-		this.$element.first().replaceWith( $newElements );
-		this.$element.remove();
-		this.$element = $newElements;
+		this.generatedContentsValid = false;
+		this.model.emit( 'generatedContentsError', $newElements );
 	}
 
 	// Update focusable and resizable elements if necessary
+	// TODO: Move these method definitions to their respective mixins.
 	if ( this.$focusable ) {
 		this.$focusable = this.getFocusableElement();
+		this.$bounding = this.getBoundingElement();
 	}
 	if ( this.$resizable ) {
 		this.$resizable = this.getResizableElement();
 	}
 
+	this.initialize();
 	if ( this.live ) {
 		this.emit( 'setup' );
 	}
@@ -180,18 +237,31 @@ ve.ce.GeneratedContentNode.prototype.afterRender = function () {
 };
 
 /**
+ * Check whether the response HTML contains an error.
+ *
+ * The default implementation always returns true.
+ *
+ * @param {jQuery} $element The generated element
+ * @return {boolean} There is no error
+ */
+ve.ce.GeneratedContentNode.prototype.validateGeneratedContents = function () {
+	return true;
+};
+
+/**
  * Update the contents of this node based on the model and config data. If this combination of
  * model and config data has been rendered before, the cached rendering in the store will be used.
  *
  * @param {Object} [config] Optional additional data to pass to generateContents()
+ * @param {boolean} [staged] Update happened in staging mode
  */
-ve.ce.GeneratedContentNode.prototype.update = function ( config ) {
+ve.ce.GeneratedContentNode.prototype.update = function ( config, staged ) {
 	var store = this.model.doc.getStore(),
-		index = store.indexOfHash( OO.getHash( [ this.model, config ] ) );
-	if ( index !== null ) {
-		this.render( store.value( index ) );
+		contents = store.value( store.hashOfValue( null, OO.getHash( [ this.model.getHashObjectForRendering(), config ] ) ) );
+	if ( contents ) {
+		this.render( contents, staged );
 	} else {
-		this.forceUpdate( config );
+		this.forceUpdate( config, staged );
 	}
 };
 
@@ -199,8 +269,9 @@ ve.ce.GeneratedContentNode.prototype.update = function ( config ) {
  * Force the contents to be updated. Like update(), but bypasses the store.
  *
  * @param {Object} [config] Optional additional data to pass to generateContents()
+ * @param {boolean} [staged] Update happened in staging mode
  */
-ve.ce.GeneratedContentNode.prototype.forceUpdate = function ( config ) {
+ve.ce.GeneratedContentNode.prototype.forceUpdate = function ( config, staged ) {
 	var promise, node = this;
 
 	if ( this.generatingPromise ) {
@@ -217,7 +288,7 @@ ve.ce.GeneratedContentNode.prototype.forceUpdate = function ( config ) {
 		// If this promise is no longer the currently pending one, ignore it completely
 		.done( function ( generatedContents ) {
 			if ( node.generatingPromise === promise ) {
-				node.doneGenerating( generatedContents, config );
+				node.doneGenerating( generatedContents, config, staged );
 			}
 		} )
 		.fail( function () {
@@ -265,21 +336,22 @@ ve.ce.GeneratedContentNode.prototype.abortGenerating = function () {
  * @method
  * @param {Object|string|Array} generatedContents Generated contents
  * @param {Object} [config] Config object passed to forceUpdate()
+ * @param {boolean} [staged] Update happened in staging mode
  */
-ve.ce.GeneratedContentNode.prototype.doneGenerating = function ( generatedContents, config ) {
+ve.ce.GeneratedContentNode.prototype.doneGenerating = function ( generatedContents, config, staged ) {
 	var store, hash;
 
 	// Because doneGenerating is invoked asynchronously, the model node may have become detached
 	// in the meantime. Handle this gracefully.
-	if ( this.model.doc ) {
+	if ( this.model && this.model.doc ) {
 		store = this.model.doc.getStore();
-		hash = OO.getHash( [ this.model, config ] );
-		store.index( generatedContents, hash );
+		hash = OO.getHash( [ this.model.getHashObjectForRendering(), config ] );
+		store.hash( generatedContents, hash );
 	}
 
 	this.$element.removeClass( 've-ce-generatedContentNode-generating' );
 	this.generatingPromise = null;
-	this.render( generatedContents );
+	this.render( generatedContents, staged );
 };
 
 /**
@@ -311,30 +383,19 @@ ve.ce.GeneratedContentNode.prototype.getFocusableElement = function () {
 };
 
 /**
+ * Get the bounding element
+ *
+ * @return {jQuery} Bounding element
+ */
+ve.ce.GeneratedContentNode.prototype.getBoundingElement = function () {
+	return this.$element;
+};
+
+/**
  * Get the resizable element
  *
  * @return {jQuery} Resizable element
  */
 ve.ce.GeneratedContentNode.prototype.getResizableElement = function () {
 	return this.$element;
-};
-
-/**
- * Check if the rendering is visible
- *
- * @return {boolean} The rendering is visible
- */
-ve.ce.GeneratedContentNode.prototype.isVisible = function () {
-	var visible = false;
-	if ( this.$element.text().trim() !== '' ) {
-		return true;
-	}
-	this.$element.each( function () {
-		var $this = $( this );
-		if ( $this.width() >= 8 && $this.height() >= 8 ) {
-			visible = true;
-			return false;
-		}
-	} );
-	return visible;
 };

@@ -1,13 +1,15 @@
 /*!
  * VisualEditor ContentEditable DocumentNode styles.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 .ve-ce-documentNode {
+	cursor: default;
+}
+
+.ve-ce-surface-enabled .ve-ce-documentNode {
 	cursor: text;
-	/* 0.75/0.8, 1.5/0.8 */
-	padding: 0.9375em 1.875em;
 }
 
 /*
@@ -17,10 +19,5 @@
  */
 .ve-ce-documentNode::selection,
 .ve-ce-documentNode *::selection {
-	background: rgba(109, 169, 247, 0.5); /* #6da9f7 */
-}
-
-/* Prevent focus outline on editor */
-.ve-ce-documentNode:focus {
-	outline: none;
+	background: rgba( 109, 169, 247, 0.5 ); /* #6da9f7 */
 }

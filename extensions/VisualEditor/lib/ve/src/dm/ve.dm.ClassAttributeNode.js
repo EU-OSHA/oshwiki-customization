@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel ClassAttribute class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -31,6 +31,10 @@ OO.initClass( ve.dm.ClassAttributeNode );
  * @type {Object}
  */
 ve.dm.ClassAttributeNode.static.classAttributes = {};
+
+ve.dm.ClassAttributeNode.static.preserveHtmlAttributes = function ( attribute ) {
+	return attribute !== 'class';
+};
 
 /**
  * Set attributes from a class attribute
@@ -65,12 +69,14 @@ ve.dm.ClassAttributeNode.static.setClassAttributes = function ( attributes, clas
 /**
  * Get class attribute from element attributes
  *
- * @param {Object} attributes Element attributes
+ * @param {Object|undefined} attributes Element attributes
  * @return {string|null} Class name, or null if no classes to set
  */
 ve.dm.ClassAttributeNode.static.getClassAttrFromAttributes = function ( attributes ) {
 	var className, key, classAttributeSet, hasClass,
 		classNames = [];
+
+	attributes = attributes || {};
 
 	for ( className in this.classAttributes ) {
 		classAttributeSet = this.classAttributes[ className ];
@@ -101,4 +107,13 @@ ve.dm.ClassAttributeNode.static.getClassAttrFromAttributes = function ( attribut
 	}
 
 	return null;
+};
+
+/**
+ * @inheritdoc ve.dm.Node
+ */
+ve.dm.ClassAttributeNode.static.sanitize = function ( dataElement ) {
+	if ( dataElement.attributes ) {
+		delete dataElement.attributes.unrecognizedClasses;
+	}
 };

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor Standalone Initialization Platform class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -26,8 +26,8 @@ ve.init.sa.Platform = function VeInitSaPlatform( messagePaths ) {
 	ve.init.Platform.call( this );
 
 	// Properties
-	this.externalLinkUrlProtocolsRegExp = /^https?\:\/\//i;
-	this.unanchoredExternalLinkUrlProtocolsRegExp = /https?\:\/\//i;
+	this.externalLinkUrlProtocolsRegExp = /^https?:\/\//i;
+	this.unanchoredExternalLinkUrlProtocolsRegExp = /https?:\/\//i;
 	this.messagePaths = messagePaths || [];
 	this.parsedMessages = {};
 	this.userLanguages = [ 'en' ];
@@ -47,6 +47,58 @@ ve.init.sa.Platform.prototype.getExternalLinkUrlProtocolsRegExp = function () {
 /** @inheritdoc */
 ve.init.sa.Platform.prototype.getUnanchoredExternalLinkUrlProtocolsRegExp = function () {
 	return this.unanchoredExternalLinkUrlProtocolsRegExp;
+};
+
+/** @inheritdoc */
+ve.init.sa.Platform.prototype.notify = function ( message, title ) {
+	var closeId,
+		rAF = window.requestAnimationFrame || setTimeout,
+		$notificationWrapper = $( '<div>' ).addClass( 've-init-notification-wrapper' ),
+		$notification = $( '<div>' ).addClass( 've-init-notification' );
+
+	if ( title ) {
+		$notification.append(
+			$( '<div>' ).addClass( 've-init-notification-title' ).append(
+				typeof title === 'string' ? document.createTextNode( title ) : title
+			)
+		);
+	}
+	$notification.append(
+		$( '<div>' ).addClass( 've-init-notification-message' ).append(
+			typeof message === 'string' ? document.createTextNode( message ) : message
+		)
+	);
+
+	$notificationWrapper.append( $notification );
+
+	if ( !this.$notifications ) {
+		this.$notifications = $( '<div>' ).addClass( 've-init-notifications' );
+		$( 'body' ).append( this.$notifications );
+	}
+
+	function remove() {
+		$notificationWrapper.remove();
+	}
+	function collapse() {
+		$notificationWrapper.addClass( 've-init-notification-collapse' );
+		setTimeout( remove, 250 );
+	}
+	function close() {
+		clearTimeout( closeId );
+		$notificationWrapper.removeClass( 've-init-notification-open' );
+		$notificationWrapper.css( 'height', $notificationWrapper[ 0 ].clientHeight );
+		setTimeout( collapse, 250 );
+	}
+	function open() {
+		$notificationWrapper.addClass( 've-init-notification-open' );
+		closeId = setTimeout( close, 5000 );
+	}
+
+	rAF( open );
+
+	$notification.on( 'click', close );
+
+	this.$notifications.append( $notificationWrapper );
 };
 
 /**
@@ -72,6 +124,31 @@ ve.init.sa.Platform.prototype.getMessage = $.i18n;
 /**
  * @inheritdoc
  */
+ve.init.sa.Platform.prototype.getHtmlMessage = function ( key ) {
+	var $message = $( [] ),
+		lastOffset = 0,
+		args = arguments,
+		message = this.getMessage( key );
+	message.replace( /\$[0-9]+/g, function ( placeholder, offset ) {
+		var arg,
+			placeholderIndex = +( placeholder.slice( 1 ) );
+		$message = $message.add( ve.sanitizeHtml( message.slice( lastOffset, offset ) ) );
+		arg = args[ placeholderIndex ];
+		$message = $message.add(
+			typeof arg === 'string' ?
+				// Arguments come from the code so shouldn't be sanitized
+				document.createTextNode( arg ) :
+				arg
+		);
+		lastOffset = offset + placeholder.length;
+	} );
+	$message = $message.add( ve.sanitizeHtml( message.slice( lastOffset ) ) );
+	return $message;
+};
+
+/**
+ * @inheritdoc
+ */
 ve.init.sa.Platform.prototype.getConfig = function () {
 	/* Standalone has no config yet */
 	return null;
@@ -87,10 +164,14 @@ ve.init.sa.Platform.prototype.getUserConfig = function ( keys ) {
 		for ( i = 0, l = keys.length; i < l; i++ ) {
 			values[ keys[ i ] ] = this.getUserConfig( keys[ i ] );
 		}
+		return values;
 	} else {
-		return JSON.parse( localStorage.getItem( 've-' + keys ) );
+		try {
+			return JSON.parse( localStorage.getItem( 've-' + keys ) );
+		} catch ( e ) {
+			return null;
+		}
 	}
-	return values;
 };
 
 /**
@@ -100,17 +181,59 @@ ve.init.sa.Platform.prototype.setUserConfig = function ( keyOrValueMap, value ) 
 	var i;
 	if ( typeof keyOrValueMap === 'object' ) {
 		for ( i in keyOrValueMap ) {
-			if ( keyOrValueMap.hasOwnProperty( i ) ) {
-				this.setUserConfig( i, keyOrValueMap[ i ] );
+			if ( Object.prototype.hasOwnProperty.call( keyOrValueMap, i ) ) {
+				if ( !this.setUserConfig( i, keyOrValueMap[ i ] ) ) {
+					// localStorage will fail if the quota is full, so further
+					// sets won't work anyway.
+					return false;
+				}
 			}
 		}
 	} else {
-		localStorage.setItem( 've-' + keyOrValueMap, JSON.stringify( value ) );
+		try {
+			localStorage.setItem( 've-' + keyOrValueMap, JSON.stringify( value ) );
+		} catch ( e ) {
+			return false;
+		}
 	}
 	return true;
 };
 
-/** @inheritdoc */
+/**
+ * @inheritdoc
+ */
+ve.init.sa.Platform.prototype.getSession = function ( key ) {
+	try {
+		return window.sessionStorage.getItem( key );
+	} catch ( e ) {}
+	return false;
+};
+
+/**
+ * @inheritdoc
+ */
+ve.init.sa.Platform.prototype.setSession = function ( key, value ) {
+	try {
+		window.sessionStorage.setItem( key, value );
+		return true;
+	} catch ( e ) {}
+	return false;
+};
+
+/**
+ * @inheritdoc
+ */
+ve.init.sa.Platform.prototype.removeSession = function ( key ) {
+	try {
+		window.sessionStorage.removeItem( key );
+		return true;
+	} catch ( e ) {}
+	return false;
+};
+
+/**
+ * @inheritdoc
+ */
 ve.init.sa.Platform.prototype.addParsedMessages = function ( messages ) {
 	var key;
 	for ( key in messages ) {
@@ -118,7 +241,9 @@ ve.init.sa.Platform.prototype.addParsedMessages = function ( messages ) {
 	}
 };
 
-/** @inheritdoc */
+/**
+ * @inheritdoc
+ */
 ve.init.sa.Platform.prototype.getParsedMessage = function ( key ) {
 	if ( Object.prototype.hasOwnProperty.call( this.parsedMessages, key ) ) {
 		return this.parsedMessages[ key ];
@@ -140,7 +265,9 @@ ve.init.sa.Platform.prototype.getParsedMessage = function ( key ) {
 	} );
 };
 
-/** @inheritdoc */
+/**
+ * @inheritdoc
+ */
 ve.init.sa.Platform.prototype.getLanguageCodes = function () {
 	return Object.keys( $.uls.data.getAutonyms() );
 };
@@ -163,12 +290,16 @@ ve.init.sa.Platform.prototype.getLanguageAutonym = $.uls.data.getAutonym;
  */
 ve.init.sa.Platform.prototype.getLanguageDirection = $.uls.data.getDir;
 
-/** @inheritdoc */
+/**
+ * @inheritdoc
+ */
 ve.init.sa.Platform.prototype.getUserLanguages = function () {
 	return this.userLanguages;
 };
 
-/** @inheritdoc */
+/**
+ * @inheritdoc
+ */
 ve.init.sa.Platform.prototype.initialize = function () {
 	var i, iLen, j, jLen, partialLocale, localeParts, filename, deferred,
 		messagePaths = this.getMessagePaths(),
@@ -177,6 +308,10 @@ ve.init.sa.Platform.prototype.initialize = function () {
 		languagesCovered = {},
 		promises = [],
 		fallbacks = $.i18n.fallbacks[ locale ];
+
+	if ( !VisualEditorSupportCheck() ) {
+		return $.Deferred().reject().promise();
+	}
 
 	if ( !fallbacks ) {
 		// Try to find something that has fallbacks (which means it's a language we know about)

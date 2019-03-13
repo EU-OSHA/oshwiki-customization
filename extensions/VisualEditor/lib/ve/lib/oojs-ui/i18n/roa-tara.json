@@ -10,6 +10,7 @@
 	"ooui-toolbar-more": "De cchiù",
 	"ooui-toolgroup-expand": "De cchiù",
 	"ooui-toolgroup-collapse": "De mene",
+	"ooui-item-remove": "Live",
 	"ooui-dialog-message-accept": "OK",
 	"ooui-dialog-message-reject": "Annulle",
 	"ooui-dialog-process-error": "Quacche cose ha sciute stuèrte",
@@ -19,5 +20,6 @@
 	"ooui-selectfile-button-select": "Scacchie 'nu file",
 	"ooui-selectfile-not-supported": "'U scacchiamende d'u file non g'è supportate",
 	"ooui-selectfile-placeholder": "Nisciune file scacchiate",
-	"ooui-selectfile-dragdrop-placeholder": "Scitte 'u file aqquà"
+	"ooui-selectfile-dragdrop-placeholder": "Scitte 'u file aqquà",
+	"ooui-field-help": "Aijute"
 }

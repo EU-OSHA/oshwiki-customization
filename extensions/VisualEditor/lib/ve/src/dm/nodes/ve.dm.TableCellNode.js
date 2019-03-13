@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel TableCellNode class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -21,11 +21,6 @@ ve.dm.TableCellNode = function VeDmTableCellNode() {
 
 	// Mixin constructor
 	ve.dm.TableCellableNode.call( this );
-
-	// Events
-	this.connect( this, {
-		attributeChange: 'onAttributeChange'
-	} );
 };
 
 /* Inheritance */
@@ -37,6 +32,8 @@ OO.mixinClass( ve.dm.TableCellNode, ve.dm.TableCellableNode );
 /* Static Properties */
 
 ve.dm.TableCellNode.static.name = 'tableCell';
+
+ve.dm.TableCellNode.static.isUnwrappable = false;
 
 ve.dm.TableCellNode.static.parentNodeTypes = [ 'tableRow' ];
 
@@ -102,23 +99,16 @@ ve.dm.TableCellNode.static.createData = function ( options ) {
 	return [ opening ].concat( content ).concat( [ { type: '/tableCell' } ] );
 };
 
-/* Methods */
-
-/**
- * Handle attributes changes
- *
- * @param {string} key Attribute key
- * @param {string} from Old value
- * @param {string} to New value
- */
-ve.dm.TableCellNode.prototype.onAttributeChange = function ( key ) {
-	if ( this.getParent() && ( key === 'colspan' || key === 'rowspan' ) ) {
-		// In practice the matrix should already be invalidated as you
-		// shouldn't change a span without adding/removing other cells,
-		// but it is possible to just change spans if you don't mind a
-		// non-rectangular table.
-		this.getParent().getParent().getParent().getMatrix().invalidate();
+ve.dm.TableCellNode.static.describeChange = function ( key, change ) {
+	if ( key === 'style' ) {
+		return ve.htmlMsg( 'visualeditor-changedesc-no-key',
+			// Either visualeditor-table-format-data or visualeditor-table-format-header
+			this.wrapText( 'del', ve.msg( 'visualeditor-table-format-' + change.from ) ),
+			this.wrapText( 'ins', ve.msg( 'visualeditor-table-format-' + change.to ) )
+		);
 	}
+	// Parent method
+	return ve.dm.TableCellNode.parent.static.describeChange.apply( this, arguments );
 };
 
 /* Registration */

@@ -1,14 +1,14 @@
 /*!
  * VisualEditor UserInterface DSVFileTransferHandler tests.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.ui.DSVFileTransferHandler' );
 
 /* Tests */
 
-QUnit.test( 'getInsertableData', 1, function ( assert ) {
+QUnit.test( 'getInsertableData', function ( assert ) {
 	var handler,
 		done = assert.async(),
 		fn = function () {},
@@ -27,7 +27,7 @@ QUnit.test( 'getInsertableData', 1, function ( assert ) {
 		},
 		mockReader = {
 			readAsText: fn,
-			result: 'a,b\nc,d'
+			result: 'a,b\nc,d\n'
 		};
 
 	handler = ve.ui.dataTransferHandlerFactory.create( 'dsv', mockSurface, item );

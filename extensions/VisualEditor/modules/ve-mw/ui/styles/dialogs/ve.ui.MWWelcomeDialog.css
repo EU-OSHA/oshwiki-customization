@@ -1,17 +1,19 @@
 /*!
  * VisualEditor MediaWiki UserInterface beta welcome dialog styles.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
-.visualeditor-welcomedialog-content {
-	background: url(images/welcomeSplash-ltr.png) 50% 100% no-repeat;
-	background-size: 50%;
-	height: 200px;
-	text-align: center;
+
+.visualeditor-welcomedialog-content:before {
+	content: '';
+	background: url( images/welcomeSplash-ltr.png ) center no-repeat;
+	background-size: contain;
+	display: block;
+	height: 8em;
 }
 
-.visualeditor-welcomedialog-content-text {
-	display: inline-block;
-	margin-top: 12em;
+.visualeditor-welcomedialog-content {
+	display: block;
+	text-align: center;
 }

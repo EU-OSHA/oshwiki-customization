@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface ContextItem class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -9,24 +9,15 @@
  *
  * @class
  * @extends OO.ui.Widget
- * @mixins OO.ui.mixin.IconElement
- * @mixins OO.ui.mixin.LabelElement
- * @mixins OO.ui.mixin.PendingElement
  *
  * @constructor
  * @param {ve.ui.Context} context Context item is in
  * @param {ve.dm.Model} [model] Model item is related to
  * @param {Object} [config] Configuration options
- * @cfg {boolean} [basic] Render only basic information
  */
 ve.ui.ContextItem = function VeUiContextItem( context, model, config ) {
 	// Parent constructor
 	ve.ui.ContextItem.super.call( this, config );
-
-	// Mixin constructors
-	OO.ui.mixin.IconElement.call( this, config );
-	OO.ui.mixin.LabelElement.call( this, config );
-	OO.ui.mixin.PendingElement.call( this, config );
 
 	// Properties
 	this.context = context;
@@ -43,9 +34,6 @@ ve.ui.ContextItem = function VeUiContextItem( context, model, config ) {
 /* Inheritance */
 
 OO.inheritClass( ve.ui.ContextItem, OO.ui.Widget );
-OO.mixinClass( ve.ui.ContextItem, OO.ui.mixin.IconElement );
-OO.mixinClass( ve.ui.ContextItem, OO.ui.mixin.LabelElement );
-OO.mixinClass( ve.ui.ContextItem, OO.ui.mixin.PendingElement );
 
 /* Events */
 
@@ -94,7 +82,7 @@ ve.ui.ContextItem.static.isCompatibleWith = function ( model ) {
 /**
  * Check if model is a node
  *
- * @return {boolean} Model is a nodel
+ * @return {boolean} Model is a node
  */
 ve.ui.ContextItem.prototype.isNode = function () {
 	return this.model && this.model instanceof ve.dm.Node;
@@ -106,7 +94,7 @@ ve.ui.ContextItem.prototype.isNode = function () {
  * @return {ve.ui.Command} Command
  */
 ve.ui.ContextItem.prototype.getCommand = function () {
-	return ve.init.target.commandRegistry.lookup( this.constructor.static.commandName );
+	return this.context.getSurface().commandRegistry.lookup( this.constructor.static.commandName );
 };
 
 /**
@@ -124,6 +112,8 @@ ve.ui.ContextItem.prototype.getFragment = function () {
 	}
 	return this.fragment;
 };
+
+/* eslint-disable valid-jsdoc */
 
 /**
  * Setup the item.

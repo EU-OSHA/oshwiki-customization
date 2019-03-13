@@ -1,9 +1,9 @@
 /*!
  * VisualEditor Logger class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
-/*global Set*/
+/* global Set */
 
 /**
  * A scrupulous event logger that logs state at every function call, and
@@ -69,16 +69,17 @@ ve.Filibuster.prototype.clearLogs = function () {
 	this.callPath.length = 0;
 };
 
+// eslint-disable-next-line valid-jsdoc
 /**
  * Attaches an observer callback. The callback returns a value representing the current state,
- * which must be a string, a number, a boolean, undefined or null (this ensures state values
- * are immutable and can be compared with strict equals).
+ * which must be a string (this ensures state values are immutable, comparable with strict
+ * equality and easily dumpable).
  *
  * The observer will be called before and after every function call. An observation is logged
  * every time there is a difference between the current return value and the previous one.
  *
  * @param {string} name The name of the observer, for display in the logs.
- * @param {Function} callback The callback; must return string|number|boolean|undefined|null
+ * @param {Function} callback The callback; must return a string
  * @chainable
  */
 ve.Filibuster.prototype.setObserver = function ( name, callback ) {
@@ -104,14 +105,14 @@ ve.Filibuster.prototype.observe = function ( action ) {
 		} catch ( ex ) {
 			newState = 'Error: ' + ex;
 		}
-		if ( newState && !( typeof newState ).match( /^(string|number|boolean)$/ ) ) {
+		if ( typeof newState !== 'string' ) {
 			// Be strict about the allowed types, to ensure immutability
 			ve.error( 'Illegal state:', newState );
 			throw new Error( 'Illegal state: ' + newState );
 		}
 
 		if ( this.states[ name ] !== newState ) {
-			if ( this.states.hasOwnProperty( name ) ) {
+			if ( Object.prototype.hasOwnProperty.call( this.states, name ) ) {
 				// State change: write observation
 				changes[ name ] = {
 					oldState: oldState,
@@ -248,6 +249,7 @@ ve.Filibuster.prototype.wrapFunction = function ( container, klassName, fnName )
 	return this;
 };
 
+// eslint-disable-next-line valid-jsdoc
 /**
  * Wrap the functions in a class with wrappers that perform logging.
  *
@@ -276,6 +278,7 @@ ve.Filibuster.prototype.wrapClass = function ( klass, blacklist ) {
 	return this;
 };
 
+// eslint-disable-next-line valid-jsdoc
 /**
  * Recursively wrap the functions in a namespace with wrappers that perform logging.
  *
@@ -295,14 +298,14 @@ ve.Filibuster.prototype.wrapNamespace = function ( ns, nsName, blacklist ) {
 		}
 		isConstructor = (
 			typeof prop === 'function' &&
-			!$.isEmptyObject( prop.prototype )
+			!ve.isEmptyObject( prop.prototype )
 		);
 		if ( isConstructor ) {
 			this.wrapClass( prop, blacklist );
 		} else if ( typeof prop === 'function' ) {
 			this.wrapFunction( ns, nsName, propName );
 		} else if ( $.isPlainObject( prop ) ) {
-			// might be a namespace; recurse
+			// Might be a namespace; recurse
 			this.wrapNamespace( prop, nsName + '.' + propName, blacklist );
 		}
 	}
@@ -376,7 +379,7 @@ ve.Filibuster.prototype.getObservationsHtml = function ( branchPath ) {
 		return (
 			'<b>exit ' + ve.escapeHtml( frame.funcName ) + '</b>' +
 			'--->' +
-			( frame.thrown ?  'thrown' : showVal( frame.returned ) )
+			( frame.thrown ? 'thrown' : showVal( frame.returned ) )
 		);
 	}
 
@@ -475,7 +478,7 @@ ve.Filibuster.static.clonePlain = function ( val, seen ) {
 	}
 	if ( Array.isArray( val ) ) {
 		if ( seen.has( val ) ) {
-			return '...';
+			return '…';
 		}
 		seen.add( val );
 		return val.map( function ( x ) {
@@ -500,8 +503,9 @@ ve.Filibuster.static.clonePlain = function ( val, seen ) {
 	} else if ( val instanceof ve.dm.Selection ) {
 		return { 've.dm.Selection': val.getDescription() };
 	} else if ( val.constructor === ve.dm.AnnotationSet ) {
-		return { 've.dm.AnnotationSet':
-				val.getStore().values( val.getIndexes() )
+		return {
+			've.dm.AnnotationSet': val.getStore()
+				.values( val.getHashes() )
 				.map( function ( annotation ) {
 					return annotation.name;
 				} )
@@ -511,7 +515,7 @@ ve.Filibuster.static.clonePlain = function ( val, seen ) {
 		return '(' + ( val.constructor.name || 'unknown' ) + ')';
 	} else {
 		if ( seen.has( val ) ) {
-			return '...';
+			return '…';
 		}
 		seen.add( val );
 		plainVal = {};

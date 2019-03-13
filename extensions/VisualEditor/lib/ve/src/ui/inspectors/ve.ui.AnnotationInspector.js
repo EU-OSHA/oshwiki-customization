@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface AnnotationInspector class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -14,9 +14,9 @@
  * @constructor
  * @param {Object} [config] Configuration options
  */
-ve.ui.AnnotationInspector = function VeUiAnnotationInspector( config ) {
+ve.ui.AnnotationInspector = function VeUiAnnotationInspector() {
 	// Parent constructor
-	ve.ui.FragmentInspector.call( this, config );
+	ve.ui.AnnotationInspector.super.apply( this, arguments );
 
 	// Properties
 	this.initialSelection = null;
@@ -44,12 +44,6 @@ ve.ui.AnnotationInspector.static.modelClasses = [];
 // from the inspector performs.
 ve.ui.AnnotationInspector.static.actions = [
 	{
-		action: 'remove',
-		label: OO.ui.deferMsg( 'visualeditor-inspector-remove-tooltip' ),
-		flags: 'destructive',
-		modes: 'edit'
-	},
-	{
 		action: 'done',
 		label: OO.ui.deferMsg( 'visualeditor-dialog-action-done' ),
 		flags: [ 'progressive', 'primary' ],
@@ -63,7 +57,7 @@ ve.ui.AnnotationInspector.static.actions = [
 	{
 		action: 'done',
 		label: OO.ui.deferMsg( 'visualeditor-dialog-action-insert' ),
-		flags: [ 'constructive', 'primary' ],
+		flags: [ 'progressive', 'primary' ],
 		modes: 'insert'
 	}
 ];
@@ -99,6 +93,9 @@ ve.ui.AnnotationInspector.prototype.getInsertionData = function () {
  * @return {string} Text to insert
  */
 ve.ui.AnnotationInspector.prototype.getInsertionText = function () {
+	if ( this.sourceMode ) {
+		return OO.ui.resolveMsg( this.constructor.static.title );
+	}
 	return '';
 };
 
@@ -152,18 +149,6 @@ ve.ui.AnnotationInspector.prototype.getMode = function () {
 };
 
 /**
- * @inheritdoc
- */
-ve.ui.AnnotationInspector.prototype.getActionProcess = function ( action ) {
-	if ( action === 'remove' ) {
-		return new OO.ui.Process( function () {
-			this.close( { action: 'remove' } );
-		}, this );
-	}
-	return ve.ui.AnnotationInspector.super.prototype.getActionProcess.call( this, action );
-};
-
-/**
  * Handle the inspector being setup.
  *
  * There are 4 scenarios:
@@ -175,11 +160,13 @@ ve.ui.AnnotationInspector.prototype.getActionProcess = function ( action ) {
  *
  * @method
  * @param {Object} [data] Inspector opening data
+ * @param {boolean} [data.noExpand] Don't expand the selection when opening
+ * @return {OO.ui.Process}
  */
 ve.ui.AnnotationInspector.prototype.getSetupProcess = function ( data ) {
 	return ve.ui.AnnotationInspector.super.prototype.getSetupProcess.call( this, data )
 		.next( function () {
-			var expandedFragment, trimmedFragment, initialCoveringAnnotation,
+			var initialCoveringAnnotation,
 				inspector = this,
 				annotationSet, annotations,
 				fragment = this.getFragment(),
@@ -195,8 +182,9 @@ ve.ui.AnnotationInspector.prototype.getSetupProcess = function ( data ) {
 					fragment.getDocument().data.isContentOffset( fragment.getSelection().getRange().start )
 				) {
 					// Expand to nearest word
-					expandedFragment = fragment.expandLinearSelection( 'word' );
-					fragment = expandedFragment;
+					if ( !data.noExpand ) {
+						fragment = fragment.expandLinearSelection( 'word' );
+					}
 
 					// TODO: We should review how getMatchingAnnotation works in light of the fact
 					// that in the case of a collapsed range, the method falls back to retrieving
@@ -214,8 +202,7 @@ ve.ui.AnnotationInspector.prototype.getSetupProcess = function ( data ) {
 					}
 				} else {
 					// Trim whitespace
-					trimmedFragment = fragment.trimLinearSelection();
-					fragment = trimmedFragment;
+					fragment = fragment.trimLinearSelection();
 				}
 
 				if ( !fragment.getSelection().isCollapsed() && !annotation ) {
@@ -226,10 +213,9 @@ ve.ui.AnnotationInspector.prototype.getSetupProcess = function ( data ) {
 					}
 				}
 			}
-			if ( annotation ) {
+			if ( annotation && !data.noExpand ) {
 				// Expand range to cover annotation
-				expandedFragment = fragment.expandLinearSelection( 'annotation', annotation );
-				fragment = expandedFragment;
+				fragment = fragment.expandLinearSelection( 'annotation', annotation );
 			}
 
 			// Update selection
@@ -271,7 +257,7 @@ ve.ui.AnnotationInspector.prototype.getTeardownProcess = function ( data ) {
 				insertText = false,
 				replace = false,
 				annotation = this.getAnnotation(),
-				remove = data.action === 'remove' || ( data.action === 'done' && this.shouldRemoveAnnotation() ),
+				remove = data.action === 'done' && this.shouldRemoveAnnotation(),
 				surfaceModel = this.fragment.getSurface(),
 				fragment = surfaceModel.getFragment( this.initialSelection, false ),
 				selection = this.fragment.getSelection();
@@ -289,6 +275,9 @@ ve.ui.AnnotationInspector.prototype.getTeardownProcess = function ( data ) {
 			if ( !remove ) {
 				if ( data.action !== 'done' ) {
 					surfaceModel.popStaging();
+					if ( this.previousSelection ) {
+						surfaceModel.setSelection( this.previousSelection );
+					}
 					return;
 				}
 				if ( this.initialSelection.isCollapsed() ) {
@@ -339,7 +328,9 @@ ve.ui.AnnotationInspector.prototype.getTeardownProcess = function ( data ) {
 					fragment.annotateContent( 'set', annotation );
 				}
 			}
-			if ( !data.action || insertText ) {
+			// HACK: ui.WindowAction unsets previousSelection in source mode,
+			// so we can't rely on it existing.
+			if ( this.previousSelection && ( !data.action || insertText ) ) {
 				// Restore selection to what it was before we expanded it
 				selection = this.previousSelection;
 			}

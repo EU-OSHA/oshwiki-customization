@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MediaWiki UserInterface transclusion tool classes.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -9,18 +9,18 @@
  * MediaWiki UserInterface transclusion tool.
  *
  * @class
- * @extends ve.ui.DialogTool
+ * @extends ve.ui.FragmentWindowTool
  * @constructor
  * @param {OO.ui.ToolGroup} toolGroup
  * @param {Object} [config] Configuration options
  */
-ve.ui.MWTransclusionDialogTool = function VeUiMWTransclusionDialogTool( toolGroup, config ) {
-	ve.ui.DialogTool.call( this, toolGroup, config );
+ve.ui.MWTransclusionDialogTool = function VeUiMWTransclusionDialogTool() {
+	ve.ui.MWTransclusionDialogTool.super.apply( this, arguments );
 };
 
 /* Inheritance */
 
-OO.inheritClass( ve.ui.MWTransclusionDialogTool, ve.ui.DialogTool );
+OO.inheritClass( ve.ui.MWTransclusionDialogTool, ve.ui.FragmentWindowTool );
 
 /* Static Properties */
 
@@ -28,7 +28,7 @@ ve.ui.MWTransclusionDialogTool.static.name = 'transclusion';
 
 ve.ui.MWTransclusionDialogTool.static.group = 'object';
 
-ve.ui.MWTransclusionDialogTool.static.icon = 'template';
+ve.ui.MWTransclusionDialogTool.static.icon = 'puzzle';
 
 ve.ui.MWTransclusionDialogTool.static.title =
 	OO.ui.deferMsg( 'visualeditor-dialogbutton-template-tooltip' );
@@ -55,7 +55,7 @@ ve.ui.MWTransclusionDialogTool.static.isCompatibleWith = function ( model ) {
 	var compatible;
 
 	// Parent method
-	compatible = ve.ui.DialogTool.static.isCompatibleWith.call( this, model );
+	compatible = ve.ui.MWTransclusionDialogTool.super.static.isCompatibleWith.call( this, model );
 
 	if ( compatible && this.template ) {
 		return model.isSingleTemplate( this.template );
@@ -74,3 +74,19 @@ ve.ui.commandRegistry.register(
 		{ args: [ 'transclusion' ], supportedSelections: [ 'linear' ] }
 	)
 );
+
+ve.ui.commandRegistry.register(
+	new ve.ui.Command(
+		'transclusionFromSequence', 'window', 'open',
+		{ args: [ 'transclusion', { cancelCommand: 'undo' } ], supportedSelections: [ 'linear' ] }
+	)
+);
+
+ve.ui.sequenceRegistry.register(
+	new ve.ui.Sequence( 'wikitextTemplate', 'transclusionFromSequence', '{{', 2 )
+);
+
+ve.ui.commandHelpRegistry.register( 'insert', 'template', {
+	sequences: [ 'wikitextTemplate' ],
+	label: OO.ui.deferMsg( 'visualeditor-dialog-template-title' )
+} );

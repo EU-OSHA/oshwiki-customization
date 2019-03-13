@@ -6,33 +6,37 @@
  *
  * Example:
  *
- * <table>
- *   <tr><td rowspan=2>1</td><td colspan=2>2</td><td rowspan=2 colspan=2>3</td></tr>
- *   <tr><td>4</td><td>5</td></tr>
- * </table>
+ *     <table>
+ *       <tr><td rowspan=2>1</td><td colspan=2>2</td><td rowspan=2 colspan=2>3</td></tr>
+ *       <tr><td>4</td><td>5</td></tr>
+ *     </table>
  *
  * Visually this table would look like:
  *
- *  -------------------
- * | 1 | 2     | 3     |
- * |   |-------|       |
- * |   | 4 | 5 |       |
- *  -------------------
+ *      -------------------
+ *     | 1 | 2     | 3     |
+ *     |   |-------|       |
+ *     |   | 4 | 5 |       |
+ *      -------------------
  *
  * The HTML model is sparse which makes it hard to read but also difficult to work with programmatically.
  * The corresponding TableCellMatrix would look like:
  *
- * | C[1] | C[2] | P[2] | C[3] | P[3] |
- * | P[1] | C[4] | C[5] | P[3] | P[3] |
+ *     | C[1] | C[2] | P[2] | C[3] | P[3] |
+ *     | P[1] | C[4] | C[5] | P[3] | P[3] |
  *
  * Where C[1] represents a Cell instance wrapping cell 1,
  * and P[1] a PlaceHolder instance owned by that cell.
  *
  * @class
+ * @mixins OO.EventEmitter
  * @constructor
  * @param {ve.dm.TableNode} tableNode Reference to a table instance
  */
 ve.dm.TableMatrix = function VeDmTableMatrix( tableNode ) {
+	// Mixin constructors
+	OO.EventEmitter.call( this );
+
 	this.tableNode = tableNode;
 	// Do not access these directly as they get invalidated on structural changes
 	// Use the accessor methods instead.
@@ -40,14 +44,25 @@ ve.dm.TableMatrix = function VeDmTableMatrix( tableNode ) {
 	this.rowNodes = null;
 };
 
+/* Inheritance */
+
+OO.mixinClass( ve.dm.TableMatrix, OO.EventEmitter );
+
+/**
+ * @event structureChange
+ */
+
 /**
  * Invalidates the matrix structure.
  *
  * This is called by ve.dm.TableNode on structural changes.
+ *
+ * @fires structureChange
  */
 ve.dm.TableMatrix.prototype.invalidate = function () {
 	this.matrix = null;
 	this.rowNodes = null;
+	this.emit( 'structureChange' );
 };
 
 /**
@@ -66,9 +81,9 @@ ve.dm.TableMatrix.prototype.update = function () {
 	iterator.on( 'newRow', function ( rowNode ) {
 		row++;
 		col = -1;
-		// initialize a matrix row
+		// Initialize a matrix row
 		matrix[ row ] = matrix[ row ] || [];
-		// store the row node
+		// Store the row node
 		rowNodes.push( rowNode );
 	} );
 
@@ -76,7 +91,7 @@ ve.dm.TableMatrix.prototype.update = function () {
 	// so called placeholders into the matrix.
 	while ( ( cellNode = iterator.next() ) !== undefined ) {
 		col++;
-		// skip placeholders
+		// Skip placeholders
 		while ( matrix[ row ][ col ] ) {
 			col++;
 		}
@@ -85,9 +100,9 @@ ve.dm.TableMatrix.prototype.update = function () {
 			continue;
 		}
 		cell = new ve.dm.TableMatrixCell( cellNode, row, col );
-		// store the cell in the matrix
+		// Store the cell in the matrix
 		matrix[ row ][ col ] = cell;
-		// add place holders for spanned cells
+		// Add place holders for spanned cells
 		rowSpan = cellNode.getRowspan();
 		colSpan = cellNode.getColspan();
 
@@ -102,7 +117,7 @@ ve.dm.TableMatrix.prototype.update = function () {
 				}
 				r = row + i;
 				c = col + j;
-				// initialize the cell matrix row if not yet present
+				// Initialize the cell matrix row if not yet present
 				matrix[ r ] = matrix[ r ] || [];
 				matrix[ r ][ c ] = new ve.dm.TableMatrixCell( cellNode, r, c, cell );
 			}
@@ -168,7 +183,7 @@ ve.dm.TableMatrix.prototype.getRowNode = function ( row ) {
  * Note: this is primarily for internal use. Do not change the delivered matrix
  * and do not store as it may be invalidated.
  *
- * @return {ve.dm.TableMatrixCell[][]} Table matrix
+ * @return {Array} Table matrix, a 2D array of ve.dm.TableMatrixCell objects
  */
 ve.dm.TableMatrix.prototype.getMatrix = function () {
 	if ( !this.matrix ) {
@@ -202,14 +217,32 @@ ve.dm.TableMatrix.prototype.getRowCount = function () {
 };
 
 /**
- * Get number of columns in the table
+ * Get number of columns in a row
  *
- * @param {number} [row] Row to count columns in (for when the table is sparse and this is variable)
+ * To get the number of columns in a table use #getMaxColCount
+ *
+ * @param {number} row Row to count columns in
  * @return {number} Number of columns
  */
 ve.dm.TableMatrix.prototype.getColCount = function ( row ) {
 	var matrix = this.getMatrix();
-	return matrix.length ? matrix[ row || 0 ].length : 0;
+	return matrix.length ? matrix[ row ].length : 0;
+};
+
+/**
+ * Get the maximum number of columns in a table
+ *
+ * This is required because in sparse tables the column count is variable.
+ *
+ * @return {number} Number of columns
+ */
+ve.dm.TableMatrix.prototype.getMaxColCount = function () {
+	var row, colCount = 0;
+
+	for ( row = this.getRowCount() - 1; row >= 0; row-- ) {
+		colCount = Math.max( colCount, this.getColCount( row ) );
+	}
+	return colCount;
 };
 
 /**
@@ -280,6 +313,8 @@ ve.dm.TableMatrixCell = function VeDmTableMatrixCell( node, row, col, owner ) {
 	this.col = col;
 	this.key = row + '_' + col;
 	this.owner = owner || this;
+	// Used when moving cells
+	this.data = null;
 };
 
 /* Inheritance */

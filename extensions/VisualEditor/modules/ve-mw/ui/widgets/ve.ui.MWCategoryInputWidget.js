@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface MWCategoryInputWidget class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -15,6 +15,7 @@
  * @constructor
  * @param {ve.ui.MWCategoryWidget} categoryWidget
  * @param {Object} [config] Configuration options
+ * @cfg {mw.Api} [api] API object to use, uses Target#getContentApi if not specified
  */
 ve.ui.MWCategoryInputWidget = function VeUiMWCategoryInputWidget( categoryWidget, config ) {
 	// Config initialization
@@ -23,13 +24,14 @@ ve.ui.MWCategoryInputWidget = function VeUiMWCategoryInputWidget( categoryWidget
 	}, config );
 
 	// Parent constructor
-	OO.ui.TextInputWidget.call( this, config );
+	ve.ui.MWCategoryInputWidget.super.call( this, config );
 
 	// Mixin constructors
 	OO.ui.mixin.LookupElement.call( this, config );
 
 	// Properties
 	this.categoryWidget = categoryWidget;
+	this.api = config.api || ve.init.target.getContentApi();
 
 	// Initialization
 	this.$element.addClass( 've-ui-mwCategoryInputWidget' );
@@ -62,7 +64,7 @@ ve.ui.MWCategoryInputWidget.prototype.getLookupRequest = function () {
 	} else {
 		title = this.value;
 	}
-	return new mw.Api().get( {
+	return this.api.get( {
 		action: 'query',
 		generator: 'allcategories',
 		gacmin: 1,
@@ -83,13 +85,16 @@ ve.ui.MWCategoryInputWidget.prototype.getLookupCacheDataFromResponse = function 
 	$.each( query.pages || [], function ( pageId, categoryPage ) {
 		result.push( mw.Title.newFromText( categoryPage.title ).getMainText() );
 		linkCacheUpdate[ categoryPage.title ] = {
-			missing: categoryPage.hasOwnProperty( 'missing' ),
-			hidden: categoryPage.categoryinfo && categoryPage.categoryinfo.hasOwnProperty( 'hidden' )
+			missing: Object.prototype.hasOwnProperty.call( categoryPage, 'missing' ),
+			hidden: (
+				categoryPage.categoryinfo &&
+				Object.prototype.hasOwnProperty.call( categoryPage.categoryinfo, 'missing' )
+			)
 		};
 	} );
 
 	$.each( query.redirects || [], function ( index, redirect ) {
-		if ( !linkCacheUpdate.hasOwnProperty( redirect.to ) ) {
+		if ( !Object.prototype.hasOwnProperty.call( linkCacheUpdate, redirect.to ) ) {
 			linkCacheUpdate[ redirect.to ] = ve.init.platform.linkCache.getCached( redirect.to ) ||
 				{ missing: false, redirectFrom: [ redirect.from ] };
 		}
@@ -231,22 +236,28 @@ ve.ui.MWCategoryInputWidget.prototype.onLookupMenuItemChoose = function ( item )
  * @return {OO.ui.MenuOptionWidget} Menu item widget to be shown
  */
 ve.ui.MWCategoryInputWidget.prototype.getCategoryWidgetFromName = function ( name ) {
-	var cachedData = ve.init.platform.linkCache.getCached(
-		mw.Title.newFromText( name, mw.config.get( 'wgNamespaceIds' ).category ).getPrefixedText()
-	);
+	var cachedData = ve.init.platform.linkCache.getCached( mw.Title.newFromText(
+			name,
+			mw.config.get( 'wgNamespaceIds' ).category
+		).getPrefixedText() ),
+		optionWidget, labelText;
 	if ( cachedData && cachedData.redirectFrom ) {
-		return new OO.ui.MenuOptionWidget( {
+		labelText = mw.Title.newFromText( cachedData.redirectFrom[ 0 ] ).getMainText();
+		optionWidget = new OO.ui.MenuOptionWidget( {
 			data: name,
 			autoFitLabel: false,
 			label: $( '<span>' )
-				.text( mw.Title.newFromText( cachedData.redirectFrom[ 0 ] ).getMainText() )
+				.text( labelText )
 				.append( '<br>↳ ' )
 				.append( $( '<span>' ).text( mw.Title.newFromText( name ).getMainText() ) )
 		} );
 	} else {
-		return new OO.ui.MenuOptionWidget( {
+		labelText = name;
+		optionWidget = new OO.ui.MenuOptionWidget( {
 			data: name,
 			label: name
 		} );
 	}
+	optionWidget.$element.attr( 'title', labelText );
+	return optionWidget;
 };

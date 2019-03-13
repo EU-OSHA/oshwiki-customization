@@ -1,7 +1,7 @@
 /*!
  * VisualEditor standalone demo
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 body {
@@ -9,18 +9,33 @@ body {
 	padding: 0;
 	overflow-y: scroll;
 	background: #fff;
-	font: normal 0.8em/1.5 sans-serif;
 }
 
 /* Demo */
 
+.ve-pad-logo,
 .ve-demo-logo {
 	float: right;
 	margin: 0.5em 0 0 0;
-	background: url('VisualEditor-logo.svg') no-repeat;
+	background-repeat: no-repeat;
 	background-size: contain;
+}
+
+.ve-pad-menu {
+	float: right;
+	margin-top: 1em;
+}
+
+.ve-pad-logo {
+	background-image: url( VisualEditor-collabpad-logo.svg );
+	width: 14em;
+	height: 3.75em;
+}
+
+.ve-demo-logo {
 	width: 10.75em;
 	height: 3.75em;
+	background-image: url( VisualEditor-logo.svg );
 }
 
 .ve-demo-surfaceToolbar-read {
@@ -30,7 +45,6 @@ body {
 /* Hack: should generate demo.rtl.css */
 .ve-demo-dir-rtl .ve-demo-logo {
 	float: left;
-	margin: -0.4em 0 0 -0.3em;
 }
 
 .ve-demo-toolbar {
@@ -45,12 +59,27 @@ body {
 	text-transform: capitalize;
 }
 
-.ve-demo-toolbar .ve-ui-languageInputWidget .oo-ui-fieldLayout-body > .oo-ui-labelElement-label {
+.ve-demo-toolbar .ve-ui-languageInputWidget-languageInput,
+.ve-demo-toolbar .ve-ui-languageInputWidget-directionSelect {
+	margin: 0;
+	display: inline-block;
+}
+
+.ve-demo-toolbar .ve-ui-languageInputWidget-directionLabel {
 	display: none;
 }
 
-.ve-demo-toolbar .ve-ui-languageInputWidget-directionSelect {
-	margin: 0;
+.ve-demo-toolbar .ve-ui-languageInputWidget-languageInput {
+	margin-right: 0.5em;
+}
+
+.ve-demo-toolbar-commands {
+	margin-bottom: -0.5em;
+}
+
+.ve-demo-toolbar-divider,
+.ve-demo-toolbar-commands > .oo-ui-widget {
+	margin-bottom: 0.5em;
 }
 
 .ve-demo-toolbar-commands > .oo-ui-widget > .oo-ui-fieldLayout {
@@ -65,12 +94,28 @@ body {
 	float: none;
 	display: inline-block;
 	vertical-align: middle;
+}
+
+.ve-demo-dir-ltr .ve-demo-toolbar-commands > .oo-ui-widget,
+.ve-demo-dir-ltr .ve-demo-toolbar-commands > .oo-ui-widget > .oo-ui-fieldLayout > .oo-ui-fieldLayout-body > .oo-ui-fieldLayout-field,
+.ve-demo-dir-ltr .ve-demo-toolbar-divider {
 	margin-right: 1em;
 }
 
-.ve-demo-toolbar-commands > .oo-ui-widget:last-child,
-.ve-demo-toolbar-commands > .oo-ui-widget > .oo-ui-fieldLayout:last-child > .oo-ui-fieldLayout-body > .oo-ui-fieldLayout-field {
+.ve-demo-dir-rtl .ve-demo-toolbar-commands > .oo-ui-widget,
+.ve-demo-dir-rtl .ve-demo-toolbar-commands > .oo-ui-widget > .oo-ui-fieldLayout > .oo-ui-fieldLayout-body > .oo-ui-fieldLayout-field,
+.ve-demo-dir-rtl .ve-demo-toolbar-divider {
+	margin-left: 1em;
+}
+
+.ve-demo-dir-ltr .ve-demo-toolbar-commands > .oo-ui-widget:last-child,
+.ve-demo-dir-ltr .ve-demo-toolbar-commands > .oo-ui-widget > .oo-ui-fieldLayout:last-child > .oo-ui-fieldLayout-body > .oo-ui-fieldLayout-field {
 	margin-right: 0;
+}
+
+.ve-demo-dir-rtl .ve-demo-toolbar-commands > .oo-ui-widget:last-child,
+.ve-demo-dir-rtl .ve-demo-toolbar-commands > .oo-ui-widget > .oo-ui-fieldLayout:last-child > .oo-ui-fieldLayout-body > .oo-ui-fieldLayout-field {
+	margin-left: 0;
 }
 
 .ve-demo-toolbar .oo-ui-textInputWidget {
@@ -81,18 +126,13 @@ body {
 	z-index: 3;
 }
 
-.ve-demo-toolbar-divider {
+.ve-demo-dir-ltr .ve-demo-toolbar-divider {
 	border-right: 1px solid #ddd;
-	padding-left: 0.2em;
 	width: 0;
 }
 
-.ve-demo-source {
-	max-width: none;
-}
-
-.ve-demo-source textarea {
-	font-family: monospace, monospace;
+.ve-demo-dir-rtl .ve-demo-toolbar-divider {
+	border-left: 1px solid #ddd;
 }
 
 .ve-demo-read {
@@ -105,6 +145,7 @@ body {
 
 .ve-ui-debugBar {
 	padding: 1.5em;
+	border-top: 1px solid #ccc;
 }
 
 .ve-ui-debugBar-filibuster {
@@ -112,14 +153,15 @@ body {
 }
 
 .ve-filibuster-changes {
-	border: solid red 1px;
+	border: 1px solid #f00;
 }
 
 .ve-filibuster-frame {
 	list-style: none;
 }
 
-.ve-filibuster-frame-expandable:before, .ve-filibuster-frame-collapsed:before {
+.ve-filibuster-frame-expandable:before,
+.ve-filibuster-frame-collapsed:before {
 	content: '+';
 }
 

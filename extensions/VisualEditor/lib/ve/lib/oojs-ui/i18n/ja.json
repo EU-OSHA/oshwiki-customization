@@ -7,7 +7,11 @@
 			"Shirayuki",
 			"Takot",
 			"Los688",
-			"Sujiniku"
+			"Sujiniku",
+			"Translatealcd",
+			"Otokoume",
+			"Rxy",
+			"S2KTS"
 		]
 	},
 	"ooui-outline-control-move-down": "項目を下に移動させる",
@@ -16,6 +20,7 @@
 	"ooui-toolbar-more": "その他",
 	"ooui-toolgroup-expand": "続き",
 	"ooui-toolgroup-collapse": "折り畳む",
+	"ooui-item-remove": "削除",
 	"ooui-dialog-message-accept": "OK",
 	"ooui-dialog-message-reject": "キャンセル",
 	"ooui-dialog-process-error": "エラーが発生しました…",
@@ -25,5 +30,6 @@
 	"ooui-selectfile-button-select": "ファイルを選択",
 	"ooui-selectfile-not-supported": "ファイルの選択はサポートされていません",
 	"ooui-selectfile-placeholder": "ファイルが選択されていません",
-	"ooui-selectfile-dragdrop-placeholder": "ファイルをここにドロップ"
+	"ooui-selectfile-dragdrop-placeholder": "ファイルをここにドロップ",
+	"ooui-field-help": "ヘルプ"
 }

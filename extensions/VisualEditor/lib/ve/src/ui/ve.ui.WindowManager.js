@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface WindowManager class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -24,8 +24,10 @@ ve.ui.WindowManager = function VeUiWindowManager( config ) {
 	// Properties
 	this.overlay = config.overlay || null;
 
-	this.$element
-		.addClass( 've-ui-dir-block-' + this.getDir() );
+	// The following classes can be used here:
+	// * ve-ui-dir-block-ltr
+	// * ve-ui-dir-block-rtl
+	this.$element.addClass( 've-ui-dir-block-' + this.getDir() );
 };
 
 /* Inheritance */

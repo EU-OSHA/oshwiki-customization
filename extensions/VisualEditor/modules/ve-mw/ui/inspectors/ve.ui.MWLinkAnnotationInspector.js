@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface LinkAnnotationInspector class.
  *
- * @copyright 2011-2015 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -16,7 +16,7 @@
  */
 ve.ui.MWLinkAnnotationInspector = function VeUiMWLinkAnnotationInspector( config ) {
 	// Parent constructor
-	ve.ui.MWLinkAnnotationInspector.super.call( this, config );
+	ve.ui.MWLinkAnnotationInspector.super.call( this, ve.extendObject( { padded: false }, config ) );
 };
 
 /* Inheritance */
@@ -46,42 +46,69 @@ ve.ui.MWLinkAnnotationInspector.static.actions = ve.ui.MWLinkAnnotationInspector
  * @inheritdoc
  */
 ve.ui.MWLinkAnnotationInspector.prototype.initialize = function () {
-	var overlay = this.manager.getOverlay();
-
 	// Properties
 	this.allowProtocolInInternal = false;
-	this.internalAnnotationInput = new ve.ui.MWInternalLinkAnnotationWidget( {
-		// Sub-classes may want to know where to position overlays
-		$overlay: overlay ? overlay.$element : this.$frame
-	} );
-	this.externalAnnotationInput = new ve.ui.MWExternalLinkAnnotationWidget();
+	this.internalAnnotationInput = this.createInternalAnnotationInput();
+	this.externalAnnotationInput = this.createExternalAnnotationInput();
 
-	this.linkTypeSelect = new OO.ui.TabSelectWidget( {
-		classes: [ 've-ui-mwLinkAnnotationInspector-linkTypeSelect' ],
-		items: [
-			new OO.ui.TabOptionWidget( {
-				data: 'internal',
-				classes: [ 've-test-internal-link-tab' ],
-				label: ve.msg( 'visualeditor-linkinspector-button-link-internal' )
-			} ),
-			new OO.ui.TabOptionWidget( {
-				data: 'external',
-				classes: [ 've-test-external-link-tab' ],
-				label: ve.msg( 'visualeditor-linkinspector-button-link-external' )
-			} )
-		]
+	this.linkTypeIndex = new OO.ui.IndexLayout( {
+		expanded: false
 	} );
+
+	this.linkTypeIndex.addTabPanels( [
+		new OO.ui.TabPanelLayout( 'internal', {
+			label: ve.msg( 'visualeditor-linkinspector-button-link-internal' ),
+			expanded: false,
+			scrollable: false,
+			padded: true
+		} ),
+		new OO.ui.TabPanelLayout( 'external', {
+			label: ve.msg( 'visualeditor-linkinspector-button-link-external' ),
+			expanded: false,
+			scrollable: false,
+			padded: true
+		} )
+	] );
 
 	// Events
-	this.linkTypeSelect.connect( this, { select: 'onLinkTypeSelectSelect' } );
+	this.linkTypeIndex.connect( this, { set: 'onLinkTypeIndexSet' } );
 	this.internalAnnotationInput.connect( this, { change: 'onInternalLinkChange' } );
 	this.externalAnnotationInput.connect( this, { change: 'onExternalLinkChange' } );
+	this.internalAnnotationInput.input.getResults().connect( this, { choose: 'onFormSubmit' } );
+	// Form submit only auto triggers on enter when there is one input
+	this.internalAnnotationInput.getTextInputWidget().connect( this, { change: 'onInternalLinkInputChange' } );
+	this.internalAnnotationInput.getTextInputWidget().connect( this, { enter: 'onFormSubmit' } );
+	this.externalAnnotationInput.getTextInputWidget().connect( this, { enter: 'onFormSubmit' } );
+
+	this.internalAnnotationInput.input.results.connect( this, {
+		add: 'onInternalLinkChangeResultsChange'
+		// Listening to remove causes a flicker, and is not required
+		// as 'add' is always trigger on a change too
+	} );
 
 	// Parent method
 	ve.ui.MWLinkAnnotationInspector.super.prototype.initialize.call( this );
 
 	// Initialization
-	this.form.$element.prepend( this.linkTypeSelect.$element );
+	// HACK: IndexLayout is absolutely positioned, so place actions inside it
+	this.linkTypeIndex.$content.append( this.$otherActions );
+	this.linkTypeIndex.getTabPanel( 'internal' ).$element.append( this.internalAnnotationInput.$element );
+	this.linkTypeIndex.getTabPanel( 'external' ).$element.append( this.externalAnnotationInput.$element );
+	this.form.$element.append( this.linkTypeIndex.$element );
+};
+
+/**
+ * @return {ve.ui.MWInternalLinkAnnotationWidget}
+ */
+ve.ui.MWLinkAnnotationInspector.prototype.createInternalAnnotationInput = function () {
+	return new ve.ui.MWInternalLinkAnnotationWidget();
+};
+
+/**
+ * @return {ve.ui.MWExternalLinkAnnotationWidget}
+ */
+ve.ui.MWLinkAnnotationInspector.prototype.createExternalAnnotationInput = function () {
+	return new ve.ui.MWExternalLinkAnnotationWidget();
 };
 
 /**
@@ -90,8 +117,7 @@ ve.ui.MWLinkAnnotationInspector.prototype.initialize = function () {
  * @return {boolean} Input mode is for external links
  */
 ve.ui.MWLinkAnnotationInspector.prototype.isExternal = function () {
-	var item = this.linkTypeSelect.getSelectedItem();
-	return item && item.getData() === 'external';
+	return this.linkTypeIndex.getCurrentTabPanelName() === 'external';
 };
 
 /**
@@ -99,33 +125,18 @@ ve.ui.MWLinkAnnotationInspector.prototype.isExternal = function () {
  *
  * @param {ve.dm.MWInternalLinkAnnotation} annotation Annotation
  */
-ve.ui.MWLinkAnnotationInspector.prototype.onInternalLinkChange = function ( annotation ) {
-	var targetData,
-		href = annotation ? annotation.getAttribute( 'title' ) : '',
-		// Have to check that this.getFragment() is defined because parent class's teardown
-		// invokes setAnnotation( null ) which calls this code after fragment is unset
-		htmlDoc = this.getFragment() && this.getFragment().getDocument().getHtmlDocument();
-
-	if ( htmlDoc && ve.init.platform.getExternalLinkUrlProtocolsRegExp().test( href ) ) {
-		// Check if the 'external' link is in fact a page on the same wiki
-		// e.g. http://en.wikipedia.org/wiki/Target -> Target
-		targetData = ve.dm.MWInternalLinkAnnotation.static.getTargetDataFromHref(
-			href,
-			htmlDoc
-		);
-		if ( targetData.isInternal ) {
-			this.internalAnnotationInput.text.setValue( targetData.title );
-			return;
-		}
-	}
-
-	if (
-		!this.allowProtocolInInternal &&
-		ve.init.platform.getExternalLinkUrlProtocolsRegExp().test( href )
-	) {
-		this.linkTypeSelect.selectItemByData( 'external' );
-	}
+ve.ui.MWLinkAnnotationInspector.prototype.onInternalLinkChange = function () {
 	this.updateActions();
+};
+
+/**
+ * Handle list change events ('add') from the interal link's result widget
+ *
+ * @param {OO.ui.OptionWidget[]} items Added items
+ * @param {number} index Index of insertion point
+ */
+ve.ui.MWLinkAnnotationInspector.prototype.onInternalLinkChangeResultsChange = function () {
+	this.updateSize();
 };
 
 /**
@@ -170,6 +181,35 @@ ve.ui.MWLinkAnnotationInspector.prototype.updateActions = function () {
 };
 
 /**
+ * Handle change events on the internal link widget's input
+ *
+ * @param {string} value Current value of input widget
+ */
+ve.ui.MWLinkAnnotationInspector.prototype.onInternalLinkInputChange = function ( value ) {
+	// If this looks like an external link, switch to the correct tabPanel.
+	// Note: We don't care here if it's a *valid* link, so we just
+	// check whether it looks like a URI -- i.e. whether it starts with
+	// something that appears to be a schema per RFC1630. Later the external
+	// link inspector will use getExternalLinkUrlProtocolsRegExp for validity
+	// checking.
+	// Note 2: RFC1630 might be too broad in practice. You don't really see
+	// schemas that use the full set of allowed characters, and we might get
+	// more false positives by checking for them.
+	// Note 3: We allow protocol-relative URIs here.
+	if ( this.internalAnnotationInput.getTextInputWidget().getValue() !== value ) {
+		return;
+	}
+	if (
+		!this.allowProtocolInInternal &&
+		/^(?:[a-z][a-z0-9$\-_@.&!*"'(),]*:)?\/\//i.test( value.trim() )
+	) {
+		this.linkTypeIndex.setTabPanel( 'external' );
+		// Changing tabPanel focuses and selects the input, so collapse the cursor back to the end.
+		this.externalAnnotationInput.getTextInputWidget().moveCursorToEnd();
+	}
+};
+
+/**
  * @inheritdoc
  */
 ve.ui.MWLinkAnnotationInspector.prototype.createAnnotationInput = function () {
@@ -182,20 +222,10 @@ ve.ui.MWLinkAnnotationInspector.prototype.createAnnotationInput = function () {
 ve.ui.MWLinkAnnotationInspector.prototype.getSetupProcess = function ( data ) {
 	return ve.ui.MWLinkAnnotationInspector.super.prototype.getSetupProcess.call( this, data )
 		.next( function () {
-			this.linkTypeSelect.selectItemByData(
+			this.linkTypeIndex.setTabPanel(
 				this.initialAnnotation instanceof ve.dm.MWExternalLinkAnnotation ? 'external' : 'internal'
 			);
 			this.annotationInput.setAnnotation( this.initialAnnotation );
-		}, this );
-};
-
-/**
- * @inheritdoc
- */
-ve.ui.MWLinkAnnotationInspector.prototype.getReadyProcess = function ( data ) {
-	return ve.ui.MWLinkAnnotationInspector.super.prototype.getReadyProcess.call( this, data )
-		.next( function () {
-			this.internalAnnotationInput.text.populateLookupMenu();
 		}, this );
 };
 
@@ -222,11 +252,18 @@ ve.ui.MWLinkAnnotationInspector.prototype.getTeardownProcess = function ( data )
 			fragment = this.getFragment();
 		}, this )
 		.next( function () {
-			var selection = fragment && fragment.getSelection();
+			var annotations, data,
+				selection = fragment && fragment.getSelection();
 
 			// Handle conversion to magic link.
 			if ( data && data.convert && selection instanceof ve.dm.LinearSelection ) {
-				fragment.insertContent( [
+				annotations = fragment.getDocument().data
+					.getAnnotationsFromRange( selection.getRange() )
+					// Remove link annotations
+					.filter( function ( annotation ) {
+						return !/^link/.test( annotation.name );
+					} );
+				data = new ve.dm.ElementLinearData( annotations.store, [
 					{
 						type: 'link/mwMagic',
 						attributes: {
@@ -236,7 +273,9 @@ ve.ui.MWLinkAnnotationInspector.prototype.getTeardownProcess = function ( data )
 					{
 						type: '/link/mwMagic'
 					}
-				], true );
+				] );
+				data.setAnnotationsAtOffset( 0, annotations );
+				fragment.insertContent( data.getData(), true );
 			}
 
 			// Clear dialog state.
@@ -248,33 +287,38 @@ ve.ui.MWLinkAnnotationInspector.prototype.getTeardownProcess = function ( data )
 };
 
 /**
- * Handle select events from the linkTypeSelect widget
+ * Handle set events from the linkTypeIndex layout
  *
- * @param {OO.ui.MenuOptionWidget} item Selected item
+ * @param {OO.ui.TabPanelLayout} tabPanel Current tabPanel
  */
-ve.ui.MWLinkAnnotationInspector.prototype.onLinkTypeSelectSelect = function () {
-	var text = this.annotationInput.text.getValue(),
+ve.ui.MWLinkAnnotationInspector.prototype.onLinkTypeIndexSet = function () {
+	var text = this.annotationInput.getTextInputWidget().getValue(),
 		end = text.length,
 		isExternal = this.isExternal(),
 		inputHasProtocol = ve.init.platform.getExternalLinkUrlProtocolsRegExp().test( text );
 
-	this.annotationInput.$element.detach();
+	this.annotationInput = isExternal ? this.externalAnnotationInput : this.internalAnnotationInput;
 
-	this.annotationInput = this.createAnnotationInput();
-	this.form.$element.append( this.annotationInput.$element );
+	this.updateSize();
 
 	// If the user manually switches to internal links with an external link in the input, remember this
 	if ( !isExternal && inputHasProtocol ) {
 		this.allowProtocolInInternal = true;
 	}
 
-	this.annotationInput.text.setValue( text ).focus();
-	// Firefox moves the cursor to the beginning
-	this.annotationInput.text.$input[ 0 ].setSelectionRange( end, end );
+	this.annotationInput.getTextInputWidget().setValue( text ).focus();
+	// Select entire link when switching, for ease of replacing entire contents.
+	// Most common case:
+	// 1. Inspector opened, internal-link shown with the selected-word prefilled
+	// 2. User clicks external link tab (unnecessary, because we'd auto-switch, but the user doesn't know that)
+	// 3. User pastes a link, intending to replace the existing prefilled link
+	this.annotationInput.getTextInputWidget().$input[ 0 ].setSelectionRange( 0, end );
+	// Focusing a TextInputWidget normally unsets validity. However, because
+	// we're kind of pretending this is the same input, just in a different
+	// mode, it doesn't make sense to the user that the focus behavior occurs.
+	this.annotationInput.getTextInputWidget().setValidityFlag();
 
-	if ( !isExternal ) {
-		this.annotationInput.text.populateLookupMenu();
-	}
+	this.updateActions();
 };
 
 /**
@@ -293,7 +337,7 @@ ve.ui.MWLinkAnnotationInspector.prototype.getAnnotationFromFragment = function (
 	// Figure out if this is an internal or external link
 	if ( ve.init.platform.getExternalLinkUrlProtocolsRegExp().test( target ) ) {
 		// External link
-		return new ve.dm.MWExternalLinkAnnotation( {
+		return this.newExternalLinkAnnotation( {
 			type: 'link/mwExternal',
 			attributes: {
 				href: target
@@ -301,12 +345,28 @@ ve.ui.MWLinkAnnotationInspector.prototype.getAnnotationFromFragment = function (
 		} );
 	} else if ( title ) {
 		// Internal link
-		return ve.dm.MWInternalLinkAnnotation.static.newFromTitle( title );
+		return this.newInternalLinkAnnotationFromTitle( title );
 	} else {
 		// Doesn't look like an external link and mw.Title considered it an illegal value,
 		// for an internal link.
 		return null;
 	}
+};
+
+/**
+ * @param {mw.Title} title The title to link to.
+ * @return {ve.dm.MWInternalLinkAnnotation} The annotation.
+ */
+ve.ui.MWLinkAnnotationInspector.prototype.newInternalLinkAnnotationFromTitle = function ( title ) {
+	return ve.dm.MWInternalLinkAnnotation.static.newFromTitle( title );
+};
+
+/**
+ * @param {Object} element
+ * @return {ve.dm.MWExternalLinkAnnotation} The annotation.
+ */
+ve.ui.MWLinkAnnotationInspector.prototype.newExternalLinkAnnotation = function ( element ) {
+	return new ve.dm.MWExternalLinkAnnotation( element );
 };
 
 /**
@@ -331,13 +391,8 @@ ve.ui.MWLinkAnnotationInspector.prototype.getInsertionData = function () {
 	}
 };
 
-/**
- * ve.ui.MWInternalLinkAnnotationWidget.prototype.getHref will try to return an href, obviously,
- * but we don't want this to go into the text and can just call its parent instead.
- */
-ve.ui.MWLinkAnnotationInspector.prototype.getInsertionText = function () {
-	return this.annotationInput.constructor.super.prototype.getHref.call( this.annotationInput );
-};
+// #getInsertionText call annotationInput#getHref, which returns the link title,
+// so no custmisation is needed.
 
 /* Registration */
 

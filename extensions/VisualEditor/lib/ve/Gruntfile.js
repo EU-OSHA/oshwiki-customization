@@ -4,39 +4,39 @@
  * @package VisualEditor
  */
 
-/*jshint node:true */
+/* eslint-env node, es6 */
+
 module.exports = function ( grunt ) {
 	var modules = grunt.file.readJSON( 'build/modules.json' ),
 		moduleUtils = require( './build/moduleUtils' ),
+		rebaserBuildFiles = moduleUtils.makeBuildList( modules, [ 'rebaser.build' ] ),
+		veRebaseFiles = moduleUtils.makeBuildList( modules, [ 'visualEditor.rebase.build' ] ),
 		coreBuildFiles = moduleUtils.makeBuildList( modules, [ 'visualEditor.build' ] ),
 		coreBuildFilesApex = moduleUtils.makeBuildList( modules, [ 'visualEditor.build.apex' ] ),
-		coreBuildFilesMediaWiki = moduleUtils.makeBuildList( modules, [ 'visualEditor.build.mediawiki' ] ),
+		coreBuildFilesWikimediaUI = moduleUtils.makeBuildList( modules, [ 'visualEditor.build.wikimediaui' ] ),
 		testFiles = moduleUtils.makeBuildList( modules, [ 'visualEditor.test' ] ).scripts,
 		demoPages = ( function () {
-			var pages = {},
+			var pages = [],
 				files = grunt.file.expand( 'demos/ve/pages/*.html' );
-			files.forEach( function ( file ) {
-				var matches = file.match( /^.*(pages\/(.+).html)$/ ),
-					path = matches[ 1 ],
-					name = matches[ 2 ];
-
-				pages[ name ] = path;
+			pages = files.map( function ( file ) {
+				return file.match( /^.*pages\/(.+).html$/ )[ 1 ];
 			} );
 			return pages;
-		} )();
+		}() );
 
 	grunt.loadNpmTasks( 'grunt-jsonlint' );
 	grunt.loadNpmTasks( 'grunt-banana-checker' );
 	grunt.loadNpmTasks( 'grunt-contrib-clean' );
 	grunt.loadNpmTasks( 'grunt-contrib-concat' );
 	grunt.loadNpmTasks( 'grunt-contrib-copy' );
-	grunt.loadNpmTasks( 'grunt-contrib-csslint' );
-	grunt.loadNpmTasks( 'grunt-contrib-jshint' );
 	grunt.loadNpmTasks( 'grunt-contrib-watch' );
 	grunt.loadNpmTasks( 'grunt-css-url-embed' );
 	grunt.loadNpmTasks( 'grunt-cssjanus' );
-	grunt.loadNpmTasks( 'grunt-jscs' );
+	grunt.loadNpmTasks( 'grunt-eslint' );
 	grunt.loadNpmTasks( 'grunt-karma' );
+	grunt.loadNpmTasks( 'grunt-stylelint' );
+	grunt.loadNpmTasks( 'grunt-svgmin' );
+	grunt.loadNpmTasks( 'grunt-tyops' );
 	grunt.loadTasks( 'build/tasks' );
 
 	// We want to use `grunt watch` to start this and karma watch together.
@@ -48,6 +48,28 @@ module.exports = function ( grunt ) {
 			dist: [ 'dist/*', 'coverage/*' ]
 		},
 		concat: {
+			'rebaser.build': {
+				options: {
+					banner: grunt.file.read( 'build/rebaser-banner.txt' ),
+					footer: grunt.file.read( 'build/rebaser-footer.txt' )
+				},
+				dest: 'dist/ve-rebaser.js',
+				src: rebaserBuildFiles.scripts
+			},
+			'visualEditor.rebase.scripts': {
+				options: {
+					banner: grunt.file.read( 'build/banner.txt' )
+				},
+				dest: 'dist/visualEditor-rebase.js',
+				src: veRebaseFiles.scripts
+			},
+			'visualEditor.rebase.styles': {
+				options: {
+					banner: grunt.file.read( 'build/banner.txt' )
+				},
+				dest: 'dist/visualEditor-rebase.css',
+				src: veRebaseFiles.styles
+			},
 			js: {
 				options: {
 					banner: grunt.file.read( 'build/banner.txt' )
@@ -62,12 +84,12 @@ module.exports = function ( grunt ) {
 				dest: 'dist/visualEditor-apex.css',
 				src: coreBuildFilesApex.styles
 			},
-			'css-mediawiki': {
+			'css-wikimediaui': {
 				options: {
 					banner: grunt.file.read( 'build/banner.txt' )
 				},
-				dest: 'dist/visualEditor-mediawiki.css',
-				src: coreBuildFilesMediaWiki.styles
+				dest: 'dist/visualEditor-wikimediaui.css',
+				src: coreBuildFilesWikimediaUI.styles
 			},
 			// HACK: Ideally these libraries would provide their own distribution files (T95667)
 			'jquery.i18n': {
@@ -84,9 +106,9 @@ module.exports = function ( grunt ) {
 				dest: 'dist/visualEditor-apex.rtl.css',
 				src: 'dist/visualEditor-apex.css'
 			},
-			mediawiki: {
-				dest: 'dist/visualEditor-mediawiki.rtl.css',
-				src: 'dist/visualEditor-mediawiki.css'
+			wikimediaui: {
+				dest: 'dist/visualEditor-wikimediaui.rtl.css',
+				src: 'dist/visualEditor-wikimediaui.css'
 			}
 		},
 		cssUrlEmbed: {
@@ -99,8 +121,8 @@ module.exports = function ( grunt ) {
 				files: {
 					'dist/visualEditor-apex.css': 'dist/visualEditor-apex.css',
 					'dist/visualEditor-apex.rtl.css': 'dist/visualEditor-apex.rtl.css',
-					'dist/visualEditor-mediawiki.css': 'dist/visualEditor-mediawiki.css',
-					'dist/visualEditor-mediawiki.rtl.css': 'dist/visualEditor-mediawiki.rtl.css'
+					'dist/visualEditor-wikimediaui.css': 'dist/visualEditor-wikimediaui.css',
+					'dist/visualEditor-wikimediaui.rtl.css': 'dist/visualEditor-wikimediaui.rtl.css'
 				}
 			}
 		},
@@ -114,6 +136,42 @@ module.exports = function ( grunt ) {
 				src: [ 'lib/**', '!lib/jquery.i18n/**', '!lib/jquery.uls/**' ],
 				dest: 'dist/',
 				expand: true
+			}
+		},
+		// SVG Optimization
+		svgmin: {
+			options: {
+				js2svg: {
+					indent: '	',
+					pretty: true
+				},
+				multipass: true,
+				plugins: [ {
+					cleanupIDs: false
+				}, {
+					removeDesc: false
+				}, {
+					removeRasterImages: true
+				}, {
+					removeTitle: false
+				}, {
+					removeViewBox: false
+				}, {
+					removeXMLProcInst: false
+				}, {
+					sortAttrs: true
+				} ]
+			},
+			all: {
+				files: [ {
+					expand: true,
+					cwd: 'src/ui',
+					src: [
+						'**/*.svg'
+					],
+					dest: 'src/ui/',
+					ext: '.svg'
+				} ]
 			}
 		},
 		buildloader: {
@@ -130,15 +188,15 @@ module.exports = function ( grunt ) {
 				indent: '\t\t',
 				dir: 'ltr'
 			},
-			desktopDemo: {
+			desktopDemoApex: {
 				targetFile: 'demos/ve/desktop.html',
 				template: 'demos/ve/demo.html.template',
 				modules: modules,
 				load: [
-					'visualEditor.desktop.standalone',
+					'visualEditor.desktop.standalone.apex',
 					'visualEditor.standalone.read'
 				],
-				run: [ 'visualEditor.desktop.standalone.demo' ],
+				run: [ 'visualEditor.desktop.standalone.apex.demo' ],
 				env: {
 					debug: true
 				},
@@ -147,15 +205,46 @@ module.exports = function ( grunt ) {
 				indent: '\t\t',
 				demoPages: demoPages
 			},
-			desktopDemoDist: {
+			desktopDemoApexDist: {
 				targetFile: 'demos/ve/desktop-dist.html',
 				template: 'demos/ve/demo.html.template',
 				modules: modules,
 				load: [
-					'visualEditor.standalone.apex.dist',
+					'visualEditor.desktop.standalone.apex.dist',
 					'visualEditor.standalone.read'
 				],
-				run: [ 'visualEditor.desktop.standalone.demo' ],
+				run: [ 'visualEditor.desktop.standalone.apex.demo' ],
+				pathPrefix: '../../',
+				i18n: [ 'dist/i18n/', 'lib/oojs-ui/i18n/' ],
+				indent: '\t\t',
+				demoPages: demoPages
+			},
+			desktopDemoWikimediaUI: {
+				targetFile: 'demos/ve/desktop-wikimediaui.html',
+				template: 'demos/ve/demo.html.template',
+				modules: modules,
+				load: [
+					'visualEditor.desktop.standalone.wikimediaui',
+					'visualEditor.standalone.read'
+				],
+				run: [ 'visualEditor.desktop.standalone.wikimediaui.demo' ],
+				env: {
+					debug: true
+				},
+				pathPrefix: '../../',
+				i18n: [ 'i18n/', 'lib/oojs-ui/i18n/' ],
+				indent: '\t\t',
+				demoPages: demoPages
+			},
+			desktopDemoWikimediaUIDist: {
+				targetFile: 'demos/ve/desktop-wikimediaui-dist.html',
+				template: 'demos/ve/demo.html.template',
+				modules: modules,
+				load: [
+					'visualEditor.desktop.standalone.wikimediaui.dist',
+					'visualEditor.standalone.read'
+				],
+				run: [ 'visualEditor.desktop.standalone.wikimediaui.demo' ],
 				pathPrefix: '../../',
 				i18n: [ 'dist/i18n/', 'lib/oojs-ui/i18n/' ],
 				indent: '\t\t',
@@ -183,7 +272,7 @@ module.exports = function ( grunt ) {
 				template: 'demos/ve/demo.html.template',
 				modules: modules,
 				load: [
-					'visualEditor.standalone.mediawiki.dist',
+					'visualEditor.mobile.standalone.dist',
 					'visualEditor.standalone.read'
 				],
 				run: [ 'visualEditor.mobile.standalone.demo' ],
@@ -234,47 +323,48 @@ module.exports = function ( grunt ) {
 				indent: '\t\t'
 			}
 		},
-		jshint: {
+		tyops: {
 			options: {
-				jshintrc: true
+				typos: 'build/typos.json'
 			},
-			all: [
-				'*.js',
-				'{.jsduck,build,demos,src,tests}/*.js',
-				'{.jsduck,build,demos,src,tests}/**/*.js'
+			src: [
+				'**/*.{js,json,less,css,txt}',
+				'!package-lock.json',
+				'!build/typos.json',
+				'!lib/**',
+				'!i18n/**',
+				'!{coverage,dist,docs,node_modules,rebaser/node_modules}/**',
+				'!.git/**'
 			]
 		},
-		jscs: {
-			fix: {
-				options: {
-					fix: true
-				},
-				src: [
-					'<%= jshint.all %>'
-				]
-			},
-			main: {
-				src: [
-					'<%= jshint.all %>'
-				]
-			}
+		eslint: {
+			main: [
+				'*.{js,html}',
+				'{bin,build,demos,src,tests,rebaser}/**/*.{js,html}',
+				'!rebaser/node_modules/**'
+			]
 		},
-		csslint: {
-			options: {
-				csslintrc: '.csslintrc'
-			},
-			all: '{.jsduck,build,demos,src,tests}/**/*.css'
+		stylelint: {
+			all: [
+				'**/*.css',
+				'!coverage/**',
+				'!dist/**',
+				'!docs/**',
+				'!lib/**',
+				'!node_modules/**'
+			]
 		},
 		jsonlint: {
 			all: [
+				'.eslintrc.json',
 				'**/*.json',
+				'!dist/**',
+				'!docs/**',
+				'!lib/**',
 				'!node_modules/**'
 			]
 		},
 		banana: {
-			options: {
-				disallowDuplicateTranslations: false
-			},
 			all: 'i18n/'
 		},
 		karma: {
@@ -285,22 +375,68 @@ module.exports = function ( grunt ) {
 				singleRun: true,
 				browserDisconnectTimeout: 5000,
 				browserDisconnectTolerance: 2,
+				browserNoActivityTimeout: 30000,
 				autoWatch: false
 			},
 			main: {
-				browsers: [ 'Chrome' ],
+				browsers: [ 'Chrome' ], // T200347: Temporarily disabled `, 'Firefox'*/ ],`
 				preprocessors: {
+					'rebaser/src/**/*.js': [ 'coverage' ],
 					'src/**/*.js': [ 'coverage' ]
 				},
-				reporters: [ 'dots', 'coverage' ],
-				coverageReporter: { reporters: [
-					{ type: 'json-summary', dir: 'coverage/' },
-					{ type: 'html', dir: 'coverage/' },
-					{ type: 'text-summary', dir: 'coverage/' }
-				] }
-			},
-			others: {
-				browsers: [ 'Firefox' ]
+				reporters: [ 'mocha', 'coverage' ],
+				coverageReporter: {
+					dir: 'coverage/',
+					subdir: '.',
+					reporters: [
+						{ type: 'clover' },
+						{ type: 'html' },
+						{ type: 'text-summary' }
+					],
+					// https://github.com/karma-runner/karma-coverage/blob/v1.1.1/docs/configuration.md#check
+					check: {
+						global: {
+							functions: 60,
+							branches: 60,
+							statements: 60,
+							lines: 60,
+							overrides: {
+								'src/dm/*.js': {
+									functions: 80,
+									branches: 80,
+									statements: 80,
+									lines: 80
+								},
+								'src/dm/**/*.js': {
+									functions: 80,
+									branches: 80,
+									statements: 80,
+									lines: 80
+								}
+							}
+						},
+						each: {
+							functions: 20,
+							branches: 20,
+							statements: 20,
+							lines: 20,
+							excludes: [
+								'rebaser/src/dm/ve.dm.ProtocolServer.js',
+								'rebaser/src/dm/ve.dm.RebaseDocState.js',
+								'rebaser/src/dm/ve.dm.TransportServer.js',
+								'src/ve.track.js',
+								'src/init/**/*.js',
+								'src/ce/**/*.js',
+								'src/ui/**/*.js',
+								'src/dm/ve.dm.SurfaceSynchronizer.js',
+								'src/dm/ve.dm.TableSlice.js',
+								'src/dm/annotations/ve.dm.BidiAnnotation.js',
+								'src/dm/metaitems/ve.dm.CommentMetaItem.js',
+								'src/dm/nodes/ve.dm.GeneratedContentNode.js'
+							]
+						}
+					}
+				}
 			},
 			bg: {
 				browsers: [ 'Chrome', 'Firefox' ],
@@ -310,9 +446,13 @@ module.exports = function ( grunt ) {
 		},
 		runwatch: {
 			files: [
-				'.{csslintrc,jscsrc,jshintignore,jshintrc}',
-				'<%= jshint.all %>',
-				'<%= csslint.all %>'
+				'.{stylelintrc,eslintrc}.json',
+				'**/*.js',
+				'!coverage/**',
+				'!dist/**',
+				'!docs/**',
+				'!node_modules/**',
+				'<%= stylelint.all %>'
 			],
 			tasks: [ 'test', 'karma:bg:run' ]
 		}
@@ -339,18 +479,19 @@ module.exports = function ( grunt ) {
 	} );
 
 	grunt.registerTask( 'build', [ 'clean', 'concat', 'cssjanus', 'cssUrlEmbed', 'copy', 'buildloader' ] );
-	grunt.registerTask( 'lint', [ 'jshint', 'jscs:main', 'csslint', 'jsonlint', 'banana' ] );
+	grunt.registerTask( 'lint', [ 'tyops', 'eslint', 'stylelint', 'jsonlint', 'banana' ] );
 	grunt.registerTask( 'unit', [ 'karma:main' ] );
-	grunt.registerTask( 'fix', [ 'jscs:fix' ] );
 	grunt.registerTask( '_test', [ 'lint', 'git-build', 'build', 'unit' ] );
-	grunt.registerTask( 'ci', [ '_test', 'git-status' ] );
+	grunt.registerTask( 'ci', [ '_test', 'svgmin', 'git-status' ] );
 	grunt.registerTask( 'watch', [ 'karma:bg:start', 'runwatch' ] );
 
+	/* eslint-disable no-process-env */
 	if ( process.env.JENKINS_HOME ) {
 		grunt.registerTask( 'test', 'ci' );
 	} else {
 		grunt.registerTask( 'test', '_test' );
 	}
+	/* eslint-enable no-process-env */
 
 	grunt.registerTask( 'default', 'test' );
 };
