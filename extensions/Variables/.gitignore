@@ -1,3 +1,8 @@
+node_modules/
+vendor/
+composer.lock
+tests/phan/issues/
+
 .svn
 *~
 *.kate-swp
