@@ -27,7 +27,7 @@ wfLoadExtension("DynamicPageList");
 
 # Enable CategoryTree: http://www.mediawiki.org/wiki/Extension:CategoryTree
 $wgUseAjax = true;
-require_once("{$IP}/extensions/CategoryTree/CategoryTree.php");
+wfLoadExtension( 'CategoryTree' );
 
 # http://www.mediawiki.org/wiki/Extension:Cite/Cite.php
 wfLoadExtension( 'Cite' );
