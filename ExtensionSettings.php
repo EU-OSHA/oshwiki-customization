@@ -5,7 +5,6 @@
 #####
 
 # This is required for infoboxes to work
-/* require_once( "$IP/extensions/ParserFunctions/ParserFunctions.php" ); */
 wfLoadExtension( 'ParserFunctions' );
 $wgPFEnableStringFunctions = true;
 $wgPFStringLengthLimit = 5000;
