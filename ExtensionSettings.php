@@ -100,9 +100,9 @@ enableSemantics('oshwiki.eu');
 #http://www.mediawiki.org/wiki/Extension:Semantic_Forms
 include_once("$IP/extensions/SemanticForms/SemanticForms.php");
 # Note the URL must be accessible to the local Apache, without auth
-$sfgAutocompletionURLs['osha-property-list'] = "$wgServer$wgScriptPath/property-lists/osha.json";
-$sfgAutocompletionURLs['isco-property-list'] = "$wgServer$wgScriptPath/property-lists/isco.json";
-$sfgAutocompletionURLs['nace-property-list'] = "$wgServer$wgScriptPath/property-lists/nace.json";
+$wgPageFormsAutocompletionURLs['osha-property-list'] = "$wgServer$wgScriptPath/property-lists/osha.json";
+$wgPageFormsAutocompletionURLs['isco-property-list'] = "$wgServer$wgScriptPath/property-lists/isco.json";
+$wgPageFormsAutocompletionURLs['nace-property-list'] = "$wgServer$wgScriptPath/property-lists/nace.json";
 
 # http://www.mediawiki.org/wiki/Extension:Semantic_Internal_Objects
 include_once("$IP/extensions/SemanticInternalObjects/SemanticInternalObjects.php");
@@ -140,7 +140,7 @@ $codeMatchesLanguages = array( 'en', 'bg', 'bs',  'cs', 'da', 'de', 'el', 'es', 
  
 foreach ( $codeMatchesDataTypes as $dataType ) {
 	foreach ( $codeMatchesLanguages as $language ) {
-		$sfgAutocompletionURLs["code-matches-$dataType-$language"] =
+		$wgPageFormsAutocompletionURLs["code-matches-$dataType-$language"] =
 			"$codeMatchesURL?data-type=$dataType&language=$language&substring=<substr>";
 	}
 }

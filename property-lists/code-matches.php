@@ -35,7 +35,7 @@ switch( $project ) {
                 $all=simplexml_load_file('nace.vdex');
                 break;
         default:
-                echo '{"sfautocomplete":[]}';
+                echo '{"pfautocomplete":[]}';
                 die();
 }
 
@@ -68,6 +68,6 @@ function generate( $all, $projectStr ) {
 
 generate( $all, strtoupper($project) . ' ' );
 
-echo '{"sfautocomplete":[' . implode( $result['title'], ',' ) . ']}' ;
+echo '{"pfautocomplete":[' . implode( $result['title'], ',' ) . ']}' ;
 
 ?>
