@@ -176,7 +176,7 @@ $wgShowExceptionDetails = true;
 
 require_once("$IP/extensions/SidebarLanguagelink/SidebarLanguagelink.php");
 
-require_once "$IP/extensions/wiki-seo-1.2.1/WikiSEO.php";
+require_once "$IP/extensions/WikiSEO/WikiSEO.php";
 
 
 /* $wgDefaultUserOptions['wikieditor-preview'] = 1; */
