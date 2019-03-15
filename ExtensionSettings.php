@@ -94,11 +94,10 @@ $wgAddThisSidebar = false;
 # http://www.mediawiki.org/wiki/Extension:Variables
 require_once("$IP/extensions/Variables/Variables.php");
 
-include_once("$IP/extensions/SemanticMediaWiki/SemanticMediaWiki.php");
 enableSemantics('oshwiki.eu');
 
-#http://www.mediawiki.org/wiki/Extension:Semantic_Forms
-include_once("$IP/extensions/SemanticForms/SemanticForms.php");
+wfLoadExtension( 'PageForms' );
+
 # Note the URL must be accessible to the local Apache, without auth
 $wgPageFormsAutocompletionURLs['osha-property-list'] = "$wgServer$wgScriptPath/property-lists/osha.json";
 $wgPageFormsAutocompletionURLs['isco-property-list'] = "$wgServer$wgScriptPath/property-lists/isco.json";
