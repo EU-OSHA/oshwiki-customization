@@ -105,8 +105,7 @@ $wgPageFormsAutocompletionURLs['nace-property-list'] = "$wgServer$wgScriptPath/p
 # http://www.mediawiki.org/wiki/Extension:Semantic_Internal_Objects
 include_once("$IP/extensions/SemanticInternalObjects/SemanticInternalObjects.php");
 
-# http://www.mediawiki.org/wiki/Extension:Replace_Text
-require_once( "$IP/extensions/ReplaceText/ReplaceText.php" );
+wfLoadExtension( 'ReplaceText' );
 
 # $smwgQMaxInlineLimit = 5;
 # $smwgQPrintoutLimit = 5;
