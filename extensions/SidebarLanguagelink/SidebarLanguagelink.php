@@ -63,7 +63,7 @@ function getTranslations(&$canonicalTranslation) {
 
 function getFormattedTranslations($translations) {
 	$formattedTranslations = "";
-	$langCodeProperty = new SMWDIProperty('Language_code');
+	$langCodeProperty = new SMWDIProperty( '_LCODE' );
 	$langNames = Language::fetchLanguageNames();
 
 	foreach ($translations as &$translation) {
