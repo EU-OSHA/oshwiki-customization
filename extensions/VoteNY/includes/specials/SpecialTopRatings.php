@@ -9,7 +9,6 @@
  *
  * @file
  * @ingroup Extensions
- * @date 11 December 2011
  * @license To the extent that it is possible, this code is in the public domain
  */
 class SpecialTopRatings extends IncludableSpecialPage {
@@ -58,56 +57,51 @@ class SpecialTopRatings extends IncludableSpecialPage {
 		}
 		*/
 
-		$ratings = array();
+		$ratings = [];
 		$output = '';
 
-		$dbr = wfGetDB( DB_SLAVE );
-		$tables = $where = $joinConds = array();
-		$whatToSelect = array( 'DISTINCT vote_page_id' );
+		$dbr = wfGetDB( DB_REPLICA );
+		$tables = $where = $joinConds = [];
+		$whatToSelect = [ 'DISTINCT vote_page_id', 'SUM(vote_value) AS vote_value_sum' ];
 
 		// By default we have no category and no namespace
-		$tables = array( 'Vote' );
-		$where = array( 'vote_page_id <> 0' );
+		$tables = [ 'Vote' ];
+		$where = [ 'vote_page_id <> 0' ];
 
 		// isset(), because 0 is a totally valid NS
 		if ( !empty( $categoryName ) && isset( $namespace ) ) {
-			$tables = array( 'Vote', 'page', 'categorylinks' );
-			$where = array(
+			$tables = [ 'Vote', 'page', 'categorylinks' ];
+			$where = [
 				'vote_page_id <> 0',
 				'cl_to' => str_replace( ' ', '_', $categoryName ),
 				'page_namespace' => $namespace
-			);
-			$joinConds = array(
-				'categorylinks' => array( 'INNER JOIN', 'cl_from = page_id' ),
-				'page' => array( 'INNER JOIN', 'page_id = vote_page_id' )
-			);
+			];
+			$joinConds = [
+				'categorylinks' => [ 'INNER JOIN', 'cl_from = page_id' ],
+				'page' => [ 'INNER JOIN', 'page_id = vote_page_id' ]
+			];
 		}
 
 		// Perform the SQL query with the given conditions; the basic idea is
 		// that we get $limit (however, 100 or less) unique page IDs from the
-		// Vote table. If a category and a namespace have been given, we also
-		// do an INNER JOIN with page and categorylinks table to get the
-		// correct data.
+		// Vote table. The GROUP BY is to make SUM(vote_value) give the SUM of
+		// all vote_values for a page. If a category and a namespace have been
+		// given, we also do an INNER JOIN with page and categorylinks table
+		// to get the correct data.
 		$res = $dbr->select(
 			$tables,
 			$whatToSelect,
 			$where,
 			__METHOD__,
-			array( 'LIMIT' => intval( $limit ) ),
+			[ 'GROUP BY' => 'vote_page_id', 'LIMIT' => intval( $limit ) ],
 			$joinConds
 		);
 
 		foreach ( $res as $row ) {
-			// Add the results to the $ratings array and get the amount of
-			// votes the given page ID has
+			// Add the results to the $ratings array
 			// For example: $ratings[1] = 11 = page with the page ID 1 has 11
 			// votes
-			$ratings[$row->vote_page_id] = (int)$dbr->selectField(
-				'Vote',
-				'SUM(vote_value)',
-				array( 'vote_page_id' => $row->vote_page_id ),
-				__METHOD__
-			);
+			$ratings[$row->vote_page_id] = (int)$row->vote_value_sum;
 		}
 
 		// If we have some ratings, start building HTML output
@@ -129,6 +123,8 @@ class SpecialTopRatings extends IncludableSpecialPage {
 			}
 			*/
 
+			$linkRenderer = $this->getLinkRenderer();
+
 			// yes, array_keys() is needed
 			foreach ( array_keys( $ratings ) as $discardThis => $pageId ) {
 				$titleObj = Title::newFromId( $pageId );
@@ -137,8 +133,9 @@ class SpecialTopRatings extends IncludableSpecialPage {
 				}
 
 				$vote = new VoteStars( $pageId );
+
 				$output .= '<div class="user-list-rating">' .
-					Linker::link(
+					$linkRenderer->makeLink(
 						$titleObj,
 						$titleObj->getPrefixedText() // prefixed, so that the namespace shows!
 					) . $this->msg( 'word-separator' )->escaped() . // i18n overkill? ya betcha...
@@ -169,14 +166,13 @@ class SpecialTopRatings extends IncludableSpecialPage {
 	/**
 	 * Static version of Vote::getAverageVote().
 	 *
-	 * @param $pageId Integer: ID of the page for which we want to get the avg.
-	 *                         rating
-	 * @return Integer: average vote for the given page (ID)
+	 * @param int $pageId ID of the page for which we want to get the avg. rating
+	 * @return int Average vote for the given page (ID)
 	 */
 	public static function getAverageRatingForPage( $pageId ) {
 		global $wgMemc;
 
-		$key = wfMemcKey( 'vote', 'avg', $pageId );
+		$key = $wgMemc->makeKey( 'vote', 'avg', $pageId );
 		$data = $wgMemc->get( $key );
 		$voteAvg = 0;
 
@@ -184,11 +180,11 @@ class SpecialTopRatings extends IncludableSpecialPage {
 			wfDebug( "Loading vote avg for page {$pageId} from cache (TopRatings)\n" );
 			$voteAvg = $data;
 		} else {
-			$dbr = wfGetDB( DB_SLAVE );
+			$dbr = wfGetDB( DB_REPLICA );
 			$voteAvg = (int)$dbr->selectField(
 				'Vote',
 				'AVG(vote_value) AS VoteAvg',
-				array( 'vote_page_id' => $pageId ),
+				[ 'vote_page_id' => $pageId ],
 				__METHOD__
 			);
 			$wgMemc->set( $key, $voteAvg );

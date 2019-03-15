@@ -11,11 +11,9 @@ class VoteHooks {
 	 * Set up the <vote> parser hook.
 	 *
 	 * @param Parser $parser
-	 * @return bool
 	 */
 	public static function registerParserHook( &$parser ) {
-		$parser->setHook( 'vote', array( 'VoteHooks', 'renderVote' ) );
-		return true;
+		$parser->setHook( 'vote', [ 'VoteHooks', 'renderVote' ] );
 	}
 
 	/**
@@ -32,7 +30,7 @@ class VoteHooks {
 		// Disable parser cache (sadly we have to do this, because the caching is
 		// messing stuff up; we want to show an up-to-date rating instead of old
 		// or totally wrong rating, i.e. another page's rating...)
-		$parser->disableCache();
+		$parser->getOutput()->updateCacheExpiry( 0 );
 
 		// Add CSS & JS
 		// In order for us to do this *here* instead of having to do this in
@@ -56,7 +54,7 @@ class VoteHooks {
 		$title = $wgOut->getTitle();
 		if ( $title ) {
 			$articleID = $title->getArticleID();
-			switch( $type ) {
+			switch ( $type ) {
 				case 0:
 					$vote = new Vote( $articleID );
 					break;
@@ -77,11 +75,9 @@ class VoteHooks {
 	 * For the Renameuser extension.
 	 *
 	 * @param RenameuserSQL $renameUserSQL
-	 * @return bool
 	 */
 	public static function onUserRename( $renameUserSQL ) {
-		$renameUserSQL->tables['Vote'] = array( 'username', 'vote_user_id' );
-		return true;
+		$renameUserSQL->tables['Vote'] = [ 'username', 'vote_user_id' ];
 	}
 
 	/**
@@ -92,13 +88,12 @@ class VoteHooks {
 	 * @param $cache
 	 * @param string $magicWordId Magic word ID
 	 * @param int $ret Return value (number of votes)
-	 * @return bool
 	 */
 	public static function assignValueToMagicWord( &$parser, &$cache, &$magicWordId, &$ret ) {
 		global $wgMemc;
 
 		if ( $magicWordId == 'NUMBEROFVOTES' ) {
-			$key = wfMemcKey( 'vote', 'magic-word' );
+			$key = $wgMemc->makeKey( 'vote', 'magic-word' );
 			$data = $wgMemc->get( $key );
 			if ( $data != '' ) {
 				// We have it in cache? Oh goody, let's just use the cached value!
@@ -110,11 +105,11 @@ class VoteHooks {
 				$ret = $data;
 			} else {
 				// Not cached → have to fetch it from the database
-				$dbr = wfGetDB( DB_SLAVE );
+				$dbr = wfGetDB( DB_REPLICA );
 				$voteCount = (int)$dbr->selectField(
 					'Vote',
 					'COUNT(*) AS count',
-					array(),
+					[],
 					__METHOD__
 				);
 				wfDebugLog( 'VoteNY', 'Got the amount of votes from DB' );
@@ -127,8 +122,6 @@ class VoteHooks {
 		} elseif ( $magicWordId == 'NUMBEROFVOTESPAGE' ) {
 			$ret = VoteHooks::getNumberOfVotesPage( $parser->getTitle() );
 		}
-
-		return true;
 	}
 
 	/**
@@ -142,18 +135,18 @@ class VoteHooks {
 
 		$id = $title->getArticleID();
 
-		$key = wfMemcKey( 'vote', 'magic-word-page', $id );
+		$key = $wgMemc->makeKey( 'vote', 'magic-word-page', $id );
 		$data = $wgMemc->get( $key );
 
 		if ( $data ) {
 			return $data;
 		} else {
-			$dbr = wfGetDB( DB_SLAVE );
+			$dbr = wfGetDB( DB_REPLICA );
 
 			$voteCount = (int)$dbr->selectField(
 				'Vote',
 				'COUNT(*) AS count',
-				array( 'vote_page_id' => $id ),
+				[ 'vote_page_id' => $id ],
 				__METHOD__
 			);
 
@@ -170,7 +163,7 @@ class VoteHooks {
 	 * @param string $pagename Page name
 	 * @return int Amount of votes for the given page
 	 */
-	static function getNumberOfVotesPageParser( $parser, $pagename ) {
+	public static function getNumberOfVotesPageParser( $parser, $pagename ) {
 		$title = Title::newFromText( $pagename );
 
 		if ( !$title instanceof Title ) {
@@ -184,23 +177,19 @@ class VoteHooks {
 	 * Register the magic word ID for {{NUMBEROFVOTES}} and {{NUMBEROFVOTESPAGE}}
 	 *
 	 * @param array $variableIds Array of pre-existing variable IDs
-	 * @return bool
 	 */
 	public static function registerVariableId( &$variableIds ) {
 		$variableIds[] = 'NUMBEROFVOTES';
 		$variableIds[] = 'NUMBEROFVOTESPAGE';
-		return true;
 	}
 
 	/**
 	 * Hook to setup parser function {{NUMBEROFVOTESPAGE:<page>}}
 	 *
 	 * @param Parser $parser
-	 * @return bool
 	 */
-	static function setupNumberOfVotesPageParser( &$parser ) {
+	public static function setupNumberOfVotesPageParser( &$parser ) {
 		$parser->setFunctionHook( 'NUMBEROFVOTESPAGE', 'VoteHooks::getNumberOfVotesPageParser', Parser::SFH_NO_HASH );
-		return true;
 	}
 
 	/**
@@ -208,16 +197,20 @@ class VoteHooks {
 	 * maintenance/update.php.
 	 *
 	 * @param DatabaseUpdater $updater
-	 * @return bool
 	 */
 	public static function addTable( $updater ) {
 		$dbt = $updater->getDB()->getType();
-		$file = __DIR__ . "/vote.$dbt";
+		// If using SQLite, just use the MySQL/MariaDB schema, it's compatible
+		// anyway. Only PGSQL and some more exotic variants need a totally
+		// different schema.
+		if ( $dbt === 'sqlite' ) {
+			$dbt = 'mysql';
+		}
+		$file = __DIR__ . "/../sql/vote.$dbt";
 		if ( file_exists( $file ) ) {
-			$updater->addExtensionUpdate( array( 'addTable', 'Vote', $file, true ) );
+			$updater->addExtensionTable( 'Vote', $file );
 		} else {
 			throw new MWException( "VoteNY does not support $dbt." );
 		}
-		return true;
 	}
 }

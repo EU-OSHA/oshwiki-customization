@@ -160,7 +160,7 @@ return true;
 # Ratings extension
 # https://www.mediawiki.org/wiki/Extension:VoteNY
 ##
-require_once("$IP/extensions/VoteNY/Vote.php"); 
+wfLoadExtension( 'VoteNY' );
 $wgGroupPermissions['*']['vote'] = true; // Anonymous users can vote
 
 wfLoadExtension( 'UserMerge' ); 

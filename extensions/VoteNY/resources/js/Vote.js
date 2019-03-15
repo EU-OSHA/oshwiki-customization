@@ -7,7 +7,7 @@
  *
  * @constructor
  *
- * @author Jack Phoenix <jack@countervandalism.net>
+ * @author Jack Phoenix
  * @author Daniel A. R. Werner < daniel.a.r.werner@gmail.com >
  */
 var VoteNY = function VoteNY() {
@@ -16,7 +16,7 @@ var VoteNY = function VoteNY() {
 	this.voted_new = [];
 	this.id = 0;
 	this.last_id = 0;
-	this.imagePath = mw.config.get( 'wgExtensionAssetsPath' ) + '/VoteNY/images/';
+	this.imagePath = mw.config.get( 'wgExtensionAssetsPath' ) + '/VoteNY/resources/images/';
 
 	/**
 	 * Called when voting through the green square voting box
@@ -25,14 +25,14 @@ var VoteNY = function VoteNY() {
 	 * @param PageID Integer: internal ID number of the current article
 	 */
 	this.clickVote = function( TheVote, PageID ) {
-		$.post(
-			mw.util.wikiScript(), {
-				action: 'ajax',
-				rs: 'wfVoteClick',
-				rsargs: [ TheVote, PageID ]
-			}
-		).done( function( data ) {
-			$( '#PollVotes' ).html( ( data || '0' ) );
+		( new mw.Api() ).postWithToken( 'edit', {
+			action: 'voteny',
+			format: 'json',
+			what: 'vote',
+			pageId: PageID,
+			voteValue: TheVote
+		} ).done( function( data ) {
+			$( '#PollVotes' ).html( data.voteny.result );
 			$( '#Answer' ).html(
 				'<a href="javascript:void(0);" class="vote-unvote-link">' +
 				mediaWiki.msg( 'voteny-unvote-link' ) + '</a>'
@@ -44,17 +44,15 @@ var VoteNY = function VoteNY() {
 	 * Called when removing your vote through the green square voting box
 	 *
 	 * @param PageID Integer: internal ID number of the current article
-	 * @param mk Mixed: random token
 	 */
 	this.unVote = function( PageID ) {
-		$.post(
-			mw.util.wikiScript(), {
-				action: 'ajax',
-				rs: 'wfVoteDelete',
-				rsargs: [ PageID ]
-			}
-		).done( function( data ) {
-			$( '#PollVotes' ).html( ( data || '0' ) );
+		( new mw.Api() ).postWithToken( 'edit', {
+			action: 'voteny',
+			format: 'json',
+			what: 'delete',
+			pageId: PageID
+		} ).done( function( data ) {
+			$( '#PollVotes' ).html( data.voteny.result );
 			$( '#Answer' ).html(
 				'<a href="javascript:void(0);" class="vote-vote-link">' +
 				mediaWiki.msg( 'voteny-link' ) + '</a>'
@@ -71,22 +69,22 @@ var VoteNY = function VoteNY() {
 	 */
 	this.clickVoteStars = function( TheVote, PageID, id, action ) {
 		this.voted_new[id] = TheVote;
-		var rsfun;
+		var actionName;
 		if ( action == 3 ) {
-			rsfun = 'wfVoteStars';
+			actionName = 'stars'; // all other values but 'multi' are ignored anyway
 		}
 		if ( action == 5 ) {
-			rsfun = 'wfVoteStarsMulti';
+			actionName = 'multi';
 		}
 
-		$.post(
-			mw.util.wikiScript(), {
-				action: 'ajax',
-				rs: rsfun,
-				rsargs: [ TheVote, PageID ]
-			}
-		).done( function( data ) {
-			$( '#rating_' + id ).html( data );
+		( new mw.Api() ).postWithToken( 'edit', {
+			action: 'voteny',
+			type: 'stars',
+			what: actionName,
+			voteValue: TheVote,
+			pageId: PageID
+		} ).done( function( data ) {
+			$( '#rating_' + id ).html( data.voteny.result );
 		} );
 	};
 
@@ -97,14 +95,13 @@ var VoteNY = function VoteNY() {
 	 * @param id Integer: ID of the current rating star
 	 */
 	this.unVoteStars = function( PageID, id ) {
-		$.post(
-			mw.util.wikiScript(), {
-				action: 'ajax',
-				rs: 'wfVoteStarsDelete',
-				rsargs: [ PageID ]
-			}
-		).done( function( data ) {
-			$( '#rating_' + id ).html( data );
+		( new mw.Api() ).postWithToken( 'edit', {
+			action: 'voteny',
+			what: 'delete',
+			type: 'stars',
+			pageId: PageID
+		} ).done( function( data ) {
+			$( '#rating_' + id ).html( data.voteny.result );
 		} );
 	};
 
@@ -121,20 +118,19 @@ var VoteNY = function VoteNY() {
 		}
 
 		for ( var x = 1; x <= this.MaxRating; x++ ) {
-			var star_on, old_rating;
+			var old_rating = voted ? voted : prev_rating;
+			var star = 'off';
+
 			if ( voted ) {
-				star_on = 'voted';
-				old_rating = voted;
-			} else {
-				star_on = 'on';
-				old_rating = prev_rating;
+				star = 'voted';
+			} else if ( !num && old_rating >= x ) {
+				star = 'on';
+			} else if ( !num && x == Math.ceil( old_rating ) ) {
+				star = 'half';
 			}
-			var ratingElement = $( '#rating_' + id + '_' + x );
-			if ( !num && old_rating >= x ) {
-				ratingElement.attr( 'src', this.imagePath + 'star_' + star_on + '.gif' );
-			} else {
-				ratingElement.attr( 'src', this.imagePath + 'star_off.gif' );
-			}
+
+			$( '#rating_' + id + '_' + x )
+				.attr( 'src', this.imagePath + 'star_' + star + '.gif' );
 		}
 	};
 

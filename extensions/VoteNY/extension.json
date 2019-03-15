@@ -1,0 +1,77 @@
+{
+	"name": "VoteNY",
+	"version": "2.9.4",
+	"author": [
+		"Aaron Wright",
+		"David Pean",
+		"Jack Phoenix"
+	],
+	"license-name": "GPL-2.0-or-later",
+	"url": "https://www.mediawiki.org/wiki/Extension:VoteNY",
+	"descriptionmsg": "voteny-desc",
+	"type": "parserhook",
+	"requires": {
+		"MediaWiki": ">= 1.30.0"
+	},
+	"SpecialPages": {
+		"TopRatings": "SpecialTopRatings"
+	},
+	"MessagesDirs": {
+		"VoteNY": [
+			"i18n"
+		]
+	},
+	"APIModules": {
+		"voteny": "ApiVoteNY"
+	},
+	"ExtensionMessagesFiles": {
+		"VoteNYAlias": "includes/VoteNY.alias.php",
+		"VoteNYMagic": "includes/VoteNY.i18n.magic.php"
+	},
+	"AutoloadClasses": {
+		"ApiVoteNY": "includes/api/ApiVoteNY.php",
+		"Vote": "includes/Vote.class.php",
+		"VoteStars": "includes/VoteStars.class.php",
+		"SpecialTopRatings": "includes/specials/SpecialTopRatings.php",
+		"VoteHooks": "includes/VoteNY.hooks.php"
+	},
+	"Hooks": {
+		"ParserFirstCallInit": [
+			"VoteHooks::registerParserHook",
+			"VoteHooks::setupNumberOfVotesPageParser"
+		],
+		"RenameUserSQL": "VoteHooks::onUserRename",
+		"ParserGetVariableValueSwitch": "VoteHooks::assignValueToMagicWord",
+		"MagicWordwgVariableIDs": "VoteHooks::registerVariableId",
+		"LoadExtensionSchemaUpdates": "VoteHooks::addTable"
+	},
+	"ResourceFileModulePaths": {
+		"localBasePath": "",
+		"remoteExtPath": "VoteNY"
+	},
+	"ResourceModules": {
+		"ext.voteNY.scripts": {
+			"scripts": "resources/js/Vote.js",
+			"messages": [
+				"voteny-link",
+				"voteny-unvote-link"
+			],
+			"dependencies": [ "mediawiki.api" ]
+		},
+		"ext.voteNY.styles": {
+			"styles": "resources/css/Vote.css"
+		}
+	},
+	"AvailableRights": [
+		"voteny"
+	],
+	"GroupPermissions": {
+		"*": {
+			"voteny": false
+		},
+		"user": {
+			"voteny": true
+		}
+	},
+	"manifest_version": 1
+}
