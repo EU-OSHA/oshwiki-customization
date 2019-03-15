@@ -203,7 +203,7 @@ $wgHiddenPrefs[] = 'visualeditor-enable';
 
 $wgVisualEditorSupportedSkins = array( 'osha' );
 
-require_once "$IP/extensions/mediawiki-extensions-ExternalData-1.8.3/ExternalData.php";
+require_once "$IP/extensions/ExternalData/ExternalData.php";
 $edgStringReplacements['PIWIK_AUTH'] = 'bd16bd5296c7d89708e65149d5125302';
 $edgCacheTable = 'ed_url_cache';
 $edgCacheExpireTime = 24 * 60 * 60;
