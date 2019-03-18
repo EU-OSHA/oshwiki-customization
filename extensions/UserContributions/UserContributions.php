@@ -46,7 +46,7 @@
 					$dbr = wfGetDB( DB_SLAVE );
 					$user_res = $dbr->select(array( 'user' ),
 										array( 'user_real_name' ),
-										array( 'user_id' => $user_id),
+										array( 'user_name' => $user_id),
 										__METHOD__
 										);
 					$row = $dbr->fetchObject( $user_res );
