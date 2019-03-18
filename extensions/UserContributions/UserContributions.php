@@ -37,14 +37,11 @@
 				$NS = $wgTitle->getNamespace();
 				$action = $wgRequest->getVal('action');
 
-				if (($NS==NS_USER) or ($NS==NS_SPECIAL) and ($action == null)) {
+				if (($NS==NS_USER) and ($action == null)) {
 					$context = RequestContext::getMain();
 					if ($NS==NS_USER) {
 						$user_id = explode(":", $wgOut->getPageTitle())[1];
 					}
-					else {
-						$user_id = explode("FormEdit/User/User:", $wgTitle)[1];
-					};
 
 					$dbr = wfGetDB( DB_SLAVE );
 					$user_res = $dbr->select(array( 'user' ),
