@@ -59,6 +59,8 @@
 											   array('target' => $user_id,
 													 'contribs' => 'user',
 													 'namespace' => '0',
+                                                     'start' => '',
+                                                     'end' => '',
 													 'year' => '',
 													 'month' => '',
 													 'deletedOnly' => false,
