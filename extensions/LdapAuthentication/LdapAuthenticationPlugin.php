@@ -18,7 +18,7 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
-class LdapAuthenticationPlugin {
+class LdapAuthenticationPlugin extends AuthPlugin {
 
 	private static $instance = null;
 

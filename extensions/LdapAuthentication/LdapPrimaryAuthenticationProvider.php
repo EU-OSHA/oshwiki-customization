@@ -60,6 +60,7 @@ class LdapPrimaryAuthenticationProvider
 
 		// Hooks to handle updating LDAP on various core events
 		\Hooks::register( 'UserSaveSettings', [ $this, 'onUserSaveSettings' ] );
+		\Hooks::register( 'UserGroupsChanged', [ $this, 'onUserGroupsChanged' ] );
 		\Hooks::register( 'UserLoggedIn', [ $this, 'onUserLoggedIn' ] );
 		\Hooks::register( 'LocalUserCreated', [ $this, 'onLocalUserCreated' ] );
 	}
@@ -116,6 +117,19 @@ class LdapPrimaryAuthenticationProvider
 		$ldap = LdapAuthenticationPlugin::getInstance();
 		$reset = $this->setDomainForUser( $ldap, $user );
 		$ldap->updateExternalDB( $user );
+		ScopedCallback::consume( $reset );
+	}
+
+	/**
+	 * Hook function to call LdapAuthenticationPlugin::updateExternalDBGroups()
+	 * @param User $user
+	 * @param array $added
+	 * @param array $removed
+	 */
+	public function onUserGroupsChanged( $user, $added, $removed ) {
+		$ldap = LdapAuthenticationPlugin::getInstance();
+		$reset = $this->setDomainForUser( $ldap, $user );
+		$ldap->updateExternalDBGroups( $user, $added, $removed );
 		ScopedCallback::consume( $reset );
 	}
 
@@ -193,7 +207,7 @@ class LdapPrimaryAuthenticationProvider
 		) {
 			return AuthenticationResponse::newPass( $username );
 		} else {
-			$this->authoritative = $ldap->strict();
+			$this->authoritative = $ldap->strict() || $ldap->strictUserAuth( $username );
 			return $this->failResponse( $req );
 		}
 	}
@@ -231,7 +245,11 @@ class LdapPrimaryAuthenticationProvider
 	 * @return bool
 	 */
 	private function testUserCanAuthenticateInternal( LdapAuthenticationPlugin $ldap, $user ) {
-		return $ldap->userExistsReal( $user->getName() );
+		if ( $ldap->userExistsReal( $user->getName() ) ) {
+			return !$ldap->getUserInstance( $user )->isLocked();
+		} else {
+			return false;
+		}
 	}
 
 	public function providerRevokeAccessForUser( $username ) {
@@ -291,7 +309,9 @@ class LdapPrimaryAuthenticationProvider
 	}
 
 	public function providerAllowsPropertyChange( $property ) {
-		return true;
+		// No way to know the right domain to query.
+		$ldap = LdapAuthenticationPlugin::getInstance();
+		return $ldap->allowPropChange( $property );
 	}
 
 	public function providerAllowsAuthenticationDataChange(
