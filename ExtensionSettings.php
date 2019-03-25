@@ -110,11 +110,6 @@ wfLoadExtension( 'ReplaceText' );
 # $smwgQMaxInlineLimit = 5;
 # $smwgQPrintoutLimit = 5;
 
-###
-# Sets whether or not the 'printouts' textarea should have autocompletion
-# on property names.
-##
-$smwgAutocompleteInSpecialAsk = false;
 
 $smwgPageSpecialProperties = array( '_MDAT', '_CDAT' );
 
