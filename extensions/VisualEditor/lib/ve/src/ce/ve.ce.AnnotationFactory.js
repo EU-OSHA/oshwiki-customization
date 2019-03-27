@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable AnnotationFactory class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -35,19 +35,6 @@ ve.ce.AnnotationFactory.prototype.getDescription = function ( annotation ) {
 		return this.registry[ type ].static.getDescription( annotation );
 	}
 	throw new Error( 'Unknown annotation type: ' + type );
-};
-
-/**
- * Check if an annotation needs to force continuation.
- *
- * @param {string} type Annotation type
- * @return {boolean} Whether the annotation needs to force continuation
- */
-ve.ce.AnnotationFactory.prototype.isAnnotationContinuationForced = function ( type ) {
-	if ( Object.prototype.hasOwnProperty.call( this.registry, type ) ) {
-		return this.registry[ type ].static.forceContinuation;
-	}
-	return false;
 };
 
 /**

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWInternalLinkAnnotation tests.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.dm.MWInternalLinkAnnotation' );
@@ -91,7 +91,7 @@ QUnit.test( 'toDataElement', function ( assert ) {
 } );
 
 QUnit.test( 'getFragment', function ( assert ) {
-	var	i, l,
+	var i, l,
 		cases = [
 			{
 				msg: 'No fragment returns null',

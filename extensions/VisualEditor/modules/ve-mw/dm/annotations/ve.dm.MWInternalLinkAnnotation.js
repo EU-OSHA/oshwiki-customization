@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWInternalLinkAnnotation class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -30,13 +30,26 @@ OO.inheritClass( ve.dm.MWInternalLinkAnnotation, ve.dm.LinkAnnotation );
 
 ve.dm.MWInternalLinkAnnotation.static.name = 'link/mwInternal';
 
-ve.dm.MWInternalLinkAnnotation.static.matchRdfaTypes = [ 'mw:WikiLink' ];
+ve.dm.MWInternalLinkAnnotation.static.matchRdfaTypes = [ 'mw:WikiLink', 'mw:MediaLink' ];
 
 ve.dm.MWInternalLinkAnnotation.static.toDataElement = function ( domElements, converter ) {
-	var targetData = this.getTargetDataFromHref(
-		domElements[ 0 ].getAttribute( 'href' ),
-		converter.getTargetHtmlDocument()
-	);
+	var targetData, data,
+		resource = domElements[ 0 ].getAttribute( 'resource' );
+
+	if ( resource ) {
+		data = ve.parseParsoidResourceName( resource );
+
+		targetData = {
+			title: data.title,
+			rawTitle: data.rawTitle,
+			hrefPrefix: data.hrefPrefix
+		};
+	} else {
+		targetData = this.getTargetDataFromHref(
+			domElements[ 0 ].getAttribute( 'href' ),
+			converter.getTargetHtmlDocument()
+		);
+	}
 
 	return {
 		type: this.name,
@@ -159,6 +172,7 @@ ve.dm.MWInternalLinkAnnotation.static.toDomElements = function () {
 
 ve.dm.MWInternalLinkAnnotation.static.getHref = function ( dataElement ) {
 	var href,
+		prefix = './',
 		title = dataElement.attributes.title,
 		origTitle = dataElement.attributes.origTitle;
 	if ( origTitle !== undefined && ve.decodeURIComponentIntoArticleTitle( origTitle ) === title ) {
@@ -166,7 +180,7 @@ ve.dm.MWInternalLinkAnnotation.static.getHref = function ( dataElement ) {
 		href = origTitle;
 		// Only use hrefPrefix if restoring from origTitle
 		if ( dataElement.attributes.hrefPrefix ) {
-			href = dataElement.attributes.hrefPrefix + href;
+			prefix = dataElement.attributes.hrefPrefix;
 		}
 	} else {
 		// Don't escape slashes in the title; they represent subpages.
@@ -178,7 +192,7 @@ ve.dm.MWInternalLinkAnnotation.static.getHref = function ( dataElement ) {
 			}
 		} ).join( '' );
 	}
-	return href;
+	return prefix + href;
 };
 
 /**

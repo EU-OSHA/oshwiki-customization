@@ -1,7 +1,7 @@
 /*!
  * VisualEditor CommentAnnotationContextItem class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -47,6 +47,17 @@ ve.ui.CommentAnnotationContextItem.static.commandName = 'commentAnnotation';
  */
 ve.ui.CommentAnnotationContextItem.prototype.getDescription = function () {
 	return this.model.getAttribute( 'text' ).trim();
+};
+
+/**
+ * @inheritdoc
+ */
+ve.ui.CommentAnnotationContextItem.prototype.renderBody = function () {
+	this.$body.append(
+		this.getDescription().split( '\n' ).map( function ( line ) {
+			return $( '<div>' ).text( line );
+		} )
+	);
 };
 
 /* Registration */

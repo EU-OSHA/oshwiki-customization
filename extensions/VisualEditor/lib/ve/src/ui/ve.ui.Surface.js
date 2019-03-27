@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface Surface class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -25,6 +25,7 @@
  * @cfg {Object} [importRules] Import rules
  * @cfg {boolean} [multiline=true] Multi-line surface
  * @cfg {string} [placeholder] Placeholder text to display when the surface is empty
+ * @cfg {string} [readOnly] Surface is read-only
  * @cfg {string} [inDialog] The name of the dialog this surface is in
  */
 ve.ui.Surface = function VeUiSurface( dataOrDocOrSurface, config ) {
@@ -84,6 +85,7 @@ ve.ui.Surface = function VeUiSurface( dataOrDocOrSurface, config ) {
 	this.placeholder = null;
 	this.placeholderVisible = false;
 	this.setPlaceholder( config.placeholder );
+	this.setReadOnly( !!config.readOnly );
 	this.scrollPosition = null;
 	this.windowStackDepth = 0;
 
@@ -137,6 +139,13 @@ OO.inheritClass( ve.ui.Surface, OO.ui.Widget );
  * @event submit
  */
 
+/**
+ * The surface read-only state has changed
+ *
+ * @event readOnly
+ * @param {boolean} readOnly The surface is read-only
+ */
+
 /* Methods */
 
 /* eslint-disable valid-jsdoc */
@@ -149,9 +158,6 @@ OO.inheritClass( ve.ui.Surface, OO.ui.Widget );
  * @fires destroy
  */
 ve.ui.Surface.prototype.destroy = function () {
-	// Disable the surface to avoid issues during teardown (e.g. T193103)
-	this.setDisabled( true );
-
 	// Destroy the ce.Surface, the ui.Context and window managers
 	this.context.destroy();
 	this.dialogs.destroy();
@@ -186,7 +192,7 @@ ve.ui.Surface.prototype.destroy = function () {
  */
 ve.ui.Surface.prototype.initialize = function () {
 	// Attach globalOverlay to the global <body>, not the local frame's <body>
-	$( 'body' ).append( this.globalOverlay.$element );
+	$( document.body ).append( this.globalOverlay.$element );
 
 	if ( ve.debug ) {
 		this.setupDebugBar();
@@ -262,7 +268,18 @@ ve.ui.Surface.prototype.createDialogWindowManager = function () {
  * @return {ve.dm.Surface} Surface model
  */
 ve.ui.Surface.prototype.createModel = function ( doc ) {
-	return new ve.dm.Surface( doc, { sourceMode: this.getMode() === 'source' } );
+	var sections, node,
+		root = doc.getDocumentNode();
+	sections = doc.getNodesByType( 'section' );
+	if ( sections.length && sections.length === 1 ) {
+		node = sections[ 0 ];
+	} else {
+		node = root;
+	}
+	if ( !node.isSurfaceable() ) {
+		throw new Error( 'Not a surfaceable node' );
+	}
+	return new ve.dm.Surface( doc, node, { sourceMode: this.getMode() === 'source' } );
 };
 
 /**
@@ -407,39 +424,30 @@ ve.ui.Surface.prototype.getGlobalOverlay = function () {
  * @inheritdoc
  */
 ve.ui.Surface.prototype.setDisabled = function ( disabled ) {
-	if ( disabled !== this.disabled && this.disabled !== null ) {
-		if ( disabled ) {
-			this.view.disable();
-			this.model.disable();
-		} else {
-			this.view.enable();
-			this.model.enable();
-		}
+	if ( disabled ) {
+		OO.ui.warnDeprecation( 'Surfaces can\'t be disabled, only set to readOnly' );
 	}
-	// Parent method
-	return ve.ui.Surface.super.prototype.setDisabled.call( this, disabled );
 };
 
 /**
- * Disable editing.
+ * Set the read-only state of the surface
  *
- * @deprecated Use #setDisabled
- * @method
- * @chainable
+ * @param {boolean} readOnly Make surface read-only
  */
-ve.ui.Surface.prototype.disable = function () {
-	return this.setDisabled( true );
+ve.ui.Surface.prototype.setReadOnly = function ( readOnly ) {
+	this.readOnly = !!readOnly;
+	this.model.setReadOnly( readOnly );
+	this.view.setReadOnly( readOnly );
+	this.emit( 'readOnly', readOnly );
 };
 
 /**
- * Enable editing.
+ * Check if the surface is read-only
  *
- * @deprecated Use #setDisabled
- * @method
- * @chainable
+ * @return {boolean}
  */
-ve.ui.Surface.prototype.enable = function () {
-	return this.setDisabled( false );
+ve.ui.Surface.prototype.isReadOnly = function () {
+	return this.readOnly;
 };
 
 /**
@@ -470,7 +478,7 @@ ve.ui.Surface.prototype.onDocumentTransact = function () {
  * This is required when the cursor disappears under the floating toolbar.
  */
 ve.ui.Surface.prototype.scrollCursorIntoView = function () {
-	var view, clientRect, surfaceRect, cursorTop, cursorBottom, scrollTo, bottomBound, topBound;
+	var profile, view, clientRect, surfaceRect, cursorTop, cursorBottom, scrollTo, bottomBound, topBound;
 
 	view = this.getView();
 
@@ -505,6 +513,28 @@ ve.ui.Surface.prototype.scrollCursorIntoView = function () {
 	// window.
 	topBound = this.toolbarHeight; // top of the window + height of the toolbar
 	bottomBound = window.innerHeight; // bottom of the window
+	if (
+		OO.ui.isMobile() &&
+		!this.getModel().getSelection().isCollapsed()
+	) {
+		profile = $.client.profile();
+		// Assume that if the selection has been expanded, then a context menu is visible
+		// above the selection. We don't want this to obscure the toolbar so add on an
+		// estimate of its height. Note that scrolling on iOS closes the context, but it
+		// will re-open when the user touches the selection. (T202723)
+		if (
+			ve.init.platform.constructor.static.isIos() ||
+			// Older versions of Android draw the context menu in the address bar and so
+			// don't need to be fixed.
+			( profile.name === 'android' && profile.versionNumber >= 6 )
+		) {
+			topBound += 60;
+		}
+		// Also assume there are selection handles below on Android. (T204718)
+		if ( profile.name === 'android' ) {
+			bottomBound -= 30;
+		}
+	}
 
 	cursorTop = clientRect.top - 5;
 	cursorBottom = clientRect.bottom + 5;
@@ -584,6 +614,7 @@ ve.ui.Surface.prototype.toggleMobileGlobalOverlay = function ( show ) {
 		this.scrollPosition = $scrollContainer.scrollTop();
 	}
 
+	// eslint-disable-next-line no-jquery/no-global-selector
 	$( 'html, body' ).toggleClass( 've-ui-overlay-global-mobile-enabled', show );
 	this.globalOverlay.$element.toggleClass( 've-ui-overlay-global-mobile-visible', show );
 
@@ -622,7 +653,7 @@ ve.ui.Surface.prototype.updatePlaceholder = function () {
 	if ( !hasContent ) {
 		// Use a clone of the first node in the document so the placeholder
 		// styling matches the text the users sees when they start typing
-		firstNode = this.getView().documentView.documentNode.getNodeFromOffset( 1 );
+		firstNode = this.getView().attachedRoot.children[ 0 ];
 		if ( firstNode ) {
 			$wrapper = firstNode.$element.clone();
 			if ( ve.debug ) {
@@ -667,10 +698,6 @@ ve.ui.Surface.prototype.getCommands = function () {
  */
 ve.ui.Surface.prototype.execute = function ( triggerOrAction, method ) {
 	var command, obj, ret;
-
-	if ( this.isDisabled() ) {
-		return;
-	}
 
 	if ( triggerOrAction instanceof ve.ui.Trigger ) {
 		command = this.triggerListener.getCommandByTrigger( triggerOrAction.toString() );
@@ -724,7 +751,7 @@ ve.ui.Surface.prototype.setToolbarHeight = function ( toolbarHeight ) {
  * @return {jQuery.Promise} Promise which resolves with a progress bar widget and a promise which fails if cancelled
  */
 ve.ui.Surface.prototype.createProgress = function ( progressCompletePromise, label, nonCancellable ) {
-	var progressBarDeferred = $.Deferred();
+	var progressBarDeferred = ve.createDeferred();
 
 	this.progresses.push( {
 		label: label,

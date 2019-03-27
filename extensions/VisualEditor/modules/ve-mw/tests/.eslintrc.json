@@ -4,6 +4,12 @@
 		"../../../.eslintrc.json"
 	],
 	"env": {
-		"qunit": true
+		"es6": true
+	},
+	"globals": {
+		"sinon": false
+	},
+	"rules": {
+		"no-jquery/no-parse-html-literal": "off"
 	}
 }

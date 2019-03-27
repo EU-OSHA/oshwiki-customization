@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable linear escape key down handler
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -13,8 +13,8 @@
  * @constructor
  */
 ve.ce.LinearTabKeyDownHandler = function VeCeLinearTabKeyDownHandler() {
-	// Parent constructor
-	ve.ui.LinearTabKeyDownHandler.super.apply( this, arguments );
+	// Parent constructor - never called because class is fully static
+	// ve.ui.LinearTabKeyDownHandler.super.apply( this, arguments );
 };
 
 /* Inheritance */
@@ -76,10 +76,10 @@ ve.ce.LinearTabKeyDownHandler.static.execute = function ( surface, e ) {
 			e.stopPropagation();
 			if ( e.shiftKey ) {
 				// back out of the table
-				surface.getModel().setSelection( new ve.dm.LinearSelection( documentModel, documentModel.getRelativeRange( activeTableNode.getRange(), -1 ) ) );
+				surface.getModel().setSelection( new ve.dm.LinearSelection( documentModel.getRelativeRange( activeTableNode.getRange(), -1 ) ) );
 			} else {
 				// move to the first cell
-				surface.getModel().setSelection( new ve.dm.TableSelection( documentModel, activeTableNode.getOuterRange(), 0, 0 ) );
+				surface.getModel().setSelection( new ve.dm.TableSelection( activeTableNode.getOuterRange(), 0, 0 ) );
 			}
 			return true;
 		}

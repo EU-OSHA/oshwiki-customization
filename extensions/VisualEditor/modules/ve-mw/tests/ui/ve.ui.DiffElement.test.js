@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MW-specific DiffElement tests.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.ui.DiffElement (MW)', ve.test.utils.mwEnvironment );
@@ -34,7 +34,7 @@ QUnit.test( 'Diffing', function ( assert ) {
 					'<div class="ve-ui-diffElement-doc-child-change">' +
 						ve.dm.mwExample.MWBlockImage.html
 							.replace( 'width="1"', 'width="3"' )
-							.replace( 'href="Foo"', 'href="' + ve.resolveUrl( 'Foo', ve.dm.example.base ) + '"  rel="noopener" target="_blank"' )
+							.replace( 'href="Foo"', 'href="' + ve.resolveUrl( 'Foo', ve.dm.example.base ) + '"' )
 							.replace( 'foobar"', 'foobar" data-diff-action="structural-change" data-diff-id="0"' ) +
 					'</div>',
 				expectedDescriptions: [

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel BlockImageNode class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -142,6 +142,14 @@ ve.dm.BlockImageNode.static.toDomElements = function ( data, doc, converter ) {
 ve.dm.BlockImageNode.prototype.getCaptionNode = function () {
 	var node = this.children[ 0 ];
 	return node instanceof ve.dm.BlockImageCaptionNode ? node : null;
+};
+
+/**
+ * @inheritdoc
+ */
+ve.dm.BlockImageNode.prototype.suppressSlugType = function () {
+	// TODO: Have alignment attribute changes trigger a parent branch node re-render
+	return this.getAttribute( 'align' ) !== 'center' ? 'float' : null;
 };
 
 /* Registration */

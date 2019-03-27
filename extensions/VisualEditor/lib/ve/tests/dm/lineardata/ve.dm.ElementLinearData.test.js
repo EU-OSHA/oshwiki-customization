@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ElementLinearData tests.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.dm.ElementLinearData' );
@@ -1712,6 +1712,18 @@ QUnit.test( 'sanitize', function ( assert ) {
 				],
 				rules: { removeOriginalDomElements: true },
 				msg: 'Span stripped when removing original DOM elements'
+			},
+			{
+				html: '<p><span style="color:red;"><span style="color:red;">Foo</span></span></p>',
+				data: [
+					{ type: 'paragraph' },
+					'F', 'o', 'o',
+					{ type: '/paragraph' },
+					{ type: 'internalList' },
+					{ type: '/internalList' }
+				],
+				rules: { removeOriginalDomElements: true },
+				msg: 'Double annotation sanitized'
 			},
 			{
 				html: '<p>F<br>o</p><h1>B<br>a</h1><p>B<br></p>',

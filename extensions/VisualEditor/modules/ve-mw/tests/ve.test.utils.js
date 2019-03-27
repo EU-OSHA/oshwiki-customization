@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MediaWiki test utilities.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -25,7 +25,9 @@
 		this.imageInfoCache = null;
 	}
 	OO.inheritClass( MWDummyPlatform, ve.init.mw.Platform );
-	MWDummyPlatform.prototype.getMessage = function () { return Array.prototype.join.call( arguments, ',' ); };
+	MWDummyPlatform.prototype.getMessage = function () {
+		return Array.prototype.join.call( arguments, ',' );
+	};
 	MWDummyPlatform.prototype.getHtmlMessage = function () {
 		var $wrapper = $( '<div>' );
 		Array.prototype.forEach.call( arguments, function ( arg, i, args ) {
@@ -34,8 +36,10 @@
 				$wrapper.append( ',' );
 			}
 		} );
-		// Re-parse HTML to merge text nodes
-		return $( $.parseHTML( $wrapper.html() ) );
+		// Merge text nodes
+		// eslint-disable-next-line no-restricted-properties
+		$wrapper[ 0 ].normalize();
+		return $wrapper.contents().toArray();
 	};
 	ve.test.utils.MWDummyPlatform = MWDummyPlatform;
 
@@ -86,6 +90,7 @@
 			ve.init.target = mwTarget;
 			mw.libs.ve.setEditorPreference = dummySetEditorPreference;
 			// Ensure the current target is appended to the current fixture
+			// eslint-disable-next-line no-jquery/no-global-selector
 			$( '#qunit-fixture' ).append( ve.init.target.$element );
 		}
 

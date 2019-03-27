@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MediaWiki UserInterface popup tool classes.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -25,11 +25,27 @@ ve.ui.MWPopupTool = function VeUiMWPopupTool( title, toolGroup, config ) {
 	ve.ui.MWPopupTool.super.call( this, toolGroup, config );
 
 	this.$element.addClass( 've-ui-mwPopupTool' );
+
+	this.$link.on( 'click', this.onToolLinkClick.bind( this ) );
 };
 
 /* Inheritance */
 
 OO.inheritClass( ve.ui.MWPopupTool, OO.ui.PopupTool );
+
+/**
+ * Handle clicks on the main tool button.
+ *
+ * @param {jQuery.Event} e Click event
+ */
+ve.ui.MWPopupTool.prototype.onToolLinkClick = function () {
+	if ( this.popup.isVisible() ) {
+		// Popup will be visible if this just opened, thanks to sequencing.
+		// Can't just track this with toggle, because the notices popup is auto-opened and we
+		// want to know about deliberate interactions.
+		ve.track( 'activity.' + this.constructor.static.name + 'Popup', { action: 'show' } );
+	}
+};
 
 /**
  * MediaWiki UserInterface notices popup tool.
@@ -84,16 +100,20 @@ ve.ui.MWNoticesPopupTool.prototype.setNotices = function ( notices ) {
 	}
 
 	this.$items = $( '<div>' ).addClass( 've-ui-mwNoticesPopupTool-items' );
+	this.noticeItems = [];
 
-	notices.forEach( function ( itemHtml ) {
-		var $node = $( '<div>' )
+	notices.forEach( function ( item ) {
+		var $element = $( '<div>' )
 			.addClass( 've-ui-mwNoticesPopupTool-item' )
-			.append( $.parseHTML( itemHtml ) );
+			.html( typeof item === 'string' ? item : item.message );
+		ve.targetLinksToNewWindow( $element[ 0 ] );
 
-		// Ensure that any links in the notices open in a new tab/window
-		$node.find( 'a' ).attr( 'target', '_blank' ).attr( 'rel', 'noopener' );
+		tool.noticeItems.push( {
+			$element: $element,
+			type: item.type
+		} );
 
-		tool.$items.append( $node );
+		tool.$items.append( $element );
 	} );
 
 	this.popup.$body.append( this.$items );
@@ -170,7 +190,7 @@ ve.ui.MWHelpPopupTool = function VeUiMWHelpPopupTool( toolGroup, config ) {
 				.append( this.keyboardShortcutsButton.$element )
 				.append( this.feedbackButton.$element )
 		);
-	this.$items.find( 'a' ).attr( 'target', '_blank' ).attr( 'rel', 'noopener' );
+	ve.targetLinksToNewWindow( this.$items[ 0 ] );
 	this.popup.$body.append( this.$items );
 };
 

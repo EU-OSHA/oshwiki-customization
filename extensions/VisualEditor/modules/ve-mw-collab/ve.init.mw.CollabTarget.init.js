@@ -1,9 +1,11 @@
 /*!
  * VisualEditor MediaWiki CollabTarget init.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
+
+/* eslint-disable no-jquery/no-global-selector */
 
 ( function () {
 	var target,
@@ -71,7 +73,7 @@
 
 			// Add a dummy surface while the doc is loading
 			dummySurface = target.addSurface( ve.dm.converter.getModelFromDom( ve.createDocumentFromHtml( '' ) ) );
-			dummySurface.setDisabled( true );
+			dummySurface.setReadOnly( true );
 
 			// TODO: Create the correct model surface type (ve.ui.Surface#createModel)
 			surfaceModel = new ve.dm.Surface( ve.dm.converter.getModelFromDom( ve.createDocumentFromHtml( '' ) ) );
@@ -180,8 +182,12 @@
 		} );
 	}
 
-	function showForm() {
+	function showForm( pushState ) {
 		var specialTitle = mw.Title.newFromText( 'Special:CollabPad' );
+
+		if ( pushState ) {
+			history.pushState( { tag: 'collabTarget' }, mw.msg( 'collabpad' ), specialTitle.getUrl() );
+		}
 
 		if ( target ) {
 			$( '#firstHeading' ).removeClass( 've-init-mw-desktopArticleTarget-uneditableContent' );
@@ -285,6 +291,11 @@
 	} else {
 		showForm();
 	}
+
+	$specialTab.on( 'click', function ( e ) {
+		showForm( true );
+		e.preventDefault();
+	} );
 
 	// Tag current state
 	if ( history.replaceState ) {

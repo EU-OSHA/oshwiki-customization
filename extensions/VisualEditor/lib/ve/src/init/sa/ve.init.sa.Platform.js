@@ -1,7 +1,7 @@
 /*!
  * VisualEditor Standalone Initialization Platform class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -10,7 +10,7 @@
  *     @example
  *     var platform = new ve.init.sa.Platform( ve.messagePaths );
  *     platform.initialize().done( function () {
- *         $( 'body' ).append( $( '<p>' ).text(
+ *         $( document.body ).append( $( '<p>' ).text(
  *             platform.getMessage( 'visualeditor' )
  *         ) );
  *     } );
@@ -73,7 +73,7 @@ ve.init.sa.Platform.prototype.notify = function ( message, title ) {
 
 	if ( !this.$notifications ) {
 		this.$notifications = $( '<div>' ).addClass( 've-init-notifications' );
-		$( 'body' ).append( this.$notifications );
+		$( document.body ).append( this.$notifications );
 	}
 
 	function remove() {
@@ -143,7 +143,7 @@ ve.init.sa.Platform.prototype.getHtmlMessage = function ( key ) {
 		lastOffset = offset + placeholder.length;
 	} );
 	$message = $message.add( ve.sanitizeHtml( message.slice( lastOffset ) ) );
-	return $message;
+	return $message.toArray();
 };
 
 /**
@@ -310,7 +310,7 @@ ve.init.sa.Platform.prototype.initialize = function () {
 		fallbacks = $.i18n.fallbacks[ locale ];
 
 	if ( !VisualEditorSupportCheck() ) {
-		return $.Deferred().reject().promise();
+		return ve.createDeferred().reject().promise();
 	}
 
 	if ( !fallbacks ) {
@@ -344,11 +344,11 @@ ve.init.sa.Platform.prototype.initialize = function () {
 		filename = languages[ i ].toLowerCase() + '.json';
 
 		for ( j = 0, jLen = messagePaths.length; j < jLen; j++ ) {
-			deferred = $.Deferred();
+			deferred = ve.createDeferred();
 			$.i18n().load( messagePaths[ j ] + filename, languages[ i ] )
 				.always( deferred.resolve );
 			promises.push( deferred.promise() );
 		}
 	}
-	return $.when.apply( $, promises );
+	return ve.promiseAll( promises );
 };

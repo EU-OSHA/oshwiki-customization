@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MediaWiki Initialization Target class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -178,9 +178,11 @@ ve.init.mw.Target.prototype.createModelFromDom = function () {
 
 /**
  * @inheritdoc
- * @param {number} [section] Section
+ * @param {number|string|null} section Section. Use null to unwrap all sections.
+ * @param {boolean} [onlySection] Only return the requested section, otherwise returns the
+ *  whole document with just the requested section still wrapped (visual mode only).
  */
-ve.init.mw.Target.static.parseDocument = function ( documentString, mode, section ) {
+ve.init.mw.Target.static.parseDocument = function ( documentString, mode, section, onlySection ) {
 	var doc, sectionNode;
 	if ( mode === 'source' ) {
 		// Parent method
@@ -189,14 +191,17 @@ ve.init.mw.Target.static.parseDocument = function ( documentString, mode, sectio
 		// Parsoid documents are XHTML so we can use parseXhtml which fixed some IE issues.
 		doc = ve.parseXhtml( documentString );
 		if ( section !== undefined ) {
-			sectionNode = doc.body.querySelector( '[data-mw-section-id="' + section + '"]' );
-			doc.body.innerHTML = '';
-			if ( sectionNode ) {
-				doc.body.appendChild( sectionNode );
+			if ( onlySection ) {
+				sectionNode = doc.body.querySelector( '[data-mw-section-id="' + section + '"]' );
+				doc.body.innerHTML = '';
+				if ( sectionNode ) {
+					doc.body.appendChild( sectionNode );
+				}
+			} else {
+				// Strip Parsoid sections
+				ve.unwrapParsoidSections( doc.body, section );
 			}
 		}
-		// Strip Parsoid sections
-		ve.unwrapParsoidSections( doc.body );
 		// Strip legacy IDs, for example in section headings
 		ve.stripParsoidFallbackIds( doc.body );
 		// Fix relative or missing base URL if needed
@@ -259,20 +264,27 @@ ve.init.mw.Target.prototype.getHtml = function ( newDoc, oldDoc ) {
 
 	// Filter out junk that may have been added by browser plugins
 	$( newDoc )
-		.find(
-			'script, ' + // T54884, T65229, T96533, T103430
-			'noscript, ' + // T144891
-			'object, ' + // T65229
-			'style:not( [ data-mw ] ), ' + // T55252, but allow <style data-mw/> e.g. TemplateStyles T188143
-			'embed, ' + // T53521, T54791, T65121
-			'img[src^="data:"], ' + // T192392
-			'div[id="myEventWatcherDiv"], ' + // T53423
-			'div[id="sendToInstapaperResults"], ' + // T63776
-			'div[id="kloutify"], ' + // T69006
-			'div[id^="mittoHidden"], ' + // T70900
+		.find( [
+			'script', // T54884, T65229, T96533, T103430
+			'noscript', // T144891
+			'object', // T65229
+			'style:not( [ data-mw ] )', // T55252, but allow <style data-mw/> e.g. TemplateStyles T188143
+			'embed', // T53521, T54791, T65121
+			'a[href^="javascript:"]', // T200971
+			'img[src^="data:"]', // T192392
+			'div[id="myEventWatcherDiv"]', // T53423
+			'div[id="sendToInstapaperResults"]', // T63776
+			'div[id="kloutify"]', // T69006
+			'div[id^="mittoHidden"]', // T70900
+			'div.hon.certificateLink', // HON (T209619)
 			'div.donut-container' // Web of Trust (T189148)
-		)
+		].join( ',' ) )
 		.remove();
+
+	// data-mw-section-id is copied to headings by ve.unwrapParsoidSections
+	// Remove these to avoid triggering selser.
+	$( newDoc ).find( '[data-mw-section-id]:not( section )' ).removeAttr( 'data-mw-section-id' );
+
 	// Add doctype manually
 	return '<!doctype html>' + ve.serializeXhtml( newDoc );
 };
@@ -380,8 +392,6 @@ ve.init.mw.Target.prototype.addSurface = function () {
 	// as opposed to TargetWidget surfaces
 	surface.$element.addClass( 've-init-mw-target-surface' );
 	this.track( 'trace.createSurface.exit' );
-
-	this.dummyToolbar = false;
 
 	this.setSurface( surface );
 

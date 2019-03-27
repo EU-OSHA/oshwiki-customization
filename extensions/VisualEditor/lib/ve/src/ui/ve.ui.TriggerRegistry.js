@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface TriggerRegistry class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -84,7 +84,9 @@ ve.ui.TriggerRegistry.prototype.getNameByTrigger = function ( triggerString ) {
  * @return {string[]} List of trigger messages
  */
 ve.ui.TriggerRegistry.prototype.getMessages = function ( name ) {
-	return ( this.lookup( name ) || [] ).map( function ( trigger ) { return trigger.getMessage(); } );
+	return ( this.lookup( name ) || [] ).map( function ( trigger ) {
+		return trigger.getMessage();
+	} );
 };
 
 /* Initialization */
@@ -261,5 +263,18 @@ ve.ui.triggerRegistry.register(
 			new ve.ui.Trigger( 'shift+ctrl+g' ),
 			new ve.ui.Trigger( 'shift+f3' )
 		]
+	}
+);
+ve.ui.triggerRegistry.register(
+	'enterTableCell', [
+		new ve.ui.Trigger( 'enter' ),
+		new ve.ui.Trigger( 'shift+enter' ),
+		new ve.ui.Trigger( 'f2' )
+	]
+);
+ve.ui.triggerRegistry.register(
+	'submit', {
+		mac: new ve.ui.Trigger( 'cmd+enter' ),
+		pc: new ve.ui.Trigger( 'ctrl+enter' )
 	}
 );

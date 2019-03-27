@@ -222,7 +222,6 @@
 	"visualeditor-savedialog-title-review": "پنهنجي تبديلين تي نظرثاني ڪريو",
 	"visualeditor-savedialog-title-save": "پنهنجون تبديليون سانڍيو",
 	"visualeditor-saveerror": "سرور ڏانھن مواد سانڍڻ ۾ خرابي:$1",
-	"visualeditor-saveerror-titleblacklist": "صفحو سانڍڻ ۾ خرابي: صفحي جو عنوان بليڪ لسٽ ٿيل آھي",
 	"visualeditor-section-body-placeholder": "نئون سيڪشن",
 	"visualeditor-section-title-placeholder": "موضوع",
 	"visualeditor-serializeerror": ".سرور کان مواد لاھڻ ۾ خرابي:$1",
@@ -232,8 +231,5 @@
 	"visualeditor-toolbar-savedialog": "صفحو سانڍيو",
 	"visualeditor-toolbar-savedialog-short": "سانڍيو",
 	"visualeditor-version-label": "ورزن",
-	"visualeditor-viewpage-savewarning-discard": "ترميمون ختم ڪريو",
-	"visualeditor-viewpage-savewarning-keep": "سنوارڻ جاري رکو",
-	"visualeditor-viewpage-savewarning-title": "ڇا توهان کي پڪ آهي؟",
 	"visualeditor-wikitext-progress": "وڪيٽيڪسٽ بدلائيندي"
 }

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel Surface class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -75,7 +75,7 @@ ve.ce.MWWikitextSurface.prototype.onCopy = function ( e ) {
 		// setTimeout: postpone until after the default copy action
 		setTimeout( function () {
 			// Change focus back
-			view.$documentNode[ 0 ].focus();
+			view.$attachedRootNode[ 0 ].focus();
 			view.showSelectionState( originalSelection );
 			// Restore scroll position
 			view.$window.scrollTop( scrollTop );

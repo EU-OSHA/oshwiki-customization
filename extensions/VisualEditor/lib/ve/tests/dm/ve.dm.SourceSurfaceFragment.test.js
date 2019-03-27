@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel SourceSurfaceFragment tests.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.dm.SourceSurfaceFragment' );
@@ -106,7 +106,6 @@ QUnit.test( 'insertContent/insertDocument', function ( assert ) {
 		} else {
 			fragment.insertContent( caseItem.insert );
 		}
-		// eslint-disable-next-line no-loop-func
 		fragment.getPending().then( function () {
 			assert.deepEqual(
 				doc.getData( doc.getDocumentRange() ),

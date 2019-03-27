@@ -105,6 +105,7 @@
 					"ve.dm.RebaseDocState",
 					"ve.dm.RebaseClient",
 					"ve.dm.RebaseServer",
+					"ve.dm.DocumentStore",
 					"ve.dm.ProtocolServer",
 					"ve.dm.TransportServer",
 					"ve.dm.SurfaceSynchronizer"
@@ -216,7 +217,7 @@
 				"name": "Windows",
 				"classes": [
 					"ve.ui.*WindowManager",
-					"ve.ui.NodeWindow",
+					"ve.ui.*Window",
 					"ve.ui.*Dialog",
 					"ve.ui.*Inspector"
 				]
@@ -235,29 +236,6 @@
 				"classes": [
 					"ve.DiffMatchPatch",
 					"ve.DiffTreeNode"
-				]
-			}
-		]
-	},
-	{
-		"name": "Tests",
-		"groups": [
-			{
-				"name": "QUnit",
-				"classes": ["ve.QUnit", "ve.QUnit.assert"]
-			},
-			{
-				"name": "IME",
-				"classes": [
-					"ve.ce.TestOffset",
-					"ve.ce.TestRunner"
-				]
-			},
-			{
-				"name": "Rebasing",
-				"classes": [
-					"ve.dm.TestRebaseClient",
-					"ve.dm.TestRebaseServer"
 				]
 			}
 		]
@@ -355,6 +333,7 @@
 					"Number",
 					"Object",
 					"RegExp",
+					"Set",
 					"String"
 				]
 			}

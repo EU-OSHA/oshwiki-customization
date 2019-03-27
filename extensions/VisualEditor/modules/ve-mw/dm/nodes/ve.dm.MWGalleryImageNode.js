@@ -45,7 +45,7 @@ ve.dm.MWGalleryImageNode.static.toDataElement = function ( domElements, converte
 
 	// TODO: Improve handling of missing files. See 'isError' in MWBlockImageNode#toDataElement
 	li = domElements[ 0 ];
-	img = li.querySelector( 'img,audio,video' );
+	img = li.querySelector( 'img,audio,video,span[resource]' );
 
 	// Get caption (may be missing for mode="packed-hover" galleries)
 	captionNode = li.querySelector( '.gallerytext' );
@@ -89,11 +89,11 @@ ve.dm.MWGalleryImageNode.static.toDataElement = function ( domElements, converte
 ve.dm.MWGalleryImageNode.static.toDomElements = function ( data, doc ) {
 	// ImageNode:
 	// <li> li (gallerybox)
-	// 	<div> outerDiv
-	// 		<div> thumbDiv
-	// 			<div> innerDiv
-	// 				<a> a
-	// 					<img> img
+	//   <div> outerDiv
+	//     <div> thumbDiv
+	//       <div> innerDiv
+	//         <a> a
+	//           <img> img
 	var model = data,
 		li = doc.createElement( 'li' ),
 		outerDiv = doc.createElement( 'div' ),

@@ -2,7 +2,9 @@
 	"@metadata": {
 		"authors": [
 			"Iwan Novirion",
-			"Jagwar"
+			"Jagwar",
+			"Muhraz",
+			"Matma Rex"
 		]
 	},
 	"tooltip-ca-createsource": "Buek kode sumber laman ko",
@@ -96,6 +98,5 @@
 	"visualeditor-serializeerror": "Kasalahan pamuatan data dari server: $1.",
 	"visualeditor-toolbar-savedialog": "Simpan laman",
 	"visualeditor-usernamespacepagelink": "Project:Ruangnamo pangguno",
-	"visualeditor-version-label": "Versi",
-	"visualeditor-viewpage-savewarning": "Apo Sanak yakin nio baliak ka mode baco sabalun manyimpan?"
+	"visualeditor-version-label": "Versi"
 }

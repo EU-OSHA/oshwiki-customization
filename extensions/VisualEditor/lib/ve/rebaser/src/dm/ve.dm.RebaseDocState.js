@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel rebase document state class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -65,4 +65,11 @@ ve.dm.RebaseDocState.prototype.getActiveAuthors = function () {
 		}
 	} );
 	return result;
+};
+
+ve.dm.RebaseDocState.prototype.clearHistory = function () {
+	this.history = new ve.dm.Change( 0, [], [], {} );
+	this.authors.forEach( function ( authorData ) {
+		authorData.continueBase = null;
+	} );
 };

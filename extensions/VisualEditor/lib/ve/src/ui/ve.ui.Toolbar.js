@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface Toolbar class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -177,7 +177,7 @@ ve.ui.Toolbar.prototype.updateToolState = function () {
 	// Update context direction for button icons UI.
 	// By default, inline and block directions are the same.
 	// If no context direction is available, use document model direction.
-	dirInline = dirBlock = this.surface.getView().getSelection().getDirection();
+	dirInline = dirBlock = this.surface.getView().getSelectionDirectionality();
 
 	// 'inline' direction is different only if we are inside a language annotation
 	fragmentAnnotation = fragment.getAnnotations();
@@ -203,6 +203,8 @@ ve.ui.Toolbar.prototype.updateToolState = function () {
 		this.contextDirection.block = dirBlock;
 	}
 
+	// Array#map doesn't filter null elements
+	// eslint-disable-next-line no-jquery/no-map-util
 	activeDialogs = $.map(
 		[
 			this.surface.getDialogs(),

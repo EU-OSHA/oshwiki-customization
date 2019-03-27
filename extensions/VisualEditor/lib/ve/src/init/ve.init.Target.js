@@ -1,7 +1,7 @@
 /*!
  * VisualEditor Initialization Target class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -43,6 +43,7 @@ ve.init.Target = function VeInitTarget( config ) {
 	this.toolbarScrollOffset = 0;
 	this.activeToolbars = 0;
 	this.wasSurfaceActive = null;
+	this.teardownPromise = null;
 
 	this.modes = config.modes || this.constructor.static.modes;
 	this.setDefaultMode( config.defaultMode );
@@ -64,6 +65,8 @@ ve.init.Target = function VeInitTarget( config ) {
 
 	// Events
 	this.onDocumentKeyDownHandler = this.onDocumentKeyDown.bind( this );
+	this.onDocumentKeyUpHandler = this.onDocumentKeyUp.bind( this );
+	this.onDocumentVisibilityChangeHandler = this.onDocumentVisibilityChange.bind( this );
 	this.onTargetKeyDownHandler = this.onTargetKeyDown.bind( this );
 	this.onContainerScrollHandler = this.onContainerScroll.bind( this );
 	this.bindHandlers();
@@ -287,7 +290,11 @@ ve.init.Target.prototype.isModeAvailable = function ( mode ) {
  * Bind event handlers to target and document
  */
 ve.init.Target.prototype.bindHandlers = function () {
-	$( this.getElementDocument() ).on( 'keydown', this.onDocumentKeyDownHandler );
+	$( this.getElementDocument() ).on( {
+		keydown: this.onDocumentKeyDownHandler,
+		keyup: this.onDocumentKeyUpHandler,
+		visibilitychange: this.onDocumentVisibilityChangeHandler
+	} );
 	this.$element.on( 'keydown', this.onTargetKeyDownHandler );
 	ve.addPassiveEventListener( this.$scrollContainer[ 0 ], 'scroll', this.onContainerScrollHandler );
 };
@@ -296,7 +303,11 @@ ve.init.Target.prototype.bindHandlers = function () {
  * Unbind event handlers on target and document
  */
 ve.init.Target.prototype.unbindHandlers = function () {
-	$( this.getElementDocument() ).off( 'keydown', this.onDocumentKeyDownHandler );
+	$( this.getElementDocument() ).off( {
+		keydown: this.onDocumentKeyDownHandler,
+		keyup: this.onDocumentKeyUpHandler,
+		visibilitychange: this.onDocumentVisibilityChangeHandler
+	} );
 	this.$element.off( 'keydown', this.onTargetKeyDownHandler );
 	ve.removePassiveEventListener( this.$scrollContainer[ 0 ], 'scroll', this.onContainerScrollHandler );
 };
@@ -307,18 +318,23 @@ ve.init.Target.prototype.unbindHandlers = function () {
  * @return {jQuery.Promise} Promise which resolves when the target has been torn down
  */
 ve.init.Target.prototype.teardown = function () {
-	this.unbindHandlers();
-	// Wait for the toolbar to teardown before clearing surfaces,
-	// as it may want to transition away
-	return this.teardownToolbar().then( this.clearSurfaces.bind( this ) );
+	if ( !this.teardownPromise ) {
+		this.unbindHandlers();
+		// Wait for the toolbar to teardown before clearing surfaces,
+		// as it may want to transition away
+		this.teardownPromise = this.teardownToolbar().then( this.clearSurfaces.bind( this ) );
+	}
+	return this.teardownPromise;
 };
 
 /**
  * Destroy the target
+ *
+ * @return {jQuery.Promise} Promise which resolves when the target has been destroyed
  */
 ve.init.Target.prototype.destroy = function () {
 	var target = this;
-	this.teardown().then( function () {
+	return this.teardown().then( function () {
 		target.$element.remove();
 		ve.init.target = null;
 	} );
@@ -385,6 +401,27 @@ ve.init.Target.prototype.onDocumentKeyDown = function ( e ) {
 			e.preventDefault();
 		}
 	}
+	// Allows elements to re-style for ctrl+click behaviour, e.g. ve.ce.LinkAnnotation
+	this.$element.toggleClass( 've-init-target-ctrl-meta-down', e.ctrlKey || e.metaKey );
+};
+
+/**
+ * Handle key up events on the document
+ *
+ * @param {jQuery.Event} e Key up event
+ */
+ve.init.Target.prototype.onDocumentKeyUp = function ( e ) {
+	this.$element.toggleClass( 've-init-target-ctrl-meta-down', e.ctrlKey || e.metaKey );
+};
+
+/**
+ * Handle visibility change events on the document
+ *
+ * @param {jQuery.Event} e Visibility change event
+ */
+ve.init.Target.prototype.onDocumentVisibilityChange = function () {
+	// keyup event will be missed if you ctrl+tab away from the page
+	this.$element.removeClass( 've-init-target-ctrl-meta-down' );
 };
 
 /**
@@ -606,7 +643,7 @@ ve.init.Target.prototype.teardownToolbar = function () {
 		this.actionsToolbar.destroy();
 		this.actionsToolbar = null;
 	}
-	return $.Deferred().resolve().promise();
+	return ve.createDeferred().resolve().promise();
 };
 
 /**

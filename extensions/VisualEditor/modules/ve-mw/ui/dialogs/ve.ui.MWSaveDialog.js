@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface MWSaveDialog class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -144,9 +144,11 @@ ve.ui.MWSaveDialog.prototype.setDiffAndReview = function ( wikitextDiffPromise, 
 
 	function createDiffElement( visualDiff ) {
 		var diffElement = new ve.ui.DiffElement( visualDiff );
-		diffElement.$document.addClass( 'mw-body-content mw-parser-output' );
+		diffElement.$document.addClass( 'mw-body-content mw-parser-output mw-content-' + visualDiff.newDoc.getDir() );
+		ve.targetLinksToNewWindow( diffElement.$document[ 0 ] );
 		// Run styles so links render with their appropriate classes
 		ve.init.platform.linkCache.styleParsoidElements( diffElement.$document, baseDoc );
+		ve.fixFragmentLinks( diffElement.$document[ 0 ], mw.Title.newFromText( ve.init.target.getPageName() ), 'mw-save-visualdiff-' );
 		return diffElement;
 	}
 
@@ -262,6 +264,7 @@ ve.ui.MWSaveDialog.prototype.showPreview = function ( docOrMsg, baseDoc ) {
 		ve.targetLinksToNewWindow( this.$previewViewer[ 0 ] );
 		// Add styles so links render with their appropriate classes
 		ve.init.platform.linkCache.styleParsoidElements( this.$previewViewer, baseDoc );
+		ve.fixFragmentLinks( this.$previewViewer[ 0 ], mw.Title.newFromText( ve.init.target.getPageName() ), 'mw-save-preview-' );
 
 		if ( categories.length ) {
 			// If there are categories, we need to render them. This involves
@@ -392,6 +395,8 @@ ve.ui.MWSaveDialog.prototype.swapPanel = function ( panel, noFocus ) {
 						.addClass( 'mw-ajax-loader' );
 					this.editSummaryXhr = ve.init.target.getContentApi().post( {
 						action: 'parse',
+						title: ve.init.target.getPageName(),
+						prop: '',
 						summary: currentEditSummaryWikitext
 					} ).done( function ( result ) {
 						if ( result.parse.parsedsummary[ '*' ] === '' ) {
@@ -399,6 +404,7 @@ ve.ui.MWSaveDialog.prototype.swapPanel = function ( panel, noFocus ) {
 						} else {
 							// Intentionally treated as HTML
 							dialog.$reviewEditSummary.html( ve.msg( 'parentheses', result.parse.parsedsummary[ '*' ] ) );
+							ve.targetLinksToNewWindow( dialog.$reviewEditSummary[ 0 ] );
 						}
 					} ).fail( function () {
 						dialog.$reviewEditSummary.parent().addClass( 'oo-ui-element-hidden' );
@@ -463,9 +469,12 @@ ve.ui.MWSaveDialog.prototype.showMessage = function ( name, message, options ) {
 		} else {
 			$message.append( message );
 		}
-		this.$saveMessages.append( $message );
+		this.$saveMessages.append( $message.css( 'display', 'none' ) );
 
+		// FIXME: Use CSS transitions
+		// eslint-disable-next-line no-jquery/no-slide
 		$message.slideDown( {
+			duration: 250,
 			progress: this.updateSize.bind( this )
 		} );
 
@@ -553,10 +562,9 @@ ve.ui.MWSaveDialog.prototype.initialize = function () {
 	ve.ui.MWSaveDialog.super.prototype.initialize.call( this );
 
 	// Properties
-	this.panels = new OO.ui.StackLayout( { scrollable: true } );
+	this.panels = new OO.ui.StackLayout( { scrollable: false } );
 	this.savePanel = new OO.ui.PanelLayout( {
 		expanded: false,
-		scrollable: true,
 		padded: true,
 		classes: [ 've-ui-mwSaveDialog-savePanel' ]
 	} );
@@ -571,8 +579,8 @@ ve.ui.MWSaveDialog.prototype.initialize = function () {
 
 	// Save panel
 	this.$editSummaryLabel = $( '<div>' ).addClass( 've-ui-mwSaveDialog-summaryLabel' )
-		.html( ve.init.platform.getParsedMessage( 'summary' ) )
-		.find( 'a' ).attr( 'target', '_blank' ).attr( 'rel', 'noopener' ).end();
+		.html( ve.init.platform.getParsedMessage( 'summary' ) );
+	ve.targetLinksToNewWindow( this.$editSummaryLabel[ 0 ] );
 	this.editSummaryInput = new OO.ui.MultilineTextInputWidget( {
 		placeholder: ve.msg( 'visualeditor-editsummary' ),
 		classes: [ 've-ui-mwSaveDialog-summary' ],
@@ -630,20 +638,19 @@ ve.ui.MWSaveDialog.prototype.initialize = function () {
 	this.$saveFoot = $( '<div>' ).addClass( 've-ui-mwSaveDialog-foot' ).append(
 		$( '<p>' ).addClass( 've-ui-mwSaveDialog-license' )
 			.html( ve.init.platform.getParsedMessage( 'copyrightwarning' ) )
-			.find( 'a' ).attr( 'target', '_blank' ).attr( 'rel', 'noopener' ).end()
 	);
+	ve.targetLinksToNewWindow( this.$saveFoot[ 0 ] );
 	this.savePanel.$element.append(
 		this.$editSummaryLabel,
 		this.editSummaryInput.$element,
 		this.$saveOptions,
-		this.$saveFoot,
-		this.$saveMessages
+		this.$saveMessages,
+		this.$saveFoot
 	);
 
 	// Review panel
 	this.reviewPanel = new OO.ui.PanelLayout( {
 		expanded: false,
-		scrollable: true,
 		padded: true
 	} );
 
@@ -675,7 +682,6 @@ ve.ui.MWSaveDialog.prototype.initialize = function () {
 	// Preview panel
 	this.previewPanel = new OO.ui.PanelLayout( {
 		expanded: false,
-		scrollable: true,
 		padded: true
 	} );
 	this.$previewViewer = $( '<div>' ).addClass( 'mw-body-content mw-parser-output' );
@@ -687,12 +693,11 @@ ve.ui.MWSaveDialog.prototype.initialize = function () {
 	// Conflict panel
 	this.conflictPanel = new OO.ui.PanelLayout( {
 		expanded: false,
-		scrollable: true,
 		padded: true
 	} );
 	this.$conflict = $( '<div>' ).addClass( 've-ui-mwSaveDialog-conflict' )
-		.html( ve.init.platform.getParsedMessage( 'visualeditor-editconflict' ) )
-		.find( 'a' ).attr( 'target', '_blank' ).attr( 'rel', 'noopener' ).end();
+		.html( ve.init.platform.getParsedMessage( 'visualeditor-editconflict' ) );
+	ve.targetLinksToNewWindow( this.$conflict[ 0 ] );
 	this.conflictPanel.$element.append( this.$conflict );
 
 	// Panel stack

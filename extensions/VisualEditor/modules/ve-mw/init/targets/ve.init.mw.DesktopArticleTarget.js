@@ -1,9 +1,11 @@
 /*!
  * VisualEditor MediaWiki Initialization DesktopArticleTarget class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
+
+/* eslint-disable no-jquery/no-global-selector */
 
 /**
  * MediaWiki desktop article target.
@@ -182,40 +184,7 @@ ve.init.mw.DesktopArticleTarget.prototype.addSurface = function ( dmDoc, config 
  * @return {jQuery} Editable DOM selection
  */
 ve.init.mw.DesktopArticleTarget.prototype.getEditableContent = function () {
-	var $editableContent, $content, $before,
-		namespaceIds = mw.config.get( 'wgNamespaceIds' );
-
-	if ( mw.config.get( 'wgAction' ) === 'view' ) {
-		switch ( mw.config.get( 'wgNamespaceNumber' ) ) {
-			case namespaceIds.category:
-				// Put contents in a single wrapper
-				// TODO: Fix upstream
-				$content = $( '#mw-content-text > :not( .mw-category-generated )' );
-				$editableContent = $( '<div>' ).prependTo( $( '#mw-content-text' ) ).append( $content );
-				break;
-			case namespaceIds.file:
-				$editableContent = $( '#mw-imagepage-content' );
-				if ( !$editableContent.length ) {
-					// No image content, file doesn't exist, or is on Commons?
-					$editableContent = $( '<div>' ).attr( 'id', 'mw-imagepage-content' );
-					$before = $( '.sharedUploadNotice, #mw-imagepage-nofile' );
-					if ( $before.length ) {
-						$before.first().after( $editableContent );
-					} else {
-						// Nothing to anchor to, just prepend inside #mw-content-text
-						$( '#mw-content-text' ).prepend( $editableContent );
-					}
-				}
-				break;
-			default:
-				$editableContent = $( '#mw-content-text' );
-		}
-	} else {
-		// TODO: Load view page content if switching from edit source
-		$editableContent = $( '#mw-content-text' );
-	}
-
-	return $editableContent;
+	return $( '#mw-content-text' );
 };
 
 /**
@@ -343,7 +312,7 @@ ve.init.mw.DesktopArticleTarget.prototype.loadSuccess = function () {
 		$( '#ca-edit' ).removeClass( 'visualeditor-showtabdialog' );
 		// Set up a temporary window manager
 		windowManager = new OO.ui.WindowManager();
-		$( 'body' ).append( windowManager.$element );
+		$( document.body ).append( windowManager.$element );
 		this.editingTabDialog = new mw.libs.ve.EditingTabDialog();
 		windowManager.addWindows( [ this.editingTabDialog ] );
 		windowManager.openWindow( this.editingTabDialog )
@@ -453,16 +422,9 @@ ve.init.mw.DesktopArticleTarget.prototype.activate = function ( dataPromise ) {
 			{ type: 'paragraph' }, { type: '/paragraph' },
 			{ type: 'internalList' }, { type: '/internalList' }
 		] ) );
-		surface.setDisabled( true );
+		surface.setReadOnly( true );
 		// setSurface creates dummy toolbar
-		this.dummyToolbar = true;
 		this.setSurface( surface );
-		// Disconnect the tool factory listeners so the toolbar
-		// doesn't start showing new tools as they load, too
-		// much flickering
-		this.getToolbar().getToolFactory().off( 'register' );
-		// Disable all the tools
-		this.getToolbar().updateToolState();
 
 		this.load( dataPromise );
 	}
@@ -677,8 +639,6 @@ ve.init.mw.DesktopArticleTarget.prototype.teardown = function ( trackMechanism )
 			$( '.ve-init-mw-desktopArticleTarget-uneditableContent' )
 				.removeClass( 've-init-mw-desktopArticleTarget-uneditableContent' );
 
-			mw.hook( 've.deactivationComplete' ).fire( target.edited );
-
 			if ( !target.isViewPage ) {
 				location.href = target.viewUri.clone().extend( {
 					redirect: mw.config.get( 'wgIsRedirect' ) ? 'no' : undefined
@@ -827,7 +787,7 @@ ve.init.mw.DesktopArticleTarget.prototype.surfaceReady = function () {
 	// Make sure notices actually exists, because this might be a mode-switch and
 	// we've already removed it.
 	if ( editNotices.length ) {
-		actionTools.notices.setNotices( this.getEditNotices() );
+		actionTools.notices.setNotices( editNotices );
 	} else if ( actionTools.notices ) {
 		actionTools.notices.destroy();
 		actionTools.notices = null;
@@ -841,8 +801,6 @@ ve.init.mw.DesktopArticleTarget.prototype.surfaceReady = function () {
 
 	this.activatingDeferred.resolve();
 	this.events.trackActivationComplete();
-
-	mw.hook( 've.activationComplete' ).fire();
 };
 
 /**
@@ -895,7 +853,16 @@ ve.init.mw.DesktopArticleTarget.prototype.rebuildCategories = function ( categor
 		// Clone the existing catlinks for any specific properties which might
 		// be needed by the rest of the page. Also gives us a not-attached
 		// version, which we can pass to wikipage.categories as it requests.
-		var $catlinks = $( '#catlinks' ).clone().empty().append( $categories.children() );
+		var $catlinks = $( '#catlinks' ).clone().empty().removeClass( 'categories-allhidden' )
+			.append( $categories.children() );
+		// If all categories are hidden, we need to hide the box.
+		$catlinks.toggleClass( 'catlinks-allhidden',
+			$catlinks.find( '.mw-normal-catlinks' ).length === 0 &&
+			// Some situations make the hidden-categories visible (a user
+			// preference, and being on a category page) so rather than
+			// encoding that logic here just check whether they're visible:
+			$catlinks.find( '.mw-hidden-catlinks:visible' ).length === 0
+		);
 		target.transformCategoryLinks( $catlinks );
 		mw.hook( 'wikipage.categories' ).fire( $catlinks );
 		$( '#catlinks' ).replaceWith( $catlinks );
@@ -1124,6 +1091,7 @@ ve.init.mw.DesktopArticleTarget.prototype.setupSkinTabs = function () {
 			.on( 'click.ve-target', this.onViewTabClick.bind( this ) );
 	}
 
+	// Used by Extension:GuidedTour
 	mw.hook( 've.skinTabSetupComplete' ).fire();
 };
 
@@ -1140,7 +1108,7 @@ ve.init.mw.DesktopArticleTarget.prototype.getSaveDialogOpeningData = function ()
  * Remember the window's scroll position.
  */
 ve.init.mw.DesktopArticleTarget.prototype.saveScrollPosition = function () {
-	if ( this.getDefaultMode() === 'source' && this.section !== null ) {
+	if ( ( this.getDefaultMode() === 'source' || this.enableVisualSectionEditing ) && this.section !== null ) {
 		// Reset scroll to top if doing real section editing
 		this.scrollTop = 0;
 	} else {
@@ -1218,6 +1186,8 @@ ve.init.mw.DesktopArticleTarget.prototype.transformPage = function () {
 	this.updateTabs( true );
 	this.emit( 'transformPage' );
 
+	// TODO: Deprecate in favour of ve.activationComplete
+	// Only used by one gadget
 	mw.hook( 've.activate' ).fire();
 
 	// Move all native content inside the target
@@ -1306,7 +1276,7 @@ ve.init.mw.DesktopArticleTarget.prototype.updateHistoryState = function () {
  * Page modifications for switching back to view mode.
  */
 ve.init.mw.DesktopArticleTarget.prototype.restorePage = function () {
-	var uri, keys, section, $section;
+	var uri, keys, fragment, target;
 
 	// Skins like monobook don't have a tab for view mode and instead just have the namespace tab
 	// selected. We didn't deselect the namespace tab, so we're ready after deselecting #ca-ve-edit.
@@ -1319,6 +1289,7 @@ ve.init.mw.DesktopArticleTarget.prototype.restorePage = function () {
 		$( '#catlinks' ).replaceWith( this.$originalCategories );
 	}
 
+	// TODO: Deprecate in favour of ve.deactivationComplete
 	mw.hook( 've.deactivate' ).fire();
 	this.emit( 'restorePage' );
 
@@ -1329,30 +1300,22 @@ ve.init.mw.DesktopArticleTarget.prototype.restorePage = function () {
 		if ( 'veaction' in uri.query ) {
 			delete uri.query.veaction;
 		}
-		if ( 'section' in uri.query ) {
+		if ( this.section !== null ) {
 			// Translate into a fragment for the new URI:
 			// This should be after replacePageContent if this is post-save, so we can just look
 			// at the headers on the page.
-			section = uri.query.section.toString().indexOf( 'T-' ) === 0 ? +uri.query.section.slice( 2 ) : uri.query.section;
-			$section = this.$editableContent.find( 'h1, h2, h3, h4, h5, h6' )
-				// Ignore headings inside TOC
-				.filter( function () {
-					return $( this ).closest( '#toc' ).length === 0;
-				} );
-			if ( section === 'new' ) {
-				// A new section is appended to the end, so take the last one.
-				section = $section.length;
-			}
-			$section = $section.eq( section - 1 ).find( '.mw-headline' );
+			fragment = this.getSectionFragmentFromPage();
+			if ( fragment ) {
+				uri.fragment = fragment;
+				this.viewUri.fragment = fragment;
+				target = document.getElementById( fragment );
 
-			if ( $section.length && $section.attr( 'id' ) ) {
-				uri.fragment = $section.attr( 'id' );
-				this.viewUri.fragment = uri.fragment;
-
-				// Scroll the page to the edited section
-				setTimeout( function () {
-					$section[ 0 ].scrollIntoView( true );
-				} );
+				if ( target ) {
+					// Scroll the page to the edited section
+					setTimeout( function () {
+						target.scrollIntoView( true );
+					} );
+				}
 			}
 			delete uri.query.section;
 		}
@@ -1445,7 +1408,8 @@ ve.init.mw.DesktopArticleTarget.prototype.replacePageContent = function (
 		) );
 	}
 
-	mw.hook( 'wikipage.content' ).fire( this.$editableContent.empty().append( $content ) );
+	this.$editableContent.find( '.mw-parser-output' ).replaceWith( $content );
+	mw.hook( 'wikipage.content' ).fire( this.$editableContent );
 	if ( displayTitle ) {
 		$( '#firstHeading' ).html( displayTitle );
 	}
@@ -1460,34 +1424,6 @@ ve.init.mw.DesktopArticleTarget.prototype.replacePageContent = function (
 
 	// Re-set any edit section handlers now that the page content has been replaced
 	mw.libs.ve.setupEditLinks();
-};
-
-/**
- * Get the numeric index of a section in the page.
- *
- * @method
- * @param {HTMLElement} heading Heading element of section
- */
-ve.init.mw.DesktopArticleTarget.prototype.getEditSection = function ( heading ) {
-	var $page = $( '#mw-content-text' ),
-		section = 0;
-	$page.find( 'h1, h2, h3, h4, h5, h6' ).not( '#toc h2' ).each( function () {
-		section++;
-		if ( this === heading ) {
-			return false;
-		}
-	} );
-	return section;
-};
-
-/**
- * Store the section for which the edit link has been triggered.
- *
- * @method
- * @param {HTMLElement} heading Heading element of section
- */
-ve.init.mw.DesktopArticleTarget.prototype.saveEditSection = function ( heading ) {
-	this.section = this.getEditSection( heading );
 };
 
 /**
@@ -1527,7 +1463,7 @@ ve.init.mw.DesktopArticleTarget.prototype.maybeShowMetaDialog = function () {
 		// Pop out the notices when the welcome dialog is closed
 		this.welcomeDialogPromise
 			.always( function () {
-				var popup;
+				var popup, wiki;
 				if (
 					target.switched &&
 					!mw.user.options.get( 'visualeditor-hidevisualswitchpopup' )
@@ -1539,6 +1475,14 @@ ve.init.mw.DesktopArticleTarget.prototype.maybeShowMetaDialog = function () {
 				} else if ( target.actionsToolbar.tools.notices ) {
 					// Show notices
 					target.actionsToolbar.tools.notices.getPopup().toggle( true );
+					if ( mw.config.get( 'wgVisualEditorConfig' ).enableBlockNoticeStats &&
+						target.actionsToolbar.tools.notices.noticeItems.some( function ( item ) {
+							return item.type === 'block';
+						} )
+					) {
+						wiki = mw.config.get( 'wgDBname' );
+						mw.track( 'counter.MediaWiki.BlockNotices.' + wiki + '.VisualEditor.shown', 1 );
+					}
 				}
 			} );
 	}

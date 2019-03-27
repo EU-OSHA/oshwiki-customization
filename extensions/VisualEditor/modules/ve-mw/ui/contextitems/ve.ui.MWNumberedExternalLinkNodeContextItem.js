@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MWNumberedExternalLinkNodeContextItem class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -43,7 +43,7 @@ ve.ui.MWNumberedExternalLinkNodeContextItem.static.deletable = true;
 
 ve.ui.MWNumberedExternalLinkNodeContextItem.prototype.isDeletable = function () {
 	// We don't care about whether the context wants to show delete buttons, so override the check.
-	return this.constructor.static.deletable;
+	return this.constructor.static.deletable && !this.isReadOnly();
 };
 
 /**

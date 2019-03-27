@@ -206,7 +206,6 @@
 	"visualeditor-savedialog-title-save": "Тюрлендириулеринги сакъла",
 	"visualeditor-savedialog-warning-dirty": "Сизни тюрлендириулеригиз тюз болмазгъа боллкъдула — сакълатырыгъызны аллы бла тинтиб чыгъыгъыз.",
 	"visualeditor-saveerror": "Билгиле сакълауда халат: $1.",
-	"visualeditor-saveerror-titleblacklist": "Бетни сакълауда халат: бу бетни аты къара тизмеге киреди",
 	"visualeditor-serializeerror": "$1 серверден билгиле джюклеуде халат",
 	"visualeditor-settings-tool": "Бетни параметрлери",
 	"visualeditor-special-characters-group-other": "Кёб хайырланыучу",
@@ -214,10 +213,6 @@
 	"visualeditor-toolbar-savedialog-short": "Сакъла",
 	"visualeditor-usernamespacepagelink": "Project:Энчи алам",
 	"visualeditor-version-label": "Версия",
-	"visualeditor-viewpage-savewarning": "Тюрлендириулени сакълатмагъанлай къарау режимге къайтыргъа ажымсыз излеймисе?",
-	"visualeditor-viewpage-savewarning-discard": "Тюрлениулени ызына ал",
-	"visualeditor-viewpage-savewarning-keep": "Редакторлукъ этиуню бардыр",
-	"visualeditor-viewpage-savewarning-title": "Ишексизмисе?",
 	"visualeditor-wikitext-warning": "Сиз визуал редакторну хайырландырасыз — [[{{MediaWiki:visualeditor-wikitext-warning-link}}|вики-текст]] былайда ишлемейди. Тюрлендириуле да сакъланыб, вики-текст режимге кёчер ючюн «{{int:visualeditor-toolbar-savedialog}}» къаты бла ачылыучу тизмени ач да  «{{int:visualeditor-mweditmodesource-title}}» сайла.",
 	"visualeditor-wikitext-warning-title": "Вики-текст табылды"
 }

@@ -34,7 +34,8 @@
 			"Silicium Power",
 			"Evs",
 			"Vlad5250",
-			"Infovarius"
+			"Infovarius",
+			"Nk88"
 		]
 	},
 	"visualeditor": "Визуальный редактор",
@@ -88,11 +89,13 @@
 	"visualeditor-content-select-all": "Выбрать всё",
 	"visualeditor-contextitemwidget-label-remove": "Удалить",
 	"visualeditor-contextitemwidget-label-secondary": "Править",
+	"visualeditor-contextitemwidget-label-view": "Просмотр",
 	"visualeditor-debugbar-close": "Закрыть",
 	"visualeditor-debugbar-inputdebug": "Отладка ввода",
 	"visualeditor-debugbar-logrange": "Отладка выделенного",
 	"visualeditor-debugbar-showmodel": "Показать модель",
 	"visualeditor-debugbar-showtransactions": "Показать транзакции",
+	"visualeditor-debugbar-testsquasher": "Проверить обработчик транзакций",
 	"visualeditor-debugbar-startfilibuster": "Филибастер",
 	"visualeditor-debugbar-stopfilibuster": "Остановить Филибастер",
 	"visualeditor-debugbar-updatemodel": "Обновлять при изменениях",

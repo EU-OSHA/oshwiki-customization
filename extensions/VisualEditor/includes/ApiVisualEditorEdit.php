@@ -4,7 +4,7 @@
  *
  * @file
  * @ingroup Extensions
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license MIT
  */
 
@@ -26,7 +26,7 @@ class ApiVisualEditorEdit extends ApiVisualEditor {
 	 * @param Title $title The title of the page to write
 	 * @param string $wikitext The wikitext to write
 	 * @param array $params The edit parameters
-	 * @return Status The result of the save attempt
+	 * @return mixed The result of the save attempt
 	 */
 	protected function saveWikitext( Title $title, $wikitext, $params ) {
 		$apiParams = [
@@ -60,6 +60,9 @@ class ApiVisualEditorEdit extends ApiVisualEditor {
 		$api = new ApiMain(
 			new DerivativeRequest(
 				$this->getRequest(),
+				// Pass any unrecognized query parameters to the internal action=edit API request. This is
+				// necessary to support extensions that add extra stuff to the edit form (e.g. FlaggedRevs)
+				// and allows passing any other query parameters to be used for edit tagging (e.g. T209132).
 				$apiParams + $this->getRequest()->getValues(),
 				/* was posted? */ true
 			),
@@ -75,7 +78,7 @@ class ApiVisualEditorEdit extends ApiVisualEditor {
 	 * Load into an array the output of MediaWiki's parser for a given revision
 	 *
 	 * @param int $newRevId The revision to load
-	 * @return array The parsed of the save attempt
+	 * @return array|false The parsed of the save attempt
 	 */
 	protected function parseWikitext( $newRevId ) {
 		$apiParams = [
@@ -98,21 +101,18 @@ class ApiVisualEditorEdit extends ApiVisualEditor {
 			/* Add back-compat subelements */ 'Types' => [],
 			/* Remove any metadata keys from the links array */ 'Strip' => 'all',
 		] );
-		$content = isset( $result['parse']['text']['*'] ) ? $result['parse']['text']['*'] : false;
-		$categorieshtml = isset( $result['parse']['categorieshtml']['*'] ) ?
-			$result['parse']['categorieshtml']['*'] : false;
-		$links = isset( $result['parse']['links'] ) ? $result['parse']['links'] : [];
+		$content = $result['parse']['text']['*'] ?? false;
+		$categorieshtml = $result['parse']['categorieshtml']['*'] ?? false;
+		$links = $result['parse']['links'] ?? [];
 		$revision = Revision::newFromId( $result['parse']['revid'] );
 		$timestamp = $revision ? $revision->getTimestamp() : wfTimestampNow();
-		$displaytitle = isset( $result['parse']['displaytitle'] ) ?
-			$result['parse']['displaytitle'] : false;
+		$displaytitle = $result['parse']['displaytitle'] ?? false;
 		$modules = array_merge(
-			isset( $result['parse']['modulescripts'] ) ? $result['parse']['modulescripts'] : [],
-			isset( $result['parse']['modules'] ) ? $result['parse']['modules'] : [],
-			isset( $result['parse']['modulestyles'] ) ? $result['parse']['modulestyles'] : []
+			$result['parse']['modulescripts'] ?? [],
+			$result['parse']['modules'] ?? [],
+			$result['parse']['modulestyles'] ?? []
 		);
-		$jsconfigvars = isset( $result['parse']['jsconfigvars'] ) ?
-			$result['parse']['jsconfigvars'] : [];
+		$jsconfigvars = $result['parse']['jsconfigvars'] ?? [];
 
 		if ( $content === false || ( strlen( $content ) && $revision === null ) ) {
 			return false;
@@ -357,7 +357,7 @@ class ApiVisualEditorEdit extends ApiVisualEditor {
 			);
 			$result = [ 'result' => 'success', 'cachekey' => $key ];
 		} elseif ( $params['paction'] === 'diff' ) {
-			$section = isset( $params['section'] ) ? $params['section'] : null;
+			$section = $params['section'] ?? null;
 			$diff = $this->diffWikitext( $title, $params['oldid'], $wikitext, $section );
 			if ( $diff['result'] === 'fail' ) {
 				$this->dieWithError( 'apierror-visualeditor-difffailed', 'difffailed' );
@@ -406,11 +406,13 @@ class ApiVisualEditorEdit extends ApiVisualEditor {
 
 				$result['isRedirect'] = (string)$title->isRedirect();
 
-				if ( class_exists( 'FlaggablePageView' ) ) {
+				if ( class_exists( FlaggablePageView::class ) ) {
 					$view = FlaggablePageView::singleton();
 
-					$originalRequest = $view->getContext()->getRequest();
+					$originalContext = $view->getContext();
 					$originalTitle = RequestContext::getMain()->getTitle();
+
+					$newContext = new DerivativeContext( $originalContext );
 					// Defeat !$this->isPageView( $request ) || $request->getVal( 'oldid' ) check in setPageContent
 					$newRequest = new DerivativeRequest(
 						$this->getRequest(),
@@ -421,7 +423,9 @@ class ApiVisualEditorEdit extends ApiVisualEditor {
 							'action' => 'view'
 						] + $this->getRequest()->getValues()
 					);
-					$view->getContext()->setRequest( $newRequest );
+					$newContext->setRequest( $newRequest );
+					$newContext->setTitle( $title );
+					$view->setContext( $newContext );
 					RequestContext::getMain()->setTitle( $title );
 
 					// The two parameters here are references but we don't care
@@ -430,7 +434,7 @@ class ApiVisualEditorEdit extends ApiVisualEditor {
 					$useParserCache = null;
 					$view->setPageContent( $outputDone, $useParserCache );
 					$view->displayTag();
-					$view->getContext()->setRequest( $originalRequest );
+					$view->setContext( $originalContext );
 					RequestContext::getMain()->setTitle( $originalTitle );
 				}
 

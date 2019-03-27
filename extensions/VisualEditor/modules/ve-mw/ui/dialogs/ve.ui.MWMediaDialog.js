@@ -1,7 +1,7 @@
 /*!
  * VisualEditor user interface MWMediaDialog class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -44,7 +44,7 @@ ve.ui.MWMediaDialog.static.size = 'medium';
 
 ve.ui.MWMediaDialog.static.actions = [
 	{
-		action: 'apply',
+		action: 'done',
 		label: OO.ui.deferMsg( 'visualeditor-dialog-action-apply' ),
 		flags: [ 'progressive', 'primary' ],
 		modes: 'edit'
@@ -93,7 +93,7 @@ ve.ui.MWMediaDialog.static.actions = [
 	{
 		label: OO.ui.deferMsg( 'visualeditor-dialog-action-cancel' ),
 		flags: [ 'safe', 'back' ],
-		modes: [ 'edit', 'insert', 'select', 'search', 'upload-upload' ]
+		modes: [ 'readonly', 'edit', 'insert', 'select', 'search', 'upload-upload' ]
 	},
 	{
 		action: 'back',
@@ -643,9 +643,7 @@ ve.ui.MWMediaDialog.prototype.buildMediaInfoPanel = function ( imageinfo ) {
 			$main.prop( 'dir', contentDirection ),
 			$details
 		);
-
-	// Make sure all links open in a new window
-	$info.find( 'a' ).prop( 'target', '_blank' ).attr( 'rel', 'noopener' );
+	ve.targetLinksToNewWindow( $info[ 0 ] );
 
 	// Initialize thumb container
 	$thumbContainer
@@ -919,7 +917,7 @@ ve.ui.MWMediaDialog.prototype.updateFilenameFieldset = function () {
 		$( '<span>' ).append(
 			document.createTextNode( this.imageModel.getFilename() + ' ' ),
 			$( '<a>' )
-				.addClass( 'visualeditor-dialog-media-content-description-link' )
+				.addClass( 've-ui-mwMediaDialog-description-link' )
 				.attr( 'href', ve.resolveUrl( this.imageModel.getResourceName(), this.getFragment().getDocument().getHtmlDocument() ) )
 				.attr( 'target', '_blank' )
 				.attr( 'rel', 'noopener' )
@@ -1089,9 +1087,9 @@ ve.ui.MWMediaDialog.prototype.checkChanged = function () {
 				this.imageModel.hasBeenModified()
 			)
 		) {
-			this.actions.setAbilities( { insert: true, apply: true } );
+			this.actions.setAbilities( { insert: true, done: true } );
 		} else {
-			this.actions.setAbilities( { insert: false, apply: false } );
+			this.actions.setAbilities( { insert: false, done: false } );
 		}
 	}
 };
@@ -1106,7 +1104,8 @@ ve.ui.MWMediaDialog.prototype.getSetupProcess = function ( data ) {
 				dialog = this,
 				pageTitle = mw.config.get( 'wgTitle' ),
 				namespace = mw.config.get( 'wgNamespaceNumber' ),
-				namespacesWithSubpages = mw.config.get( 'wgVisualEditorConfig' ).namespacesWithSubpages;
+				namespacesWithSubpages = mw.config.get( 'wgVisualEditorConfig' ).namespacesWithSubpages,
+				isReadOnly = this.isReadOnly();
 
 			// Read the page title
 			if ( namespacesWithSubpages[ namespace ] ) {
@@ -1143,6 +1142,14 @@ ve.ui.MWMediaDialog.prototype.getSetupProcess = function ( data ) {
 			this.search.getQuery().setValue( this.pageTitle );
 			this.resetCaption();
 
+			this.altTextInput.setReadOnly( isReadOnly );
+			this.positionCheckbox.setDisabled( isReadOnly );
+			// TODO: This widget is not readable when disabled
+			this.positionSelect.setDisabled( isReadOnly );
+			this.typeSelectDropdown.setDisabled( isReadOnly );
+			this.borderCheckbox.setDisabled( isReadOnly );
+			this.sizeWidget.setDisabled( isReadOnly );
+
 			// Pass `true` to avoid focussing. If we focus the image caption widget during dialog
 			// opening, and it wants to display a context menu, it will be mispositioned.
 			this.switchPanels( this.selectedNode ? 'edit' : 'search', true );
@@ -1154,7 +1161,7 @@ ve.ui.MWMediaDialog.prototype.getSetupProcess = function ( data ) {
 				this.mediaUploadBooklet.initialize() :
 				$.Deferred().resolve().promise()
 			).then( function () {
-				dialog.actions.setAbilities( { upload: false, save: false, insert: false, apply: false } );
+				dialog.actions.setAbilities( { upload: false, save: false, insert: false, done: false } );
 
 				if ( data.file ) {
 					dialog.searchTabs.setTabPanel( 'upload' );
@@ -1178,8 +1185,8 @@ ve.ui.MWMediaDialog.prototype.switchPanels = function ( panel, noFocus ) {
 			this.panels.setItem( this.mediaSettingsLayout );
 			// Focus the general settings page
 			this.mediaSettingsLayout.setTabPanel( 'general' );
-			// Hide/show buttons
-			this.actions.setMode( this.selectedNode ? 'edit' : 'insert' );
+			// Parent functionality (edit/insert/readonly)
+			this.actions.setMode( this.getMode() );
 			if ( !noFocus ) {
 				// Focus the caption surface
 				this.captionTarget.focus();
@@ -1306,6 +1313,7 @@ ve.ui.MWMediaDialog.prototype.resetCaption = function () {
 
 	// Set document
 	this.captionTarget.setDocument( captionDocument );
+	this.captionTarget.setReadOnly( this.isReadOnly() );
 	this.captionTarget.initialize();
 };
 
@@ -1315,7 +1323,9 @@ ve.ui.MWMediaDialog.prototype.resetCaption = function () {
 ve.ui.MWMediaDialog.prototype.getReadyProcess = function ( data ) {
 	return ve.ui.MWMediaDialog.super.prototype.getReadyProcess.call( this, data )
 		.next( function () {
-			this.switchPanels( this.selectedNode ? 'edit' : 'search' );
+			if ( !data.file ) {
+				this.switchPanels( this.selectedNode ? 'edit' : 'search' );
+			}
 			// Revalidate size
 			this.sizeWidget.validateDimensions();
 		}, this );
@@ -1327,6 +1337,7 @@ ve.ui.MWMediaDialog.prototype.getReadyProcess = function ( data ) {
 ve.ui.MWMediaDialog.prototype.getTeardownProcess = function ( data ) {
 	return ve.ui.MWMediaDialog.super.prototype.getTeardownProcess.call( this, data )
 		.first( function () {
+			this.mediaSettingsLayout.resetScroll();
 			// Cleanup
 			this.search.getQuery().setValue( '' );
 			this.search.teardown();
@@ -1382,7 +1393,7 @@ ve.ui.MWMediaDialog.prototype.getActionProcess = function ( action ) {
 			return new OO.ui.Process( this.mediaUploadBooklet.uploadFile() );
 		case 'save':
 			return new OO.ui.Process( this.mediaUploadBooklet.saveFile() );
-		case 'apply':
+		case 'done':
 		case 'insert':
 			handler = function () {
 				var surfaceModel = this.getFragment().getSurface();

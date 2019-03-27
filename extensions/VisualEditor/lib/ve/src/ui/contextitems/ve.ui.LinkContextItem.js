@@ -1,7 +1,7 @@
 /*!
  * VisualEditor LinkContextItem class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -33,9 +33,12 @@ ve.ui.LinkContextItem = function VeUiLinkContextItem( context, model, config ) {
 			new OO.ui.IconWidget( { icon: 'quotes' } ).$element,
 			new OO.ui.LabelWidget( { label: OO.ui.deferMsg( 'visualeditor-linkcontext-label-label' ) } ).$element
 		),
-		$( '<div>' ).addClass( 've-ui-linkContextItem-label-preview' ).append( this.labelPreview.$element ),
-		$( '<div>' ).addClass( 've-ui-linkContextItem-label-action' ).append( this.labelButton.$element )
+		$( '<div>' ).addClass( 've-ui-linkContextItem-label-preview' ).append( this.labelPreview.$element )
 	);
+
+	if ( !this.isReadOnly() ) {
+		this.$labelLayout.append( $( '<div>' ).addClass( 've-ui-linkContextItem-label-action' ).append( this.labelButton.$element ) );
+	}
 };
 
 /* Inheritance */

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor user interface MWParameterPage class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -16,6 +16,7 @@
  * @param {string} name Unique symbolic name of page
  * @param {Object} [config] Configuration options
  * @cfg {jQuery} [$overlay] Overlay to render dropdowns in
+ * @cfg {boolean} [readOnly] Parameter is read-only
  */
 ve.ui.MWParameterPage = function VeUiMWParameterPage( parameter, name, config ) {
 	var paramName = parameter.getName();
@@ -48,6 +49,10 @@ ve.ui.MWParameterPage = function VeUiMWParameterPage( parameter, name, config ) 
 		.setValue( this.parameter.getValue() )
 		.connect( this, { change: 'onValueInputChange' } );
 
+	if ( config.readOnly && this.valueInput.setReadOnly ) {
+		this.valueInput.setReadOnly( true );
+	}
+
 	this.statusIndicator = new OO.ui.IndicatorWidget( {
 		classes: [ 've-ui-mwParameterPage-statusIndicator' ]
 	} );
@@ -61,7 +66,7 @@ ve.ui.MWParameterPage = function VeUiMWParameterPage( parameter, name, config ) 
 	if ( this.parameter.isRequired() ) {
 		this.statusIndicator
 			.setIndicator( 'required' )
-			.setIndicatorTitle(
+			.setTitle(
 				ve.msg( 'visualeditor-dialog-transclusion-required-parameter' )
 			);
 		this.$description.append(
@@ -74,7 +79,7 @@ ve.ui.MWParameterPage = function VeUiMWParameterPage( parameter, name, config ) 
 	} else if ( this.parameter.isDeprecated() ) {
 		this.statusIndicator
 			.setIndicator( 'alert' )
-			.setIndicatorTitle(
+			.setTitle(
 				ve.msg( 'visualeditor-dialog-transclusion-deprecated-parameter' )
 			);
 		this.$description.append(
@@ -145,7 +150,7 @@ ve.ui.MWParameterPage = function VeUiMWParameterPage( parameter, name, config ) 
 
 	this.$actions.append( this.infoButton.$element );
 
-	if ( !this.parameter.isRequired() ) {
+	if ( !this.parameter.isRequired() && !config.readOnly ) {
 		this.removeButton = new OO.ui.ButtonWidget( {
 			framed: false,
 			icon: 'trash',
@@ -188,7 +193,10 @@ ve.ui.MWParameterPage = function VeUiMWParameterPage( parameter, name, config ) 
 		.append( this.addButton.$element );
 	this.$element
 		.addClass( 've-ui-mwParameterPage' )
-		.append( this.$info, this.$field, this.$actions, this.$more );
+		.append( this.$info, this.$field, this.$actions );
+	if ( !config.readOnly ) {
+		this.$element.append( this.$more );
+	}
 };
 
 /* Inheritance */
@@ -377,14 +385,14 @@ ve.ui.MWParameterPage.prototype.setOutlineItem = function () {
 		if ( this.parameter.isRequired() ) {
 			this.outlineItem
 				.setIndicator( 'required' )
-				.setIndicatorTitle(
+				.setTitle(
 					ve.msg( 'visualeditor-dialog-transclusion-required-parameter' )
 				);
 		}
 		if ( this.parameter.isDeprecated() ) {
 			this.outlineItem
 				.setIndicator( 'alert' )
-				.setIndicatorTitle(
+				.setTitle(
 					ve.msg( 'visualeditor-dialog-transclusion-deprecated-parameter' )
 				);
 		}

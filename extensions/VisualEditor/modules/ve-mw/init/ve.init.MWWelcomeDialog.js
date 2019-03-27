@@ -1,7 +1,7 @@
 /*!
  * VisualEditor user interface MWWelcomeDialog class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -20,8 +20,7 @@ mw.libs.ve.WelcomeDialog = function VeInitWelcomeDialog( config ) {
 	mw.libs.ve.WelcomeDialog.super.call( this, config );
 
 	this.$element
-		.addClass( 've-init-mw-desktopArticleTarget-windowManager' )
-		.addClass( 've-init-mw-desktopArticleTarget-windowManager-welcome' );
+		.addClass( 've-init-mw-welcomeDialog' );
 };
 
 /* Inheritance */
@@ -61,7 +60,7 @@ mw.libs.ve.WelcomeDialog.prototype.getSetupProcess = function ( data ) {
 	data = $.extend( {
 		title: mw.msg( 'visualeditor-welcomedialog-title', mw.user, mw.config.get( 'wgSiteName' ) ),
 		message: $( '<span>' )
-			.addClass( 'visualeditor-welcomedialog-content' )
+			.addClass( 've-init-mw-welcomeDialog-content' )
 			.append(
 				document.createTextNode( mw.msg( 'visualeditor-welcomedialog-content' ) ),
 				$( '<br>' ),

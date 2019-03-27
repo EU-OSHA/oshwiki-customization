@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MediaWiki UserInterface meta tool classes.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -13,7 +13,7 @@
  * @extends ve.ui.WindowTool
  * @constructor
  */
-ve.ui.MWVeOnlyDialogTool = function VeUiMWMetaDialogTool() {
+ve.ui.MWVeOnlyDialogTool = function VeUiMWVeOnlyDialogTool() {
 	ve.ui.MWVeOnlyDialogTool.super.apply( this, arguments );
 };
 OO.inheritClass( ve.ui.MWVeOnlyDialogTool, ve.ui.WindowTool );

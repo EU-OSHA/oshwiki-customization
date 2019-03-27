@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel Change class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -130,7 +130,6 @@ ve.dm.Change.static.deserialize = function ( data, doc, preserveStoreValues, uns
 
 	for ( authorId in data.selections ) {
 		selections[ authorId ] = ve.dm.Selection.static.newFromJSON(
-			doc,
 			data.selections[ authorId ]
 		);
 	}
@@ -199,6 +198,8 @@ ve.dm.Change.static.deserializeValue = function ( serialized, unsafe ) {
 		return ve.dm.annotationFactory.createFromElement( serialized.value );
 	} else if ( serialized.type === 'domNodes' ) {
 		if ( unsafe ) {
+			// We can use jQuery here because unsafe sanitization
+			// only happens in browser clients.
 			return $.parseHTML( serialized.value, undefined, true );
 		} else {
 			// Convert NodeList to Array
@@ -321,7 +322,7 @@ ve.dm.Change.static.rebaseTransactions = function ( transactionA, transactionB )
  * So observe that by transaction commutivity we can rewrite a2' as:
  *
  * a2' := a2|(inv(a1) * a1 * b1|a1)
- * 	= a2|(b1|a1)
+ *      = a2|(b1|a1)
  *
  * and that b1|a1 conflicts only if a1|b1 conflicts (so this introduces no new conflicts). In
  * general we can write:
@@ -807,16 +808,20 @@ ve.dm.Change.prototype.applyTo = function ( surface, applySelection ) {
 		surface.documentModel.store.merge( store );
 	} );
 	this.transactions.forEach( function ( tx ) {
-		var offset;
+		var range, offset;
 		surface.change( tx );
 		// Don't mark as applied: this.start already tracks this
 		tx.applied = false;
 
 		// TODO: This would be better fixed by T202730
 		if ( applySelection ) {
-			offset = doc.getNearestCursorOffset( tx.getModifiedRange( doc ).end, -1 );
-			if ( offset !== -1 ) {
-				surface.setSelection( new ve.dm.LinearSelection( doc, new ve.Range( offset ) ) );
+			range = tx.getModifiedRange( doc );
+			// If the transaction only touched the internal list, there is no modified range within the main document
+			if ( range ) {
+				offset = doc.getNearestCursorOffset( range.end, -1 );
+				if ( offset !== -1 ) {
+					surface.setSelection( new ve.dm.LinearSelection( new ve.Range( offset ) ) );
+				}
 			}
 		}
 	} );
@@ -920,7 +925,9 @@ ve.dm.Change.prototype.serialize = function ( preserveStoreValues ) {
 		transactions: transactions
 	};
 	// Only set stores if at least one is non-null
-	if ( stores.some( function ( store ) { return store !== null; } ) ) {
+	if ( stores.some( function ( store ) {
+		return store !== null;
+	} ) ) {
 		data.stores = stores;
 	}
 	if ( Object.keys( selections ).length ) {

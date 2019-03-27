@@ -253,7 +253,6 @@
 		<script src="../src/ce/keydownhandlers/ve.ce.LinearEscapeKeyDownHandler.js"></script>
 		<script src="../src/ce/keydownhandlers/ve.ce.TableArrowKeyDownHandler.js"></script>
 		<script src="../src/ce/keydownhandlers/ve.ce.TableDeleteKeyDownHandler.js"></script>
-		<script src="../src/ce/keydownhandlers/ve.ce.TableEnterKeyDownHandler.js"></script>
 		<script src="../src/ce/keydownhandlers/ve.ce.LinearTabKeyDownHandler.js"></script>
 		<script src="../src/ce/nodes/ve.ce.GeneratedContentNode.js"></script>
 		<script src="../src/ce/nodes/ve.ce.ContentEditableNode.js"></script>
@@ -357,6 +356,7 @@
 		<script src="../src/ui/ve.ui.DataTransferHandlerFactory.js"></script>
 		<script src="../src/ui/ve.ui.DataTransferItem.js"></script>
 		<script src="../src/ui/ve.ui.WindowManager.js"></script>
+		<script src="../src/ui/ve.ui.FragmentWindow.js"></script>
 		<script src="../src/ui/ve.ui.NodeWindow.js"></script>
 		<script src="../src/ui/ve.ui.TabIndexScope.js"></script>
 		<script src="../src/ui/windowmanagers/ve.ui.SurfaceWindowManager.js"></script>
@@ -486,8 +486,10 @@
 		<script src="../src/ui/tools/ve.ui.AuthorListPopupTool.js"></script>
 
 		<!-- visualEditor.test -->
+		<script src="../src/ve.freeze.js"></script>
 		<script src="../rebaser/src/dm/ve.dm.RebaseDocState.js"></script>
 		<script src="../rebaser/src/dm/ve.dm.RebaseServer.js"></script>
+		<script src="../rebaser/src/dm/ve.dm.DocumentStore.js"></script>
 		<script src="../rebaser/src/dm/ve.dm.ProtocolServer.js"></script>
 		<script src="../rebaser/src/dm/ve.dm.TransportServer.js"></script>
 		<script src="../tests/ve.qunit.js"></script>
@@ -522,6 +524,10 @@
 		<script src="../tests/dm/ve.dm.TestRebaseClient.js"></script>
 		<script src="../tests/dm/ve.dm.TestRebaseServer.js"></script>
 		<script src="../tests/dm/ve.dm.RebaseServer.test.js"></script>
+		<script src="../tests/dm/ve.dm.FakeMongo.js"></script>
+		<script src="../tests/dm/ve.dm.FakeSocket.js"></script>
+		<script src="../tests/dm/ve.dm.DocumentStore.test.js"></script>
+		<script src="../tests/dm/ve.dm.TransportServer.test.js"></script>
 		<script src="../tests/dm/ve.dm.TreeModifier.test.js"></script>
 		<script src="../tests/dm/ve.dm.TransactionProcessor.test.js"></script>
 		<script src="../tests/dm/ve.dm.Surface.test.js"></script>
@@ -541,10 +547,21 @@
 		<script src="../tests/ce/ve.ce.RangeState.test.js"></script>
 		<script src="../tests/ce/ve.ce.TextState.test.js"></script>
 		<script src="../tests/ce/ve.ce.NodeFactory.test.js"></script>
+		<script src="../tests/ce/ve.ce.AnnotationFactory.test.js"></script>
 		<script src="../tests/ce/ve.ce.Node.test.js"></script>
 		<script src="../tests/ce/ve.ce.BranchNode.test.js"></script>
 		<script src="../tests/ce/ve.ce.ContentBranchNode.test.js"></script>
 		<script src="../tests/ce/ve.ce.LeafNode.test.js"></script>
+		<script src="../tests/ce/ve.ce.Selection.test.js"></script>
+		<script src="../tests/ce/keydownhandlers/ve.ce.LinearArrowKeyDownHandler.test.js"></script>
+		<script src="../tests/ce/keydownhandlers/ve.ce.LinearDeleteKeyDownHandler.test.js"></script>
+		<script src="../tests/ce/keydownhandlers/ve.ce.LinearEnterKeyDownHandler.test.js"></script>
+		<script src="../tests/ce/keydownhandlers/ve.ce.LinearEscapeKeyDownHandler.test.js"></script>
+		<script src="../tests/ce/keydownhandlers/ve.ce.TableArrowKeyDownHandler.test.js"></script>
+		<script src="../tests/ce/keydownhandlers/ve.ce.TableDeleteKeyDownHandler.test.js"></script>
+		<script src="../tests/ce/keydownhandlers/ve.ce.TableEnterKeyDownHandler.test.js"></script>
+		<script src="../tests/ce/keydownhandlers/ve.ce.TableF2KeyDownHandler.test.js"></script>
+		<script src="../tests/ce/nodes/ve.ce.ResizableNode.test.js"></script>
 		<script src="../tests/ce/nodes/ve.ce.TextNode.test.js"></script>
 		<script src="../tests/ce/nodes/ve.ce.TableNode.test.js"></script>
 		<script src="../tests/init/ve.init.sa.Platform.test.js"></script>
@@ -560,9 +577,11 @@
 		<script src="../tests/ui/actions/ve.ui.LinkAction.test.js"></script>
 		<script src="../tests/ui/actions/ve.ui.ListAction.test.js"></script>
 		<script src="../tests/ui/actions/ve.ui.TableAction.test.js"></script>
+		<script src="../tests/ui/actions/ve.ui.WindowAction.test.js"></script>
 		<script src="../tests/ui/datatransferhandlers/ve.ui.DSVFileTransferHandler.test.js"></script>
 		<script src="../tests/ui/datatransferhandlers/ve.ui.UrlStringTransferHandler.test.js"></script>
 		<script src="../tests/ui/dialogs/ve.ui.FindAndReplaceDialog.test.js"></script>
+		<script src="../tests/ui/inspectors/ve.ui.FragmentInspector.test.js"></script>
 		<script src="../tests/ce/ve.ce.TestRunner.js"></script>
 		<script src="../tests/ce/ve.ce.imetests.test.js"></script>
 		<script src="../tests/ce/imetests/backspace-chromium-ubuntu-none.js"></script>

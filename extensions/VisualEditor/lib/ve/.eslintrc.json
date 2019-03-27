@@ -1,11 +1,9 @@
 {
+	"root": true,
 	"extends": [
-		"wikimedia"
+		"wikimedia/client",
+		"wikimedia/jquery"
 	],
-	"env": {
-		"browser": true,
-		"jquery": true
-	},
 	"globals": {
 		"ve": true,
 		"VisualEditorSupportCheck": false,
@@ -15,8 +13,12 @@
 		"Papa": false
 	},
 	"rules": {
-		"dot-notation": [ "error", { "allowKeywords": true } ],
-		"max-len": 0
+		"no-jquery/no-extend": "error",
+		"no-jquery/no-hide": "error",
+		"no-jquery/no-show": "error",
+		"no-jquery/no-toggle": "error",
+		"max-statements-per-line": [ "error", { "max": 1 } ],
+		"max-len": "off"
 	},
 	"plugins": [ "html" ],
 	"settings": {

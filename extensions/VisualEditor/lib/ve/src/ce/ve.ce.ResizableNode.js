@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable ResizableNode class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -97,7 +97,8 @@ OO.initClass( ve.ce.ResizableNode );
  * @return {boolean} The node is currently resizable
  */
 ve.ce.ResizableNode.prototype.isResizable = function () {
-	return this.$resizable && !!this.$resizable.length && !OO.ui.isMobile();
+	return this.$resizable && !!this.$resizable.length && !OO.ui.isMobile() &&
+		!( this.root && this.root.getSurface() && this.root.getSurface().isReadOnly() );
 };
 
 /**
@@ -196,6 +197,7 @@ ve.ce.ResizableNode.prototype.updateSizeLabel = function () {
 	if ( this.showSizeLabel ) {
 		this.$sizeText.append( $( '<span>' )
 			.addClass( 've-ce-resizableNode-sizeText-size' )
+			// TODO: i18n?
 			.text( Math.round( dimensions.width ) + ' × ' + Math.round( dimensions.height ) )
 		);
 	}

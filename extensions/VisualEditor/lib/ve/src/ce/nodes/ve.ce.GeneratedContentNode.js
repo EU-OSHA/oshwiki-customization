@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable GeneratedContentNode class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -66,7 +66,7 @@ ve.ce.GeneratedContentNode.static.awaitGeneratedContent = function ( view ) {
 		var promise;
 		if ( typeof node.generateContents === 'function' ) {
 			if ( node.isGenerating() ) {
-				promise = $.Deferred();
+				promise = ve.createDeferred();
 				node.once( 'rerender', promise.resolve );
 				promises.push( promise );
 			}
@@ -80,7 +80,7 @@ ve.ce.GeneratedContentNode.static.awaitGeneratedContent = function ( view ) {
 		queueNode( view );
 	}
 
-	return $.when.apply( $, promises );
+	return ve.promiseAll( promises );
 };
 
 /* Abstract methods */
@@ -323,7 +323,7 @@ ve.ce.GeneratedContentNode.prototype.abortGenerating = function () {
 		// Unset this.generatingPromise first so that if the promise is resolved or rejected
 		// from within .abort(), this is ignored as it should be
 		this.generatingPromise = null;
-		if ( $.isFunction( promise.abort ) ) {
+		if ( typeof promise.abort === 'function' ) {
 			promise.abort();
 		}
 	}

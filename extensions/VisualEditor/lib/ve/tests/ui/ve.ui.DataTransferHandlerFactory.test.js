@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface DataTransferHandlerFactory tests.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.ui.DataTransferHandlerFactory' );
@@ -49,7 +49,9 @@ QUnit.test( 'getHandlerNameForItem', function ( assert ) {
 	StubHandlerHtml2 = makeStubTransferHandler( 'html2', false, [ 'text/html' ] );
 	// The `html3` handler should never show up
 	StubHandlerHtml3 = makeStubTransferHandler( 'html3', true, [ 'text/html' ] );
-	StubHandlerHtml3.static.matchFunction = function () { return false; };
+	StubHandlerHtml3.static.matchFunction = function () {
+		return false;
+	};
 
 	// The factory should start out empty and __proto__ shouldn't cause a crash
 	assert.strictEqual( factory.getHandlerNameForItem( stubItemTypeHtml, false ), undefined, 'Empty factory shouldn\'t match by type' );

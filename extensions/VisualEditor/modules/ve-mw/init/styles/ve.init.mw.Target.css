@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MediaWiki Initialization Target styles.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -49,4 +49,14 @@
 .ve-ui-diffElement table.mw-collapsible > caption:first-child:after {
 	color: #999;
 	float: none;
+}
+
+/* Reset section node styles */
+.ve-init-mw-target .ve-ce-sectionNode:before,
+.ve-init-mw-target .ve-ce-sectionNode:after {
+	content: normal;
+}
+
+.ve-init-mw-target .ve-ce-surface-enabled .ve-ce-sectionNode:not( .ve-ce-activeNode-active ) {
+	opacity: 1;
 }

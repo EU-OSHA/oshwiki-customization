@@ -317,7 +317,6 @@
 	"visualeditor-savedialog-title-save": "अपने बदलाव सहेजें",
 	"visualeditor-savedialog-warning-dirty": "संभवतः आपके बदलाव खराब हो गए हैं – कृपया सहेजने से पहले जाँच लें।",
 	"visualeditor-saveerror": "सर्वर पर डाटा सहेजने में त्रुटि: $1।",
-	"visualeditor-saveerror-titleblacklist": "पृष्ठ सहेजने में त्रुटि: इस पृष्ठ का शीर्षक काली सूची में है",
 	"visualeditor-section-body-placeholder": "नया अनुभाग",
 	"visualeditor-section-title-placeholder": "विषय",
 	"visualeditor-serializeerror": "सर्वर से डाटा लोड करने में त्रुटि: $1।",
@@ -329,10 +328,6 @@
 	"visualeditor-toolbar-savedialog-short": "सहेजें",
 	"visualeditor-usernamespacepagelink": "Project:सदस्य नामस्थान",
 	"visualeditor-version-label": "अवतरण",
-	"visualeditor-viewpage-savewarning": "क्या आप सचमुच सहेजे बिना दृश्य मोड में वापिस जाना चाहते हैं?",
-	"visualeditor-viewpage-savewarning-discard": "संपादन रद्द करें",
-	"visualeditor-viewpage-savewarning-keep": "संपादन जारी रखें",
-	"visualeditor-viewpage-savewarning-title": "क्या आपको यकीन है?",
 	"visualeditor-wikitext-progress": "विकिपाठ्य बदलें",
 	"visualeditor-wikitext-warning": "आप यथादृश्य संपादिका का प्रयोग कर रहे हैं। इसमें [[{{MediaWiki:visualeditor-wikitext-warning-link}}|विकिपाठ]] काम नहीं करता है। पृष्ठ के विकिपाठ में किये सम्पादनों को खोये बिना स्रोत सम्पादित करने के लिए \"{{int:visualeditor-toolbar-savedialog}}\" अगला ड्रोप-डाउन मेन्यु खोलें और \"{{int:visualeditor-mweditmodesource-title}}\" को चुनें।",
 	"visualeditor-wikitext-warning-title": "विकिपाठ विन्यास पाया गया"

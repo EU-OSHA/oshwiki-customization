@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface MWExtensionWindow class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -108,6 +108,7 @@ ve.ui.MWExtensionWindow.prototype.getSetupProcess = function ( data, process ) {
 
 		dir = this.constructor.static.dir || data.dir;
 		this.input.setDir( dir );
+		this.input.setReadOnly( this.isReadOnly() );
 
 		this.actions.setAbilities( { done: false } );
 		this.input.connect( this, { change: 'onChangeHandler' } );

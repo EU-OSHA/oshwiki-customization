@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel Document class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -51,6 +51,9 @@ ve.dm.Document = function VeDmDocument( data, htmlDocument, parentDocument, inte
 	this.originalDocument = originalDocument || null;
 	this.nodesByType = {};
 	this.origInternalListLength = null;
+
+	// Sparse array
+	this.branchNodeFromOffsetCache = [];
 
 	if ( data instanceof ve.dm.ElementLinearData ) {
 		this.data = data;
@@ -332,6 +335,7 @@ ve.dm.Document.prototype.commit = function ( transaction, isStaging ) {
 		throw new Error( 'Cannot commit a transaction that has already been committed' );
 	}
 	this.emit( 'precommit', transaction );
+	this.branchNodeFromOffsetCache = [];
 	new ve.dm.TransactionProcessor( this, transaction, isStaging ).process();
 	this.completeHistory.pushTransaction( transaction );
 	this.emit( 'transact', transaction );
@@ -443,7 +447,7 @@ ve.dm.Document.prototype.shallowCloneFromSelection = function ( selection ) {
 	if ( selection instanceof ve.dm.LinearSelection ) {
 		return this.shallowCloneFromRange( selection.getRange() );
 	} else if ( selection instanceof ve.dm.TableSelection ) {
-		ranges = selection.getTableSliceRanges();
+		ranges = selection.getTableSliceRanges( this );
 		for ( i = 0, l = ranges.length; i < l; i++ ) {
 			data = data.concat( this.data.slice( ranges[ i ].start, ranges[ i ].end ) );
 		}
@@ -999,7 +1003,10 @@ ve.dm.Document.prototype.getBranchNodeFromOffset = function ( offset ) {
 	if ( offset < 0 || offset > this.data.getLength() ) {
 		throw new Error( 've.dm.Document.getBranchNodeFromOffset(): offset ' + offset + ' is out of bounds' );
 	}
-	return ve.Document.prototype.getBranchNodeFromOffset.call( this, offset );
+	if ( !this.branchNodeFromOffsetCache[ offset ] ) {
+		this.branchNodeFromOffsetCache[ offset ] = ve.Document.prototype.getBranchNodeFromOffset.call( this, offset );
+	}
+	return this.branchNodeFromOffsetCache[ offset ];
 };
 
 /**
@@ -1648,6 +1655,8 @@ ve.dm.Document.prototype.findText = function ( query, options ) {
 			} else {
 				sensitivity = options.caseSensitiveString ? 'variant' : 'accent';
 			}
+			// Intl is only used browser clients
+			// eslint-disable-next-line no-undef
 			compare = new Intl.Collator( this.lang, { sensitivity: sensitivity } ).compare;
 		} else {
 			// Support: Firefox<29, Chrome<24, Safari<10

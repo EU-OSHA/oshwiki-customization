@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel Node class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -549,6 +549,19 @@ ve.dm.Node.prototype.canHaveSlugBefore = function () {
 ve.dm.Node.prototype.canHaveSlugAfter = ve.dm.Node.prototype.canHaveSlugBefore;
 
 /**
+ * A string identifier used to suppress slugs
+ *
+ * If sequential nodes have the same non-null suppressSlugType, then
+ * no slug is shown, e.g. two floated images can return 'float' to
+ * suppress the slug between them.
+ *
+ * @return {string|null} Type
+ */
+ve.dm.Node.prototype.suppressSlugType = function () {
+	return null;
+};
+
+/**
  * @inheritdoc ve.Node
  */
 ve.dm.Node.prototype.hasSignificantWhitespace = function () {
@@ -567,6 +580,15 @@ ve.dm.Node.prototype.handlesOwnChildren = function () {
  */
 ve.dm.Node.prototype.shouldIgnoreChildren = function () {
 	return this.constructor.static.ignoreChildren;
+};
+
+/**
+ * Check if the node can be the root of a branch exposed in a ve.ce.Surface
+ *
+ * @return {boolean} Node can be the root of a surfaced branch
+ */
+ve.dm.Node.prototype.isSurfaceable = function () {
+	return this.hasChildren() && !this.canContainContent() && !this.isMetaData() && !this.getChildNodeTypes();
 };
 
 /**

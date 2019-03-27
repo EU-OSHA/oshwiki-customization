@@ -4,7 +4,7 @@
  *
  * @file
  * @ingroup Extensions
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license MIT
  */
 
@@ -37,7 +37,7 @@ class SpecialCollabPad extends SpecialPage {
 	 */
 	public function userCanExecute( User $user ) {
 		global $wgVisualEditorRebaserURL;
-		return !!$wgVisualEditorRebaserURL && parent::userCanExecute( $user );
+		return (bool)$wgVisualEditorRebaserURL && parent::userCanExecute( $user );
 	}
 
 	/**
@@ -45,7 +45,7 @@ class SpecialCollabPad extends SpecialPage {
 	 */
 	public function isListed() {
 		global $wgVisualEditorRebaserURL;
-		return !!$wgVisualEditorRebaserURL;
+		return (bool)$wgVisualEditorRebaserURL;
 	}
 
 	/**

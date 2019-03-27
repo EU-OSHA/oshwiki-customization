@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface LinkAnnotationWidget class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -124,7 +124,7 @@ ve.ui.LinkAnnotationWidget.prototype.onTextChange = function ( value ) {
 
 	// RTL/LTR check
 	// TODO: Make this work properly
-	if ( $( 'body' ).hasClass( 'rtl' ) ) {
+	if ( document.body.classList.contains( 'rtl' ) ) {
 		isExt = ve.init.platform.getExternalLinkUrlProtocolsRegExp().test( value.trim() );
 		// If URL is external, flip to LTR. Otherwise, set back to RTL
 		this.getTextInputWidget().setDir( isExt ? 'ltr' : 'rtl' );
@@ -188,4 +188,13 @@ ve.ui.LinkAnnotationWidget.prototype.getAnnotation = function () {
  */
 ve.ui.LinkAnnotationWidget.prototype.getHref = function () {
 	return this.constructor.static.getTextFromAnnotation( this.annotation );
+};
+
+/**
+ * Set the read-only state of the widget
+ *
+ * @param {boolean} readOnly Make widget read-only
+ */
+ve.ui.LinkAnnotationWidget.prototype.setReadOnly = function ( readOnly ) {
+	this.input.setReadOnly( readOnly );
 };

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DiffElement tests.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.ui.DiffElement' );
@@ -448,7 +448,7 @@ QUnit.test( 'Diffing', function ( assert ) {
 				newDoc: '<p>foo <a href="http://example.org/whee">bar</a> baz</p>',
 				expected:
 					'<div class="ve-ui-diffElement-doc-child-change">' +
-						'<p>foo <span data-diff-action="change-remove"><a href="http://example.org/quuz" rel="noopener" target="_blank">bar</a></span><span data-diff-action="change-insert" data-diff-id="0"><a href="http://example.org/whee" rel="noopener" target="_blank">bar</a></span> baz</p>' +
+						'<p>foo <span data-diff-action="change-remove"><a href="http://example.org/quuz">bar</a></span><span data-diff-action="change-insert" data-diff-id="0"><a href="http://example.org/whee">bar</a></span> baz</p>' +
 					'</div>',
 				expectedDescriptions: [
 					'<div>visualeditor-changedesc-link-href,<del>http://example.org/quuz</del>,<ins>http://example.org/whee</ins></div>'
@@ -460,7 +460,7 @@ QUnit.test( 'Diffing', function ( assert ) {
 				newDoc: '<p><a href="http://example.org/">foo <b>bar</b> baz</a></p>',
 				expected:
 					'<div class="ve-ui-diffElement-doc-child-change">' +
-						'<p><a href="http://example.org/" rel="noopener" target="_blank">foo <del data-diff-action="remove">bar</del><ins data-diff-action="insert"><b>bar</b></ins> baz</a></p>' +
+						'<p><a href="http://example.org/">foo <del data-diff-action="remove">bar</del><ins data-diff-action="insert"><b>bar</b></ins> baz</a></p>' +
 					'</div>'
 			},
 			{
@@ -817,7 +817,7 @@ QUnit.test( 'compareAttributes/describeChanges', function ( assert ) {
 		// eslint-disable-next-line no-loop-func
 		changes.forEach( function ( change, j ) {
 			assert.deepEqualWithDomElements(
-				change instanceof jQuery ? change.toArray() : change,
+				change,
 				$.parseHTML( cases[ i ].expected[ j ] ),
 				cases[ i ].msg + ', message ' + j
 			);

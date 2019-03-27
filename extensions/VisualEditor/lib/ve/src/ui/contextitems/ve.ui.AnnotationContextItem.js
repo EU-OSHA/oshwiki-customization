@@ -1,7 +1,7 @@
 /*!
  * VisualEditor AnnotationContextItem class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -35,7 +35,7 @@ ve.ui.AnnotationContextItem = function VeUiAnnotationContextItem( context, model
 			flags: [ 'destructive' ]
 		} );
 	}
-	if ( this.isClearable() ) {
+	if ( this.isClearable() && !this.isReadOnly() ) {
 		this.actionButtons.addItems( [ this.clearButton ], 0 );
 	}
 	this.clearButton.connect( this, { click: 'onClearButtonClick' } );
@@ -70,6 +70,7 @@ ve.ui.AnnotationContextItem.prototype.isClearable = function () {
  * @protected
  */
 ve.ui.AnnotationContextItem.prototype.onClearButtonClick = function () {
+	ve.track( 'activity.' + this.constructor.static.name, { action: 'clear' } );
 	this.applyToAnnotations( function ( fragment, annotation ) {
 		fragment.annotateContent( 'clear', annotation );
 	} );

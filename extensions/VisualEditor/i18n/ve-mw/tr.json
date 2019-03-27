@@ -27,7 +27,8 @@
 			"Katpatuka",
 			"Bulgu",
 			"Diyapazon",
-			"Hedda"
+			"Hedda",
+			"Karduelis"
 		]
 	},
 	"tooltip-ca-createsource": "Bu sayfanın kaynak kodunu oluşturun",
@@ -206,7 +207,7 @@
 	"visualeditor-loaderror-title": "Editör yüklenemedi",
 	"visualeditor-loadwarning": "Sunucudan veri yüklenirken hata: $1. Yeniden denemek ister misiniz?",
 	"visualeditor-loadwarning-token": "Sunucudan düzenleme belirteci yüklenmesinde hata: $1. Yeniden denemek ister misiniz?",
-	"visualeditor-mainnamespacepagelink": "Project:Main namespace",
+	"visualeditor-mainnamespacepagelink": "Project:Ana ad alanı",
 	"visualeditor-media-input-placeholder": "Dosya ara",
 	"visualeditor-meta-tool": "Seçenekler",
 	"visualeditor-mweditmodesource-title": "Kaynak üzerinde düzenlemeye geçilsin mi?",
@@ -257,18 +258,14 @@
 	"visualeditor-savedialog-title-save": "Değişikliklerinizi kaydedin",
 	"visualeditor-savedialog-warning-dirty": "Değişiklikleriniz bozulmuş olabilir - lütfen kaydetmeden önce inceleme yapınız.",
 	"visualeditor-saveerror": "Sunucuya veri kaydedilirken hata: $1.",
-	"visualeditor-saveerror-titleblacklist": "Kaydetme hatası sayfa: Bu sayfanın adı kara listeye alındı",
 	"visualeditor-serializeerror": "Sunucudan veri yüklenirken hata oluştu: $1.",
 	"visualeditor-settings-tool": "Sayfa ayarları",
 	"visualeditor-special-characters-group-other": "Sık kullanılan",
+	"visualeditor-title-error": "Geçersiz başlık.",
 	"visualeditor-toolbar-savedialog": "Sayfayı kaydet",
 	"visualeditor-toolbar-savedialog-short": "Kaydet",
 	"visualeditor-usernamespacepagelink": "Project:Kullanıcı sayfası",
 	"visualeditor-version-label": "Sürüm",
-	"visualeditor-viewpage-savewarning": "Kaydetmeden önce ilk görüntüleme moduna geri dönmek istediğinizden emin misiniz?",
-	"visualeditor-viewpage-savewarning-discard": "Düzenlemeler silinsin",
-	"visualeditor-viewpage-savewarning-keep": "Düzenlemeye devam",
-	"visualeditor-viewpage-savewarning-title": "Emin misiniz?",
 	"visualeditor-wikitext-warning": "Görsel Düzenleyici'yi kullanmaktasınız - [[{{MediaWiki:visualeditor-wikitext-warning-link}}|viki metin editörü]] burada çalışmamaktadır. Herhangi bir anda, değişikliklerinizi kaybetmeden kaynak düzenlemeye geçmek için, \"{{int:visualeditor-toolbar-savedialog}}\" yanındaki aşağı açılır menüden \"{{int:visualeditor-mweditmodesource-title}}\" seçeneğine tıklayın.",
 	"visualeditor-wikitext-warning-title": "Vikimetin biçimlendirmesi algılandı"
 }

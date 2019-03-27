@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel SourceSurfaceFragment class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -214,9 +214,9 @@ ve.dm.SourceSurfaceFragment.prototype.wrapAllNodes = function ( wrapOuter, wrapE
  */
 ve.dm.SourceSurfaceFragment.prototype.convertToSource = function ( doc ) {
 	if ( !doc.data.hasContent() ) {
-		return $.Deferred().resolve( '' ).promise();
+		return ve.createDeferred().resolve( '' ).promise();
 	} else {
-		return $.Deferred().resolve(
+		return ve.createDeferred().resolve(
 			ve.properInnerHtml(
 				ve.dm.converter.getDomFromModel( doc ).body
 			)
@@ -240,7 +240,7 @@ ve.dm.SourceSurfaceFragment.prototype.convertFromSource = function ( source ) {
 		dir = this.getDocument().getDir();
 
 	if ( !source ) {
-		return $.Deferred().resolve(
+		return ve.createDeferred().resolve(
 			new ve.dm.Document(
 				[
 					{ type: 'paragraph', internal: { generated: 'wrapper' } }, { type: '/paragraph' },
@@ -251,7 +251,7 @@ ve.dm.SourceSurfaceFragment.prototype.convertFromSource = function ( source ) {
 			)
 		).promise();
 	} else {
-		return $.Deferred().resolve(
+		return ve.createDeferred().resolve(
 			ve.dm.converter.getModelFromDom(
 				ve.createDocumentFromHtml( source, { lang: lang, dir: dir } )
 			)

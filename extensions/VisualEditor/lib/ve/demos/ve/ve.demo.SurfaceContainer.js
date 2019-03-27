@@ -12,7 +12,8 @@
  * @param {string} dir Directionality
  */
 ve.demo.SurfaceContainer = function VeDemoSurfaceContainer( target, page, lang, dir ) {
-	var pageDropdown, pageLabel, removeButton, saveButton, diffButton, $exitReadButton,
+	var pageDropdown, pageLabel, removeButton, saveButton, diffButton,
+		$exitReadButton,
 		container = this,
 		$divider = $( '<span>' ).addClass( 've-demo-toolbar-divider' ).text( '\u00a0' );
 
@@ -46,6 +47,9 @@ ve.demo.SurfaceContainer = function VeDemoSurfaceContainer( target, page, lang, 
 	} );
 	diffButton = new OO.ui.ButtonWidget( {
 		label: 'Show changes'
+	} );
+	this.readOnlyToggle = new OO.ui.ToggleButtonWidget( {
+		label: 'Read-only'
 	} );
 	$exitReadButton = $( '<a>' ).attr( 'href', '#' ).text( 'Back to editor' ).on( 'click', function () {
 		container.modeSelect.selectItemByData( 'visual' );
@@ -95,6 +99,9 @@ ve.demo.SurfaceContainer = function VeDemoSurfaceContainer( target, page, lang, 
 			newDoc: container.surface.model.documentModel
 		} );
 	} );
+	this.readOnlyToggle.on( 'change', function ( val ) {
+		container.surface.setReadOnly( val );
+	} );
 
 	this.$element.addClass( 've-demo-surfaceContainer' ).append(
 		$( '<div>' ).addClass( 've-demo-toolbar ve-demo-surfaceToolbar-edit' ).append(
@@ -109,14 +116,16 @@ ve.demo.SurfaceContainer = function VeDemoSurfaceContainer( target, page, lang, 
 				this.autosaveToggle.$element,
 				saveButton.$element,
 				$divider.clone(),
-				diffButton.$element
+				diffButton.$element,
+				$divider.clone(),
+				this.readOnlyToggle.$element
 			)
 		),
 		$( '<div>' ).addClass( 've-demo-toolbar-commands ve-demo-surfaceToolbar-read' ).append(
 			$exitReadButton
 		),
 		this.surfaceWrapper.$element,
-		this.readView.$element.hide()
+		this.readView.$element.css( 'display', 'none' )
 	);
 
 	this.pageMenu.selectItem(
@@ -168,12 +177,13 @@ ve.demo.SurfaceContainer.prototype.change = function ( mode, page ) {
 		currentDir = 'ltr';
 
 	if ( mode === this.mode && !page ) {
-		return $.Deferred().resolve().promise();
+		return ve.createDeferred().resolve().promise();
 	}
 
 	switch ( this.mode ) {
 		case 'visual':
 		case 'source':
+			// eslint-disable-next-line no-jquery/no-slide
 			closePromise = this.surface.$element.slideUp().promise();
 			if ( !page ) {
 				html = this.surface.getHtml();
@@ -182,6 +192,7 @@ ve.demo.SurfaceContainer.prototype.change = function ( mode, page ) {
 			break;
 
 		case 'read':
+			// eslint-disable-next-line no-jquery/no-slide
 			closePromise = this.readView.$element.slideUp().promise();
 			if ( !page ) {
 				html = ve.properInnerHtml( this.readView.$element[ 0 ] );
@@ -189,7 +200,7 @@ ve.demo.SurfaceContainer.prototype.change = function ( mode, page ) {
 			break;
 
 		default:
-			closePromise = $.Deferred().resolve().promise();
+			closePromise = ve.createDeferred().resolve().promise();
 			break;
 	}
 
@@ -203,9 +214,10 @@ ve.demo.SurfaceContainer.prototype.change = function ( mode, page ) {
 			container.surface = null;
 		}
 
-		$( '.ve-demo-targetToolbar' ).toggle( !isRead );
-		container.$element.find( '.ve-demo-surfaceToolbar-edit' ).toggle( !isRead );
-		container.$element.find( '.ve-demo-surfaceToolbar-read' ).toggle( isRead );
+		// eslint-disable-next-line no-jquery/no-global-selector
+		$( '.ve-demo-targetToolbar' ).toggleClass( 'oo-ui-element-hidden', isRead );
+		container.$element.find( '.ve-demo-surfaceToolbar-edit' ).toggleClass( 'oo-ui-element-hidden', isRead );
+		container.$element.find( '.ve-demo-surfaceToolbar-read' ).toggleClass( 'oo-ui-element-hidden', !isRead );
 		$editStylesheets.prop( 'disabled', isRead );
 
 		switch ( mode ) {
@@ -221,6 +233,7 @@ ve.demo.SurfaceContainer.prototype.change = function ( mode, page ) {
 
 			case 'read':
 				container.surfaceWrapper.toggle( false );
+				// eslint-disable-next-line no-jquery/no-slide
 				container.readView.$element.html( html ).css( 'direction', currentDir ).slideDown();
 				break;
 		}
@@ -242,7 +255,8 @@ ve.demo.SurfaceContainer.prototype.loadPage = function ( page, mode ) {
 	container.emit( 'changePage' );
 
 	ve.init.platform.getInitializedPromise().done( function () {
-		( container.surface ? container.surface.$element.slideUp().promise() : $.Deferred().resolve().promise() ).done( function () {
+		// eslint-disable-next-line no-jquery/no-slide
+		( container.surface ? container.surface.$element.slideUp().promise() : ve.createDeferred().resolve().promise() ).done( function () {
 			var localMatch = page.match( /^localStorage\/(.+)$/ );
 			if ( localMatch ) {
 				container.loadHtml( localStorage.getItem( localMatch[ 1 ] ), mode );
@@ -301,6 +315,8 @@ ve.demo.SurfaceContainer.prototype.loadHtml = function ( pageHtml, mode ) {
 
 	this.target.setSurface( this.surface );
 
+	this.surface.setReadOnly( this.readOnlyToggle.getValue() );
+
 	surfaceModel = this.surface.getModel();
 	this.oldDoc = surfaceModel.getDocument().cloneFromRange();
 	if ( this.autosaveToggle.getValue() ) {
@@ -324,7 +340,8 @@ ve.demo.SurfaceContainer.prototype.loadHtml = function ( pageHtml, mode ) {
 	} );
 
 	this.surfaceWrapper.$element.empty().append( this.surface.$element.parent() );
-	this.surface.$element.hide().slideDown().promise().done( function () {
+	// eslint-disable-next-line no-jquery/no-slide
+	this.surface.$element.css( 'display', 'none' ).slideDown().promise().done( function () {
 		// Check surface still exists
 		if ( container.surface ) {
 			container.surface.getView().emit( 'position' );
@@ -355,6 +372,7 @@ ve.demo.SurfaceContainer.prototype.reload = function ( lang, dir ) {
  */
 ve.demo.SurfaceContainer.prototype.destroy = function () {
 	var container = this;
+	// eslint-disable-next-line no-jquery/no-slide
 	this.$element.slideUp().promise().done( function () {
 		if ( container.surface ) {
 			container.surface.destroy();

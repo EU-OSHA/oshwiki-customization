@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWImageNode class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -201,7 +201,8 @@ ve.dm.MWImageNode.static.describeChange = function ( key, change ) {
  * @return {Object} The new width and height of the scaled image
  */
 ve.dm.MWImageNode.static.scaleToThumbnailSize = function ( dimensions, mediaType ) {
-	var defaultThumbSize = mw.config.get( 'wgVisualEditorConfig' ).defaultUserOptions.defaultthumbsize;
+	var defaultThumbSize = mw.config.get( 'wgVisualEditorConfig' )
+		.thumbLimits[ mw.user.options.get( 'thumbsize' ) ];
 
 	mediaType = mediaType || 'BITMAP';
 
@@ -252,7 +253,8 @@ ve.dm.MWImageNode.static.resizeToBoundingBox = function ( imageDimensions, bound
  */
 ve.dm.MWImageNode.static.syncScalableToType = function ( type, mediaType, scalable ) {
 	var originalDimensions, dimensions,
-		defaultThumbSize = mw.config.get( 'wgVisualEditorConfig' ).defaultUserOptions.defaultthumbsize;
+		defaultThumbSize = mw.config.get( 'wgVisualEditorConfig' )
+			.thumbLimits[ mw.user.options.get( 'thumbsize' ) ];
 
 	originalDimensions = scalable.getOriginalDimensions();
 

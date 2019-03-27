@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel SurfaceSynchronizer class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 /* global io */
 
@@ -42,6 +42,7 @@ ve.dm.SurfaceSynchronizer = function VeDmSurfaceSynchronizer( surface, documentI
 	// Whether we are currently synchronizing the model
 	this.applying = false;
 	this.token = null;
+	this.serverId = null;
 	this.loadSessionKey();
 
 	// SocketIO events
@@ -51,11 +52,6 @@ ve.dm.SurfaceSynchronizer = function VeDmSurfaceSynchronizer( surface, documentI
 		authorId: this.getAuthorId() || '',
 		token: this.token || ''
 	} };
-	this.socket = io( path, options );
-	// HACK: SocketIO caches the options from the last request.
-	// Connecting twice appears to overwrite this cache.
-	// See https://github.com/socketio/socket.io/issues/1677
-	this.socket.disconnect();
 	this.socket = io( path, options );
 	this.socket.on( 'registered', this.onRegistered.bind( this ) );
 	this.socket.on( 'initDoc', this.onInitDoc.bind( this ) );
@@ -319,11 +315,12 @@ ve.dm.SurfaceSynchronizer.prototype.onAuthorDisconnect = function ( authorId ) {
  * @param {string} data.token
  */
 ve.dm.SurfaceSynchronizer.prototype.onRegistered = function ( data ) {
-	if ( this.token && this.token !== data.token ) {
+	if ( this.serverId && this.serverId !== data.serverId ) {
 		this.socket.disconnect();
 		this.emit( 'wrongDoc' );
 		return;
 	}
+	this.serverId = data.serverId;
 	this.setAuthorId( data.authorId );
 	this.surface.setAuthorId( this.authorId );
 	this.token = data.token;
@@ -332,6 +329,7 @@ ve.dm.SurfaceSynchronizer.prototype.onRegistered = function ( data ) {
 
 ve.dm.SurfaceSynchronizer.prototype.saveSessionKey = function () {
 	ve.init.platform.setSessionObject( 'visualeditor-session-key', {
+		serverId: this.serverId,
 		docName: this.documentId,
 		authorId: this.getAuthorId(),
 		token: this.token
@@ -341,6 +339,7 @@ ve.dm.SurfaceSynchronizer.prototype.saveSessionKey = function () {
 ve.dm.SurfaceSynchronizer.prototype.loadSessionKey = function () {
 	var data = ve.init.platform.getSessionObject( 'visualeditor-session-key' );
 	if ( data && data.docName === this.documentId ) {
+		this.serverId = data.serverId;
 		this.setAuthorId( data.authorId );
 		this.token = data.token;
 	}

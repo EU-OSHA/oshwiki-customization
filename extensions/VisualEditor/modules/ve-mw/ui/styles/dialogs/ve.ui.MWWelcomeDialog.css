@@ -1,11 +1,11 @@
 /*!
  * VisualEditor MediaWiki UserInterface beta welcome dialog styles.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
-.visualeditor-welcomedialog-content:before {
+.ve-init-mw-welcomeDialog-content:before {
 	content: '';
 	background: url( images/welcomeSplash-ltr.png ) center no-repeat;
 	background-size: contain;
@@ -13,7 +13,7 @@
 	height: 8em;
 }
 
-.visualeditor-welcomedialog-content {
+.ve-init-mw-welcomeDialog-content {
 	display: block;
 	text-align: center;
 }

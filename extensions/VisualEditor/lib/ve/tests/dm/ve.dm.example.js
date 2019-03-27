@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel example data sets.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -78,13 +78,13 @@ ve.dm.example.postprocessAnnotations = function ( data, store, preserveDomElemen
 	for ( i = 0; i < data.length; i++ ) {
 		key = data[ i ].annotations ? 'annotations' : 1;
 		if ( Array.isArray( data[ i ][ key ] ) ) {
-			data[ i ] = $.extend( Array.isArray( data[ i ] ) ? [] : {}, data[ i ] );
+			data[ i ] = ve.extendObject( Array.isArray( data[ i ] ) ? [] : {}, data[ i ] );
 			data[ i ][ key ] = new ve.dm.AnnotationSet( store, data[ i ][ key ] ).get();
 			for ( j = 0; j < data[ i ][ key ].length; j++ ) {
 				data[ i ][ key ][ j ] = data[ i ][ key ][ j ].element;
 				if ( !preserveDomElements && data[ i ][ key ][ j ].originalDomElementsHash !== undefined ) {
 					// Make a shallow clone and remove originalDomElements from it
-					data[ i ][ key ][ j ] = $.extend( {}, data[ i ][ key ][ j ] );
+					data[ i ][ key ][ j ] = ve.extendObject( {}, data[ i ][ key ][ j ] );
 					delete data[ i ][ key ][ j ].originalDomElementsHash;
 				}
 			}
@@ -327,7 +327,17 @@ ve.dm.example.blockImage = {
 		{ type: '/paragraph' },
 		{ type: '/imageCaption' },
 		{ type: '/blockImage' }
-	]
+	],
+	ceHtml:
+		'<figure class="ve-ce-branchNode ve-ce-focusableNode ve-ce-imageNode ve-ce-blockImageNode" contenteditable="false">' +
+			'<img src="https://upload.wikimedia.org/wikipedia/commons/b/b3/Wikipedia-logo-v2-en.svg" alt="Example" style="width: 100px; height: 50px;">' +
+			'<figcaption class="ve-ce-branchNode ve-ce-activeNode" contenteditable="true" spellcheck="true">' +
+				'<p class="ve-ce-branchNode ve-ce-contentBranchNode ve-ce-paragraphNode ve-ce-generated-wrapper">' +
+					'foo ' +
+					'<b style="color:red;" class="' + ve.dm.example.textStyleClasses + ' ve-ce-boldAnnotation">red</b>' +
+				'</p>' +
+			'</figcaption>' +
+		'</figure>'
 };
 
 /**
@@ -1718,22 +1728,19 @@ ve.dm.example.domToDataCases = {
 			ve.dm.example.inlineSlug +
 			'</p>'
 	},
-	'block image': {
-		body: ve.dm.example.blockImage.html,
-		data: ve.dm.example.blockImage.data.concat( [
-			{ type: 'internalList' },
-			{ type: '/internalList' }
-		] ),
+	'block images': {
+		body: ve.dm.example.blockImage.html + ve.dm.example.blockImage.html,
+		data: ve.dm.example.blockImage.data.concat(
+			ve.dm.example.blockImage.data,
+			[
+				{ type: 'internalList' },
+				{ type: '/internalList' }
+			]
+		),
 		ceHtml: ve.dm.example.blockSlug +
-			'<figure class="ve-ce-branchNode ve-ce-focusableNode ve-ce-imageNode ve-ce-blockImageNode" contenteditable="false">' +
-				'<img src="https://upload.wikimedia.org/wikipedia/commons/b/b3/Wikipedia-logo-v2-en.svg" alt="Example" style="width: 100px; height: 50px;">' +
-				'<figcaption class="ve-ce-branchNode ve-ce-activeNode" contenteditable="true" spellcheck="true">' +
-					'<p class="ve-ce-branchNode ve-ce-contentBranchNode ve-ce-paragraphNode ve-ce-generated-wrapper">' +
-						'foo ' +
-						'<b style="color:red;" class="' + ve.dm.example.textStyleClasses + ' ve-ce-boldAnnotation">red</b>' +
-					'</p>' +
-				'</figcaption>' +
-			'</figure>' +
+			ve.dm.example.blockImage.ceHtml +
+			// No block slug between two floated images
+			ve.dm.example.blockImage.ceHtml +
 			ve.dm.example.blockSlug
 	},
 	'block image modified': {

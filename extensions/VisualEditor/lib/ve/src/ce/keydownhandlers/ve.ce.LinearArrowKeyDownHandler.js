@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable linear arrow key down handler
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -13,8 +13,8 @@
  * @constructor
  */
 ve.ce.LinearArrowKeyDownHandler = function VeCeLinearArrowKeyDownHandler() {
-	// Parent constructor
-	ve.ui.LinearArrowKeyDownHandler.super.apply( this, arguments );
+	// Parent constructor - never called because class is fully static
+	// ve.ui.LinearArrowKeyDownHandler.super.apply( this, arguments );
 };
 
 /* Inheritance */
@@ -134,7 +134,7 @@ ve.ce.LinearArrowKeyDownHandler.static.execute = function ( surface, e ) {
 	}
 	// Else keep DM range and DOM selection as-is
 
-	if ( e.shiftKey && !surface.nativeSelection.extend && range.isBackwards() ) {
+	if ( e.shiftKey && !ve.supportsSelectionExtend && range.isBackwards() ) {
 		// If the browser doesn't support backwards selections, but the dm range
 		// is backwards, then use "collapse to anchor - observe - expand".
 		collapseNode = surface.nativeSelection.anchorNode;

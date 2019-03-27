@@ -58,7 +58,8 @@ module.exports = function ( grunt ) {
 			},
 			'visualEditor.rebase.scripts': {
 				options: {
-					banner: grunt.file.read( 'build/banner.txt' )
+					banner: grunt.file.read( 'build/banner.txt' ),
+					sourceMap: true
 				},
 				dest: 'dist/visualEditor-rebase.js',
 				src: veRebaseFiles.scripts
@@ -72,7 +73,8 @@ module.exports = function ( grunt ) {
 			},
 			js: {
 				options: {
-					banner: grunt.file.read( 'build/banner.txt' )
+					banner: grunt.file.read( 'build/banner.txt' ),
+					sourceMap: true
 				},
 				dest: 'dist/visualEditor.js',
 				src: coreBuildFiles.scripts
@@ -142,7 +144,7 @@ module.exports = function ( grunt ) {
 		svgmin: {
 			options: {
 				js2svg: {
-					indent: '	',
+					indent: '\t',
 					pretty: true
 				},
 				multipass: true,
@@ -338,11 +340,28 @@ module.exports = function ( grunt ) {
 			]
 		},
 		eslint: {
+			options: {
+				reportUnusedDisableDirectives: true,
+				cache: true
+			},
 			main: [
-				'*.{js,html}',
-				'{bin,build,demos,src,tests,rebaser}/**/*.{js,html}',
+				'*.js',
+				'{bin,build,demos,src,tests,rebaser}/**/*.js',
 				'!rebaser/node_modules/**'
-			]
+			],
+			html: {
+				options: {
+					// TODO: reportUnusedDisableDirectives doesn't work with plugin-html
+					// (https://github.com/BenoitZugmeyer/eslint-plugin-html/issues/111)
+					// Once that is fixed, merge main and html
+					reportUnusedDisableDirectives: false
+				},
+				src: [
+					'*.html',
+					'{bin,build,demos,src,tests,rebaser}/**/*.html',
+					'!rebaser/node_modules/**'
+				]
+			}
 		},
 		stylelint: {
 			all: [
@@ -376,10 +395,17 @@ module.exports = function ( grunt ) {
 				browserDisconnectTimeout: 5000,
 				browserDisconnectTolerance: 2,
 				browserNoActivityTimeout: 30000,
+				customLaunchers: {
+					ChromeCustom: {
+						base: 'ChromeHeadless',
+						// Chrome requires --no-sandbox in Docker/CI.
+						flags: ( process.env.CHROMIUM_FLAGS || '' ).split( ' ' )
+					}
+				},
 				autoWatch: false
 			},
 			main: {
-				browsers: [ 'Chrome' ], // T200347: Temporarily disabled `, 'Firefox'*/ ],`
+				browsers: [ 'ChromeCustom' ], // T200347: Temporarily disabled `, 'Firefox'*/ ],`
 				preprocessors: {
 					'rebaser/src/**/*.js': [ 'coverage' ],
 					'src/**/*.js': [ 'coverage' ]
@@ -393,27 +419,13 @@ module.exports = function ( grunt ) {
 						{ type: 'html' },
 						{ type: 'text-summary' }
 					],
-					// https://github.com/karma-runner/karma-coverage/blob/v1.1.1/docs/configuration.md#check
+					// https://github.com/karma-runner/karma-coverage/blob/v1.1.2/docs/configuration.md#check
 					check: {
 						global: {
 							functions: 60,
 							branches: 60,
 							statements: 60,
-							lines: 60,
-							overrides: {
-								'src/dm/*.js': {
-									functions: 80,
-									branches: 80,
-									statements: 80,
-									lines: 80
-								},
-								'src/dm/**/*.js': {
-									functions: 80,
-									branches: 80,
-									statements: 80,
-									lines: 80
-								}
-							}
+							lines: 60
 						},
 						each: {
 							functions: 20,
@@ -421,6 +433,7 @@ module.exports = function ( grunt ) {
 							statements: 20,
 							lines: 20,
 							excludes: [
+								'rebaser/src/dm/ve.dm.DocumentStore.js',
 								'rebaser/src/dm/ve.dm.ProtocolServer.js',
 								'rebaser/src/dm/ve.dm.RebaseDocState.js',
 								'rebaser/src/dm/ve.dm.TransportServer.js',
@@ -485,13 +498,11 @@ module.exports = function ( grunt ) {
 	grunt.registerTask( 'ci', [ '_test', 'svgmin', 'git-status' ] );
 	grunt.registerTask( 'watch', [ 'karma:bg:start', 'runwatch' ] );
 
-	/* eslint-disable no-process-env */
 	if ( process.env.JENKINS_HOME ) {
 		grunt.registerTask( 'test', 'ci' );
 	} else {
 		grunt.registerTask( 'test', '_test' );
 	}
-	/* eslint-enable no-process-env */
 
 	grunt.registerTask( 'default', 'test' );
 };

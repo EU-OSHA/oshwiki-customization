@@ -1,7 +1,7 @@
 /*!
  * VisualEditor Initialization Platform class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -39,7 +39,7 @@ OO.mixinClass( ve.init.Platform, OO.EventEmitter );
  * A jQuery.Deferred that tracks when the platform has been created.
  * @private
  */
-ve.init.Platform.static.deferredPlatform = $.Deferred();
+ve.init.Platform.static.deferredPlatform = ve.createDeferred();
 
 /**
  * A promise that tracks when ve.init.platform is ready for use.  When
@@ -339,7 +339,7 @@ ve.init.Platform.prototype.getMessage = null;
  * @abstract
  * @param {string} key Message key
  * @param {...Mixed} [args] List of arguments which will be injected at $1, $2, etc. in the message
- * @return {jQuery} Localized message, or key or '<' + key + '>' if message not found
+ * @return {Node[]} Localized message, or key or '<' + key + '>' if message not found
  */
 ve.init.Platform.prototype.getHtmlMessage = null;
 
@@ -433,9 +433,9 @@ ve.init.Platform.prototype.getLanguageDirection = null;
  */
 ve.init.Platform.prototype.initialize = function () {
 	if ( !VisualEditorSupportCheck() ) {
-		return $.Deferred().reject().promise();
+		return ve.createDeferred().reject().promise();
 	}
-	return $.Deferred().resolve().promise();
+	return ve.createDeferred().resolve().promise();
 };
 
 /**
@@ -478,5 +478,5 @@ ve.init.Platform.prototype.fetchSpecialCharList = function () {
 	}
 
 	// This implementation always resolves instantly
-	return $.Deferred().resolve( charsObj ).promise();
+	return ve.createDeferred().resolve( charsObj ).promise();
 };

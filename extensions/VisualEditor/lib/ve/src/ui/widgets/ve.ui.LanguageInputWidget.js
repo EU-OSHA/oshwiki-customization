@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface LanguageInputWidget class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -93,7 +93,7 @@ ve.ui.LanguageInputWidget = function VeUiLanguageInputWidget( config ) {
 	}
 	this.directionSelect.addItems( dirItems );
 	this.overlay.$element.append( this.dialogs.$element );
-	$( 'body' ).append( this.overlay.$element );
+	$( document.body ).append( this.overlay.$element );
 
 	this.$element
 		.addClass( 've-ui-languageInputWidget' )
@@ -129,7 +129,7 @@ ve.ui.LanguageInputWidget.prototype.onFindLanguageButtonClick = function () {
 		$returnFocusTo: null
 	} ).closed.then( function ( data ) {
 		data = data || {};
-		if ( data.action === 'apply' ) {
+		if ( data.action === 'done' ) {
 			widget.setLangAndDir( data.lang, data.dir );
 		}
 	} );

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable Document class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -356,7 +356,7 @@ ve.ce.Document.prototype.getNodeAndOffset = function ( offset ) {
  * @param {ve.Range} range Range
  * @return {string} 'rtl', 'ltr'
  */
-ve.ce.Document.prototype.getDirectionFromRange = function ( range ) {
+ve.ce.Document.prototype.getDirectionalityFromRange = function ( range ) {
 	var effectiveNode,
 		selectedNodes = this.selectNodes( range, 'covered' );
 

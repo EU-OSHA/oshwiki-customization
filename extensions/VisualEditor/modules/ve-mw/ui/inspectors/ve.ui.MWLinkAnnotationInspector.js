@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface LinkAnnotationInspector class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -77,8 +77,8 @@ ve.ui.MWLinkAnnotationInspector.prototype.initialize = function () {
 	this.internalAnnotationInput.input.getResults().connect( this, { choose: 'onFormSubmit' } );
 	// Form submit only auto triggers on enter when there is one input
 	this.internalAnnotationInput.getTextInputWidget().connect( this, { change: 'onInternalLinkInputChange' } );
-	this.internalAnnotationInput.getTextInputWidget().connect( this, { enter: 'onFormSubmit' } );
-	this.externalAnnotationInput.getTextInputWidget().connect( this, { enter: 'onFormSubmit' } );
+	this.internalAnnotationInput.getTextInputWidget().connect( this, { enter: 'onLinkInputEnter' } );
+	this.externalAnnotationInput.getTextInputWidget().connect( this, { enter: 'onLinkInputEnter' } );
 
 	this.internalAnnotationInput.input.results.connect( this, {
 		add: 'onInternalLinkChangeResultsChange'
@@ -146,6 +146,22 @@ ve.ui.MWLinkAnnotationInspector.prototype.onInternalLinkChangeResultsChange = fu
  */
 ve.ui.MWLinkAnnotationInspector.prototype.onExternalLinkChange = function () {
 	this.updateActions();
+};
+
+/**
+ * Handle enter events on the external/internal link inputs
+ *
+ * @param {jQuery.Event} e Key press event
+ */
+ve.ui.MWLinkAnnotationInspector.prototype.onLinkInputEnter = function () {
+	var inspector = this;
+	if ( this.annotationInput.getTextInputWidget().getValue().trim() === '' ) {
+		this.executeAction( 'done' );
+	}
+	this.annotationInput.getTextInputWidget().getValidity()
+		.done( function () {
+			inspector.executeAction( 'done' );
+		} );
 };
 
 /**
@@ -222,10 +238,13 @@ ve.ui.MWLinkAnnotationInspector.prototype.createAnnotationInput = function () {
 ve.ui.MWLinkAnnotationInspector.prototype.getSetupProcess = function ( data ) {
 	return ve.ui.MWLinkAnnotationInspector.super.prototype.getSetupProcess.call( this, data )
 		.next( function () {
+			var isReadOnly = this.isReadOnly();
 			this.linkTypeIndex.setTabPanel(
 				this.initialAnnotation instanceof ve.dm.MWExternalLinkAnnotation ? 'external' : 'internal'
 			);
 			this.annotationInput.setAnnotation( this.initialAnnotation );
+			this.internalAnnotationInput.setReadOnly( isReadOnly );
+			this.externalAnnotationInput.setReadOnly( isReadOnly );
 		}, this );
 };
 

@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MediaWiki-specific example data sets.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -1478,7 +1478,7 @@ ve.dm.mwExample.domToDataCases = {
 			{ type: 'internalList' },
 			{ type: '/internalList' }
 		],
-		normalizedBody: '<p><a rel="mw:WikiLink" href="Foo/Bar">Foo</a></p>',
+		normalizedBody: '<p><a rel="mw:WikiLink" href="./Foo/Bar">Foo</a></p>',
 		mwConfig: {
 			wgArticlePath: '/wiki/$1'
 		}
@@ -1503,7 +1503,7 @@ ve.dm.mwExample.domToDataCases = {
 			{ type: 'internalList' },
 			{ type: '/internalList' }
 		],
-		normalizedBody: '<p><a rel="mw:WikiLink" href="Foo#Bar">Foo</a></p>',
+		normalizedBody: '<p><a rel="mw:WikiLink" href="./Foo#Bar">Foo</a></p>',
 		mwConfig: {
 			wgArticlePath: '/wiki/$1'
 		}
@@ -2024,7 +2024,7 @@ ve.dm.mwExample.domToDataCases = {
 				type: '/internalList'
 			}
 		],
-		normalizedBody: '<a href="Foo/Bar" rel="mw:WikiLink">ab</a>',
+		normalizedBody: '<a href="./Foo/Bar" rel="mw:WikiLink">ab</a>',
 		mwConfig: {
 			wgArticlePath: '/wiki/$1'
 		}

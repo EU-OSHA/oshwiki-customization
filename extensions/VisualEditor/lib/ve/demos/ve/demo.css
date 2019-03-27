@@ -1,7 +1,7 @@
 /*!
  * VisualEditor standalone demo
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 body {
@@ -142,6 +142,16 @@ body {
 }
 
 /* Editor */
+
+.ve-ui-surface-placeholder,
+.ve-ui-surface .ve-ce-attachedRootNode {
+	padding: 0.5em 1.5em;
+}
+
+.ve-ui-surface-source .ve-ui-surface-placeholder,
+.ve-ui-surface-source .ve-ce-attachedRootNode {
+	padding: 1.5em;
+}
 
 .ve-ui-debugBar {
 	padding: 1.5em;

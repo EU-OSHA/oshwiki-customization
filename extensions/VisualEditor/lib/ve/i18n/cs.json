@@ -17,7 +17,8 @@
 			"Dvorapa",
 			"Martin Urbanec",
 			"Ilimanaq29",
-			"Patriccck"
+			"Patriccck",
+			"Frettie"
 		]
 	},
 	"visualeditor": "Vizuální editor",
@@ -40,7 +41,7 @@
 	"visualeditor-annotationbutton-language-tooltip": "Jazyk",
 	"visualeditor-annotationbutton-link-tooltip": "Odkaz",
 	"visualeditor-annotationbutton-small-tooltip": "Malé",
-	"visualeditor-annotationbutton-strikethrough-tooltip": "Přeskrtnuté",
+	"visualeditor-annotationbutton-strikethrough-tooltip": "Přeškrtnuté",
 	"visualeditor-annotationbutton-subscript-tooltip": "Dolní index",
 	"visualeditor-annotationbutton-superscript-tooltip": "Horní index",
 	"visualeditor-annotationbutton-underline-tooltip": "Podtržené",
@@ -58,7 +59,7 @@
 	"visualeditor-changedir": "Změnit směr textu",
 	"visualeditor-changedir-tool-ltr": "Zobrazit psané zleva doprava",
 	"visualeditor-changedir-tool-rtl": "Zobrazit psané zprava doleva",
-	"visualeditor-clearbutton-tooltip": "Odstranit",
+	"visualeditor-clearbutton-tooltip": "Vymazat formátování",
 	"visualeditor-clipboard-copy": "Kopírovat",
 	"visualeditor-clipboard-cut": "Vyjmout",
 	"visualeditor-clipboard-paste": "Vložit",
@@ -71,6 +72,7 @@
 	"visualeditor-content-select-all": "Vybrat vše",
 	"visualeditor-contextitemwidget-label-remove": "Odstranit",
 	"visualeditor-contextitemwidget-label-secondary": "Editovat",
+	"visualeditor-contextitemwidget-label-view": "Zobrazit",
 	"visualeditor-debugbar-close": "Zavřít",
 	"visualeditor-debugbar-inputdebug": "Ladění vstupu",
 	"visualeditor-debugbar-logrange": "Výběr do konzole",
@@ -163,6 +165,7 @@
 	"visualeditor-linkcontext-remove": "Odstranit odkaz",
 	"visualeditor-linkinspector-title": "Odkaz",
 	"visualeditor-listbutton-bullet-tooltip": "Seznam s odrážkami",
+	"visualeditor-listbutton-check-tooltip": "Zkontrolovat seznam",
 	"visualeditor-listbutton-number-tooltip": "Číslovaný seznam",
 	"visualeditor-mediasizewidget-label-defaulterror": "Hodnoty rozměrů jsou neplatné.",
 	"visualeditor-mediasizewidget-label-scale": "Zvětšení",

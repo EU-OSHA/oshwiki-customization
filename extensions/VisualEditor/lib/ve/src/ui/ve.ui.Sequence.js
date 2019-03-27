@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface Sequence class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -178,7 +178,9 @@ ve.ui.Sequence.prototype.getMessage = function ( explode ) {
 	} else if ( this.data instanceof RegExp ) {
 		data = [ this.data.toString() ];
 	} else {
-		data = this.data.filter( function ( key ) { return !ve.isPlainObject( key ); } );
+		data = this.data.filter( function ( key ) {
+			return !ve.isPlainObject( key );
+		} );
 	}
 	return explode ? data : data.join( '' );
 };

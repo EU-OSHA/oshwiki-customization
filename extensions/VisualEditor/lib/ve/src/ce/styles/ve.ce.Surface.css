@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable Surface styles.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 .ve-ce-surface {
@@ -29,6 +29,7 @@
 	margin-top: -0.15em;
 	padding: 0.15em 0;
 }
+
 .ve-ce-surface-deactivatedSelection-collapsed > div {
 	background: #000;
 }

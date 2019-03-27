@@ -212,7 +212,6 @@
 	"visualeditor-savedialog-title-save": "Jijjiirama kee olkaayi",
 	"visualeditor-savedialog-warning-dirty": "Gulaalli kee faalamuu hin oolle - maaloo, olkaawuu dura keeddeebi'i.",
 	"visualeditor-saveerror": "Yeroo serveriirraa deetaa olkaawuf yaalu dogoggorri uummame: $1",
-	"visualeditor-saveerror-titleblacklist": "Dogoggora fuula olkaawuu: mata-dureen barruu kanaa dhorkameera.",
 	"visualeditor-serializeerror": "Yeroo serveriirraa deetaa fiduuf yaalu dogongorri uummame: $1",
 	"visualeditor-settings-tool": "Qindaa'ina fuulaa",
 	"visualeditor-special-characters-group-other": "Baayyee kan fayyadaman",
@@ -220,10 +219,6 @@
 	"visualeditor-toolbar-savedialog-short": "Olkaayi",
 	"visualeditor-usernamespacepagelink": "Project: iddoo maqaa fayyadamaa",
 	"visualeditor-version-label": "Fooyya'aa",
-	"visualeditor-viewpage-savewarning": "Odoo jijjiiraa hin olkaayin fuula gulaalchaa keessaa ba'uu barbaaddaa?",
-	"visualeditor-viewpage-savewarning-discard": "Gulaala gati",
-	"visualeditor-viewpage-savewarning-keep": "Gulaaluu itti fufi",
-	"visualeditor-viewpage-savewarning-title": "Dhugaa jettaa?",
 	"visualeditor-wikitext-warning": "Amma Viizyuwaal'Ediiterii fayyadamaa jirta - [[{{MediaWiki:visualeditor-wikitext-warning-link}}|wikitext]] asitti hin hojjatu. Fuula kana lakkaddaan jijjiiruf, baafata gad-buusaa kan \"{{int:visualeditor-toolbar-savedialog}}\" bukkee jiru erga bantee booda \"{{int:visualeditor-mweditmodesource-title}}\" filadhu",
 	"visualeditor-wikitext-warning-title": "Maarkaappiin Wiikiitekestii argame"
 }

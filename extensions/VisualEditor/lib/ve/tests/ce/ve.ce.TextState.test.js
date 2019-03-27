@@ -1,7 +1,7 @@
 /*!
  * VisualEditor ContentEditable TextState tests.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 QUnit.module( 've.ce.TextState' );
@@ -368,10 +368,10 @@ QUnit.test( 'getChangeTransaction', function ( assert ) {
 			$( '<div>' ).html( test.oldInnerHtml )[ 0 ],
 			test.msg + ' (oldInnerHtml)'
 		);
-		view.model.setSelection( new ve.dm.LinearSelection( documentView.model, new ve.Range( 1 ) ) );
+		view.model.setSelection( new ve.dm.LinearSelection( new ve.Range( 1 ) ) );
 		oldState = new ve.ce.RangeState( null, documentNode, false );
 		contentNode.$element.html( test.newInnerHtml );
-		view.model.setSelection( new ve.dm.LinearSelection( documentView.model, new ve.Range( 1 ) ) );
+		view.model.setSelection( new ve.dm.LinearSelection( new ve.Range( 1 ) ) );
 		newState = new ve.ce.RangeState( oldState, documentNode, false );
 		change = newState.textState.getChangeTransaction(
 			oldState.textState,

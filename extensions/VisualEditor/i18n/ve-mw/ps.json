@@ -4,7 +4,8 @@
 			"Ahmed-Najib-Biabani-Ibrahimkhel",
 			"عثمان منصور انصاري",
 			"Irus",
-			"Baloch Khan"
+			"Baloch Khan",
+			"Amjad Khan"
 		]
 	},
 	"tooltip-ca-createsource": "د دې مخ د سرچينې کوډ جوړول",
@@ -227,8 +228,5 @@
 	"visualeditor-toolbar-savedialog-short": "خوندي کول",
 	"visualeditor-usernamespacepagelink": "Project:کارن نومتشيال",
 	"visualeditor-version-label": "بڼه",
-	"visualeditor-viewpage-savewarning-discard": "سمونونه غورځول",
-	"visualeditor-viewpage-savewarning-keep": "سمون پرمخ بېول",
-	"visualeditor-viewpage-savewarning-title": "آيا تاسې ډاډه ياست؟",
 	"visualeditor-wikitext-progress": "ويکي متن ته اړونه"
 }

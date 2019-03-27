@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface CheckListTool classes.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -35,21 +35,13 @@ ve.ui.CheckListTool.static.deactivateOnSelect = false;
  * @inheritdoc
  */
 ve.ui.CheckListTool.prototype.onUpdateState = function ( fragment ) {
-	var i, len, nodes, all;
+	var isMatching;
 
 	// Parent method
 	ve.ui.CheckListTool.super.prototype.onUpdateState.apply( this, arguments );
 
-	nodes = fragment ? fragment.getSelectedLeafNodes() : [];
-	all = !!nodes.length;
-
-	for ( i = 0, len = nodes.length; i < len; i++ ) {
-		if ( !nodes[ i ].hasMatchingAncestor( 'checkList' ) ) {
-			all = false;
-			break;
-		}
-	}
-	this.setActive( all );
+	isMatching = fragment.hasMatchingAncestor( 'checkList' );
+	this.setActive( isMatching );
 };
 
 ve.ui.CheckListTool.static.name = 'checkList';
@@ -70,4 +62,16 @@ ve.ui.commandRegistry.register(
 		'checkList', 'list', 'toggle',
 		{ args: [ null, false, 'checkList' ], supportedSelections: [ 'linear' ] }
 	)
+);
+
+/* Command help */
+
+ve.ui.commandHelpRegistry.register( 'formatting', 'listCheckList', {
+	sequences: [ 'checkList' ], label: OO.ui.deferMsg( 'visualeditor-listbutton-check-tooltip' )
+} );
+
+/* Sequence */
+
+ve.ui.sequenceRegistry.register(
+	new ve.ui.Sequence( 'checkList', 'checkList', [ { type: 'paragraph' }, '[', ']', ' ' ], 3 )
 );

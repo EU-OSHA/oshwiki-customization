@@ -138,12 +138,17 @@ module.exports = function ( grunt ) {
 				'**/*.{js,json,less,css,txt}',
 				'!package-lock.json',
 				'!build/typos.json',
+				'!i18n/**',
 				'!lib/**',
 				'!{docs,node_modules,vendor}/**',
 				'!.git/**'
 			]
 		},
 		eslint: {
+			options: {
+				reportUnusedDisableDirectives: true,
+				cache: true
+			},
 			all: [
 				'*.js',
 				'{build,modules}/**/*.js'

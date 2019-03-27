@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWTransclusionBlockNode class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -21,6 +21,7 @@ ve.dm.MWTransclusionBlockNode = function VeDmMWTransclusionBlockNode() {
 
 OO.inheritClass( ve.dm.MWTransclusionBlockNode, ve.dm.MWTransclusionNode );
 
+/* Only ve.dm.MWTransclusionNode matches, then creates block/inline nodes dynamically */
 ve.dm.MWTransclusionBlockNode.static.matchTagNames = [];
 
 ve.dm.MWTransclusionBlockNode.static.name = 'mwTransclusionBlock';

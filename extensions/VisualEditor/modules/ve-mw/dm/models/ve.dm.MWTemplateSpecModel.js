@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWTemplateSpecModel class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -26,7 +26,7 @@ ve.dm.MWTemplateSpecModel = function VeDmMWTemplateSpecModel( template ) {
 	this.maps = {};
 
 	// Initialization
-	this.fill();
+	this.fillFromTemplate();
 };
 
 OO.initClass( ve.dm.MWTemplateSpecModel );
@@ -93,7 +93,7 @@ ve.dm.MWTemplateSpecModel.prototype.extend = function ( data ) {
  * after a parameter is added to ensure it's still complete, and this is safe because existing data
  * is never overwritten.
  */
-ve.dm.MWTemplateSpecModel.prototype.fill = function () {
+ve.dm.MWTemplateSpecModel.prototype.fillFromTemplate = function () {
 	var key;
 
 	for ( key in this.template.getParameters() ) {
@@ -113,7 +113,7 @@ ve.dm.MWTemplateSpecModel.prototype.getDefaultParameterSpec = function ( name ) 
 	return {
 		label: name,
 		description: null,
-		'default': '',
+		default: '',
 		type: 'string',
 		aliases: [],
 		name: name,

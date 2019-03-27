@@ -1,13 +1,15 @@
 /*!
  * VisualEditor standalone demo
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 new ve.init.sa.Platform( ve.messagePaths ).getInitializedPromise().done( function () {
 
+	/* eslint-disable no-jquery/no-global-selector */
 	var $toolbar = $( '.ve-demo-targetToolbar' ),
 		$editor = $( '.ve-demo-editor' ),
+		/* eslint-enable no-jquery/no-global-selector */
 		// eslint-disable-next-line new-cap
 		target = new ve.demo.target(),
 		hashChanging = false,
@@ -62,7 +64,7 @@ new ve.init.sa.Platform( ve.messagePaths ).getInitializedPromise().done( functio
 		$( '.stylesheet-' + currentDir ).prop( 'disabled', false );
 		$( '.stylesheet-' + oldDir ).prop( 'disabled', true );
 
-		$( 'body' ).css( 'direction', currentDir )
+		$( document.body ).css( 'direction', currentDir )
 			// The following classes can be used here:
 			// ve-demo-dir-ltr
 			// ve-demo-dir-rtl
@@ -107,7 +109,9 @@ new ve.init.sa.Platform( ve.messagePaths ).getInitializedPromise().done( functio
 
 		// HACK: Override/restore message functions for qqx mode
 		if ( lang === 'qqx' ) {
-			ve.init.platform.getMessage = function ( key ) { return key; };
+			ve.init.platform.getMessage = function ( key ) {
+				return key;
+			};
 		} else {
 			ve.init.platform.getMessage = ve.init.sa.Platform.prototype.getMessage;
 		}

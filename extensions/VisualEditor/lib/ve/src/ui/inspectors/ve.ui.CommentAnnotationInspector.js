@@ -1,7 +1,7 @@
 /*!
  * VisualEditor UserInterface CommentAnnotationInspector class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -40,6 +40,13 @@ ve.ui.CommentAnnotationInspector.static.modelClasses = [ ve.dm.CommentAnnotation
  */
 ve.ui.CommentAnnotationInspector.prototype.onTextInputChange = function () {
 	this.updateActions();
+};
+
+/**
+ * Handle annotation input resize events
+ */
+ve.ui.CommentAnnotationInspector.prototype.onTextInputResize = function () {
+	this.updateSize();
 };
 
 /**
@@ -104,10 +111,13 @@ ve.ui.CommentAnnotationInspector.prototype.initialize = function () {
 	ve.ui.CommentAnnotationInspector.super.prototype.initialize.call( this );
 
 	// Properties
-	this.textInput = new OO.ui.TextInputWidget();
+	this.textInput = new OO.ui.MultilineTextInputWidget( { autosize: true } );
 
 	// Events
-	this.textInput.connect( this, { change: 'onTextInputChange' } );
+	this.textInput.connect( this, {
+		change: 'onTextInputChange',
+		resize: 'onTextInputResize'
+	} );
 
 	// Initialization
 	this.form.$element.append( this.textInput.$element );
@@ -119,8 +129,6 @@ ve.ui.CommentAnnotationInspector.prototype.initialize = function () {
 ve.ui.CommentAnnotationInspector.prototype.getSetupProcess = function ( data ) {
 	return ve.ui.CommentAnnotationInspector.super.prototype.getSetupProcess.call( this, data )
 		.next( function () {
-			// Disable surface until animation is complete; will be reenabled in ready()
-			this.getFragment().getSurface().disable();
 			this.textInput.setValue( this.initialAnnotation.getAttribute( 'text' ) );
 			this.updateActions();
 		}, this );
@@ -133,7 +141,6 @@ ve.ui.CommentAnnotationInspector.prototype.getReadyProcess = function ( data ) {
 	return ve.ui.CommentAnnotationInspector.super.prototype.getReadyProcess.call( this, data )
 		.next( function () {
 			this.textInput.focus().select();
-			this.getFragment().getSurface().enable();
 
 			// Clear validation state, so that we don't get "invalid" state immediately on focus
 			this.textInput.setValidityFlag( true );

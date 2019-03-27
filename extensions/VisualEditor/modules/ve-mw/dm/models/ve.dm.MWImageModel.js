@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWImageModel class.
  *
- * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -54,7 +54,7 @@ ve.dm.MWImageModel = function VeDmMWImageModel( parentDoc, config ) {
 
 	// Get wiki default thumbnail size
 	this.defaultThumbSize = mw.config.get( 'wgVisualEditorConfig' )
-		.defaultUserOptions.defaultthumbsize;
+		.thumbLimits[ mw.user.options.get( 'thumbsize' ) ];
 
 	if ( config.resourceName ) {
 		this.setImageResourceName( config.resourceName );
@@ -123,7 +123,8 @@ ve.dm.MWImageModel.static.infoCache = {};
  */
 ve.dm.MWImageModel.static.createImageNode = function ( attributes, imageType ) {
 	var attrs, newNode, newDimensions,
-		defaultThumbSize = mw.config.get( 'wgVisualEditorConfig' ).defaultUserOptions.defaultthumbsize;
+		defaultThumbSize = mw.config.get( 'wgVisualEditorConfig' )
+			.thumbLimits[ mw.user.options.get( 'thumbsize' ) ];
 
 	attrs = ve.extendObject( {
 		mediaClass: 'Image',
@@ -467,7 +468,7 @@ ve.dm.MWImageModel.prototype.insertImageNode = function ( fragment ) {
 				offset = fragment.getDocument().data.getNearestContentOffset( fragment.getSelection().getRange().start );
 			}
 			if ( offset > -1 ) {
-				fragment = fragment.clone( new ve.dm.LinearSelection( fragment.getDocument(), new ve.Range( offset ) ) );
+				fragment = fragment.clone( new ve.dm.LinearSelection( new ve.Range( offset ) ) );
 			}
 			fragment.insertContent( contentToInsert );
 			return fragment;
@@ -476,7 +477,7 @@ ve.dm.MWImageModel.prototype.insertImageNode = function ( fragment ) {
 			// Try to put the image in front of the structural node
 			offset = fragment.getDocument().data.getNearestStructuralOffset( fragment.getSelection().getRange().start, -1 );
 			if ( offset > -1 ) {
-				fragment = fragment.clone( new ve.dm.LinearSelection( fragment.getDocument(), new ve.Range( offset ) ) );
+				fragment = fragment.clone( new ve.dm.LinearSelection( new ve.Range( offset ) ) );
 			}
 			fragment.insertContent( contentToInsert );
 			// Add contents of new caption
@@ -502,7 +503,7 @@ ve.dm.MWImageModel.prototype.insertImageNode = function ( fragment ) {
 ve.dm.MWImageModel.prototype.getData = function () {
 	var data,
 		originalAttrs = ve.copy( this.getOriginalImageAttributes() ),
-		editAttributes = $.extend( originalAttrs, this.getUpdatedAttributes() ),
+		editAttributes = ve.extendObject( originalAttrs, this.getUpdatedAttributes() ),
 		nodeType = this.getImageNodeType();
 
 	// Remove old classes

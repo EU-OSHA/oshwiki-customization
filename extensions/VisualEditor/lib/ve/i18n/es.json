@@ -29,7 +29,8 @@
 			"Esteban",
 			"Yllelder",
 			"Jelou",
-			"Sophivorus"
+			"Sophivorus",
+			"Ktranz"
 		]
 	},
 	"visualeditor": "Editor visual",
@@ -83,11 +84,13 @@
 	"visualeditor-content-select-all": "Seleccionar todo",
 	"visualeditor-contextitemwidget-label-remove": "Borrar",
 	"visualeditor-contextitemwidget-label-secondary": "Editar",
+	"visualeditor-contextitemwidget-label-view": "Ver",
 	"visualeditor-debugbar-close": "Cerrar",
 	"visualeditor-debugbar-inputdebug": "Depuración de entrada",
 	"visualeditor-debugbar-logrange": "Registro seleccionado",
 	"visualeditor-debugbar-showmodel": "Mostrar modelo",
 	"visualeditor-debugbar-showtransactions": "Mostrar transacciones",
+	"visualeditor-debugbar-testsquasher": "Probar el combinador",
 	"visualeditor-debugbar-startfilibuster": "Filibustero",
 	"visualeditor-debugbar-stopfilibuster": "Detener al filibustero",
 	"visualeditor-debugbar-updatemodel": "Actualización sobre los cambios",
