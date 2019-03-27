@@ -1,7 +1,7 @@
 /*!
  * VisualEditor MediaWiki utilities.
  *
- * @copyright 2011-2019 VisualEditor Team and others; see http://ve.mit-license.org
+ * @copyright 2011-2018 VisualEditor Team and others; see http://ve.mit-license.org
  */
 
 /**
@@ -34,19 +34,10 @@ ve.decodeURIComponentIntoArticleTitle = function ( s, preserveUnderscores ) {
  * Unwrap Parsoid sections
  *
  * @param {HTMLElement} element Parent element, e.g. document body
- * @param {number} [keepSection] Section to keep
  */
-ve.unwrapParsoidSections = function ( element, keepSection ) {
+ve.unwrapParsoidSections = function ( element ) {
 	Array.prototype.forEach.call( element.querySelectorAll( 'section[data-mw-section-id]' ), function ( section ) {
-		var parent = section.parentNode,
-			sectionId = section.getAttribute( 'data-mw-section-id' );
-		// Copy section ID to first child (should be a heading)
-		if ( sectionId > 0 ) {
-			section.firstChild.setAttribute( 'data-mw-section-id', sectionId );
-		}
-		if ( keepSection !== undefined && +sectionId === keepSection ) {
-			return;
-		}
+		var parent = section.parentNode;
 		while ( section.firstChild ) {
 			parent.insertBefore( section.firstChild, section );
 		}
@@ -63,52 +54,6 @@ ve.unwrapParsoidSections = function ( element, keepSection ) {
 ve.stripParsoidFallbackIds = function ( element ) {
 	Array.prototype.forEach.call( element.querySelectorAll( 'span[typeof="mw:FallbackId"][id]:empty' ), function ( legacySpan ) {
 		legacySpan.parentNode.removeChild( legacySpan );
-	} );
-};
-
-/**
- * Fix fragment links which should be relative to the current document
- *
- * This prevents these links from trying to navigate to another page,
- * or open in a new window.
- *
- * Call this after ve.targetLinksToNewWindow, as it removes the target attribute.
- * Call this after LinkCache.styleParsoidElements, as it breaks that method by including the query string.
- *
- * @param {HTMLElement} element Parent element, e.g. document body
- * @param {mw.Title} title Current title, only links to this title will be normalized
- * @param {string} [prefix] Prefix to add to fragment and target ID to avoid collisions
- */
-ve.fixFragmentLinks = function ( container, docTitle, prefix ) {
-	var docTitleText = docTitle.getPrefixedText();
-	prefix = prefix || '';
-	Array.prototype.forEach.call( container.querySelectorAll( 'a[href*="#"]' ), function ( el ) {
-		var target, title,
-			fragment = new mw.Uri( el.href ).fragment,
-			targetData = ve.dm.MWInternalLinkAnnotation.static.getTargetDataFromHref( el.href, el.ownerDocument );
-
-		if ( targetData.isInternal ) {
-			title = mw.Title.newFromText( targetData.title );
-			if ( title && title.getPrefixedText() === docTitleText ) {
-
-				if ( !fragment ) {
-					// Special case for empty fragment, even if prefix set
-					el.setAttribute( 'href', '#' );
-				} else {
-					if ( prefix ) {
-						target = container.querySelector( '#' + $.escapeSelector( fragment ) );
-						// There may be multiple links to a specific target, so check the target
-						// hasn't already been fixed (in which case it would be null)
-						if ( target ) {
-							target.setAttribute( 'id', prefix + fragment );
-						}
-					}
-					el.setAttribute( 'href', '#' + prefix + fragment );
-				}
-				el.removeAttribute( 'target' );
-
-			}
-		}
 	} );
 };
 

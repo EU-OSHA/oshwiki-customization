@@ -1,7 +1,7 @@
 /*!
  * VisualEditor DataModel MWInternalLinkAnnotation class.
  *
- * @copyright 2011-2019 VisualEditor Team and others; see AUTHORS.txt
+ * @copyright 2011-2018 VisualEditor Team and others; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -30,26 +30,13 @@ OO.inheritClass( ve.dm.MWInternalLinkAnnotation, ve.dm.LinkAnnotation );
 
 ve.dm.MWInternalLinkAnnotation.static.name = 'link/mwInternal';
 
-ve.dm.MWInternalLinkAnnotation.static.matchRdfaTypes = [ 'mw:WikiLink', 'mw:MediaLink' ];
+ve.dm.MWInternalLinkAnnotation.static.matchRdfaTypes = [ 'mw:WikiLink' ];
 
 ve.dm.MWInternalLinkAnnotation.static.toDataElement = function ( domElements, converter ) {
-	var targetData, data,
-		resource = domElements[ 0 ].getAttribute( 'resource' );
-
-	if ( resource ) {
-		data = ve.parseParsoidResourceName( resource );
-
-		targetData = {
-			title: data.title,
-			rawTitle: data.rawTitle,
-			hrefPrefix: data.hrefPrefix
-		};
-	} else {
-		targetData = this.getTargetDataFromHref(
-			domElements[ 0 ].getAttribute( 'href' ),
-			converter.getTargetHtmlDocument()
-		);
-	}
+	var targetData = this.getTargetDataFromHref(
+		domElements[ 0 ].getAttribute( 'href' ),
+		converter.getTargetHtmlDocument()
+	);
 
 	return {
 		type: this.name,
@@ -64,13 +51,13 @@ ve.dm.MWInternalLinkAnnotation.static.toDataElement = function ( domElements, co
 };
 
 /**
- * Build element from a given mw.Title and raw title
+ * Build a ve.dm.MWInternalLinkAnnotation from a given mw.Title.
  *
  * @param {mw.Title} title The title to link to.
  * @param {string} [rawTitle] String from which the title was created
- * @return {Object} The element.
+ * @return {ve.dm.MWInternalLinkAnnotation} The annotation.
  */
-ve.dm.MWInternalLinkAnnotation.static.dataElementFromTitle = function ( title, rawTitle ) {
+ve.dm.MWInternalLinkAnnotation.static.newFromTitle = function ( title, rawTitle ) {
 	var element,
 		target = title.toText(),
 		namespaceIds = mw.config.get( 'wgNamespaceIds' );
@@ -86,31 +73,16 @@ ve.dm.MWInternalLinkAnnotation.static.dataElementFromTitle = function ( title, r
 	}
 
 	element = {
-		type: this.name,
+		type: 'link/mwInternal',
 		attributes: {
 			title: target,
-			normalizedTitle: this.normalizeTitle( title ),
-			lookupTitle: this.getLookupTitle( title )
+			normalizedTitle: ve.dm.MWInternalLinkAnnotation.static.normalizeTitle( title ),
+			lookupTitle: ve.dm.MWInternalLinkAnnotation.static.getLookupTitle( title )
 		}
 	};
-
 	if ( rawTitle ) {
 		element.attributes.origTitle = rawTitle;
 	}
-
-	return element;
-};
-
-/**
- * Build a ve.dm.MWInternalLinkAnnotation from a given mw.Title.
- *
- * @param {mw.Title} title The title to link to.
- * @param {string} [rawTitle] String from which the title was created
- * @return {ve.dm.MWInternalLinkAnnotation} The annotation.
- */
-ve.dm.MWInternalLinkAnnotation.static.newFromTitle = function ( title, rawTitle ) {
-	var element = this.dataElementFromTitle( title, rawTitle );
-
 	return new ve.dm.MWInternalLinkAnnotation( element );
 };
 
@@ -146,7 +118,7 @@ ve.dm.MWInternalLinkAnnotation.static.getTargetDataFromHref = function ( href, d
 	// Check if this matches the server's article path
 	matches = relativeHref.match( relativeBaseRegex );
 
-	if ( matches && matches[ 1 ].split( '#' )[ 0 ].indexOf( '?' ) === -1 ) {
+	if ( matches && matches[ 1 ].indexOf( '?' ) === -1 ) {
 		// Take the relative path
 		href = matches[ 1 ];
 		isInternal = true;
@@ -172,7 +144,6 @@ ve.dm.MWInternalLinkAnnotation.static.toDomElements = function () {
 
 ve.dm.MWInternalLinkAnnotation.static.getHref = function ( dataElement ) {
 	var href,
-		prefix = './',
 		title = dataElement.attributes.title,
 		origTitle = dataElement.attributes.origTitle;
 	if ( origTitle !== undefined && ve.decodeURIComponentIntoArticleTitle( origTitle ) === title ) {
@@ -180,7 +151,7 @@ ve.dm.MWInternalLinkAnnotation.static.getHref = function ( dataElement ) {
 		href = origTitle;
 		// Only use hrefPrefix if restoring from origTitle
 		if ( dataElement.attributes.hrefPrefix ) {
-			prefix = dataElement.attributes.hrefPrefix;
+			href = dataElement.attributes.hrefPrefix + href;
 		}
 	} else {
 		// Don't escape slashes in the title; they represent subpages.
@@ -192,7 +163,7 @@ ve.dm.MWInternalLinkAnnotation.static.getHref = function ( dataElement ) {
 			}
 		} ).join( '' );
 	}
-	return prefix + href;
+	return href;
 };
 
 /**
@@ -241,7 +212,7 @@ ve.dm.MWInternalLinkAnnotation.static.getFragment = function ( original ) {
 
 ve.dm.MWInternalLinkAnnotation.static.describeChange = function ( key, change ) {
 	if ( key === 'title' ) {
-		return ve.htmlMsg( 'visualeditor-changedesc-link-href', this.wrapText( 'del', change.from ), this.wrapText( 'ins', change.to ) );
+		return ve.msg( 'visualeditor-changedesc-link-href', change.from, change.to );
 	}
 	return null;
 };
