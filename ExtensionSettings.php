@@ -7,7 +7,12 @@
 # This is required for infoboxes to work
 wfLoadExtension( 'ParserFunctions' );
 $wgPFEnableStringFunctions = true;
-$wgPFStringLengthLimit = 5000;
+
+$wgPFStringLengthLimit = 15000;
+
+$smwgQMaxSize = 200;
+$smwgQDefaultLimit = 200;
+
 
 # This is required so that most filetypes can be uploaded. Some are still blacklisted though.
 $wgStrictFileExtensions = false;
