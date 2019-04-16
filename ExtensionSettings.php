@@ -73,7 +73,11 @@ $wgLDAPPasswordHash = array('osha' => 'crypt');
 require_once("$IP/secrets.php");
 
 $wgGroupPermissions['*']['createaccount'] = false;
+$wgGroupPermissions['*']['autocreateaccount'] = true;
 $wgGroupPermissions['*']['edit'] = false;
+
+# By default @ in a username is invalid
+$wgInvalidUsernameCharacters = ':';
 
 $wgLDAPDebug = 0;
 $wgDebugLogGroups['ldap'] = '/tmp/wiki-debug.log';
