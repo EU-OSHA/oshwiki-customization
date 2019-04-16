@@ -209,3 +209,5 @@ $wgHTTPTimeout = 60;
 
 #$mwgQMaxInlineLimit = 2000;
 
+# Allow Common.css to work on Special:UserLogin
+$wgAllowSiteCSSOnRestrictedPages = true;
