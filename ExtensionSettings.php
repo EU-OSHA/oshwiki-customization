@@ -52,10 +52,10 @@ $wgLDAPBaseDNs = array( "osha" => "ou=people,dc=osha,dc=europa,dc=eu");
 $wgLDAPSearchAttributes = array( "osha" =>"mail" );
 $wgLDAPLowerCaseUsername = array( "osha" => true );
 $wgLDAPProxyAgent = array( "osha"=>"cn=Reader,dc=osha,dc=europa,dc=eu");
-$wgLDAPPreferences = array( "osha"=>array( "email"=>"mail","realname"=>"cn","nickname"=>"cn") );
+$wgLDAPPreferences = array( "osha"=>array( "email"=>"mail","realname"=>"sn","nickname"=>"sn") );
 
 # Restrict to the OSHWIKIEditors group
-$wgLDAPGroupNameAttribute = array( "osha"=>"uid" );
+$wgLDAPGroupNameAttribute = array( "osha"=>"memberuid" );
 # NOTE: We have patch 
 $wgLDAPGroupUseFullDN = array( "osha"=>true);
 $wgLDAPGroupUseRetrievedUsername = array("osha" => true);
@@ -80,7 +80,7 @@ $wgGroupPermissions['*']['edit'] = false;
 $wgInvalidUsernameCharacters = ':';
 
 $wgLDAPDebug = 0;
-$wgDebugLogGroups['ldap'] = '/tmp/wiki-debug.log';
+$wgDebugLogGroups['ldap'] = '/var/log/nginx/wiki-debug.log';
   
 # http://www.mediawiki.org/wiki/Extension:ContributionCredits
 require_once("$IP/extensions/ContributionCredits/ContributionCredits.php");
@@ -119,7 +119,6 @@ wfLoadExtension( 'ReplaceText' );
 # $smwgQMaxInlineLimit = 5;
 # $smwgQPrintoutLimit = 5;
 
-
 $smwgPageSpecialProperties = array( '_MDAT', '_CDAT' );
 
 # ##
@@ -128,13 +127,13 @@ $smwgPageSpecialProperties = array( '_MDAT', '_CDAT' );
 # since the use of the '\b' regexp character to match on the beginnings
 # of words fails for them.
 # ##
-$sfgAutocompleteOnAllChars = true;
+$wgPageFormsAutocompleteOnAllChars = true;
 
 ##
 # The NACE properties currently have the largest amount of values (just under 3300) 
 ##
-$sfgMaxAutocompleteValues = 3300;
-$codeMatchesURL = "/property-lists/code-matches.php";
+$wgPageFormsMaxAutocompleteValues = 3300;
+$codeMatchesURL = "https:$wgServer/property-lists/code-matches.php";
 
 $codeMatchesDataTypes = array( 'osha', 'isco', 'nace' );
 $codeMatchesLanguages = array( 'en', 'bg', 'bs',  'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'ga', 'he', 'hr', 'hu', 'is', 'it', 'ko', 'lt', 'lv', 'mk', 'mt', 'nl', 'no', 'pl', 'pt', 'ro', 'sh', 'sk', 'sl', 'sq', 'sr', 'sv', 'tr');
@@ -212,6 +211,11 @@ $edgCacheExpireTime = 24 * 60 * 60;
 $wgHTTPTimeout = 60;
 
 #$mwgQMaxInlineLimit = 2000;
+
+wfLoadExtension( 'realnames' );
+$wgRealnamesLinkStyle = "replace";
+
+# wfLoadExtension( 'DebugTemplates' );
 
 # Allow Common.css to work on Special:UserLogin
 $wgAllowSiteCSSOnRestrictedPages = true;
