@@ -219,3 +219,10 @@ $wgRealnamesLinkStyle = "replace";
 
 # Allow Common.css to work on Special:UserLogin
 $wgAllowSiteCSSOnRestrictedPages = true;
+
+$wgVirtualRestConfig['modules']['parsoid'] = array(
+  // URL to the Parsoid instance
+  'url' => 'http://oshwiki:8000',
+  // Parsoid "domain", see below (optional)
+  'domain' => 'oshwiki',
+);
