@@ -1259,7 +1259,8 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 		# We must set a user option if we want token based logins to work
 		if ( $user->getToken( false ) ) {
 			$this->printDebug( "User has a token, setting domain in user options.", NONSENSITIVE );
-			self::saveDomain( $user, $_SESSION['wsDomain'] );
+			// self::saveDomain( $user, $_SESSION['wsDomain'] );
+			self::saveDomain( $user, "osha" );
 		}
 
 		# Let other extensions update the user
