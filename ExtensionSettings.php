@@ -226,3 +226,5 @@ $wgVirtualRestConfig['modules']['parsoid'] = array(
   // Parsoid "domain", see below (optional)
   'domain' => 'oshwiki',
 );
+
+wfLoadExtension( 'SandboxLink' );
