@@ -1,9 +1,0 @@
-{
-	"@metadata": {
-		"authors": [
-			"Imre",
-			"Kghbln"
-		]
-	},
-	"ldapauthentication-desc": "Ermöglicht die LDAP-Authentifizierung mit Hilfe mehrerer Authentifizierungsmethoden"
-}

@@ -38,39 +38,46 @@ wfLoadExtension( 'CategoryTree' );
 wfLoadExtension( 'Cite' );
 wfLoadExtension( 'CiteThisPage' );
 
+# LDAP
+wfLoadExtensions(['PluggableAuth', 'LDAPProvider', 'LDAPAuthentication2', 'LDAPAuthorization']);
+$wgPluggableAuth_ButtonLabel = "Log in";
+$LDAPProviderDomainConfigProvider = function() {
+    include "secrets.php";
+    include "HostSettings.php";
+    $config = [
+		"osha" => [
+			"connection" => [
+				"server" => $LDAPServer,
+                "port" => $LDAPPort,
+                "user" => "cn=reader,dc=osha,dc=europa,dc=eu",
+                "pass" => $LDAPPassword,
+                "enctype" => "clear",
+                "basedn" => "ou=people,dc=osha,dc=europa,dc=eu",
+                "userbasedn" => "ou=people,dc=osha,dc=europa,dc=eu",
+                "groupbasedn" => "ou=OSHWiki,ou=Sites,dc=osha,dc=europa,dc=eu",
+                "searchattribute" => "mail",
+                "userdnsearchattribute" => "mail",
+                "emailattribute" => "mail",
+                "realnameattribute" => "sn",
+                "usernameattribute" => "mail",
+                "groupobjectclass" => "posixGroup",
+                "groupattribute" => "memberUid",
+                "grouprequest" => "MediaWiki\\Extension\\LDAPProvider\\UserGroupsRequest\\Configurable::factory"
+            ],
+            "authorization" => [
+                "rules" => [
+                    "groups" => [
+                        "required" => [
+                            "cn=Editors,ou=OSHWiki,ou=Sites,dc=osha,dc=europa,dc=eu"
+                        ]
+                    ]
+                ]
+            ]
+        ]
+	];
 
-# LdapAuthentication
-# http://www.mediawiki.org/wiki/Extension:LDAP_Authentication/Configuration
-require_once( "$IP/extensions/LdapAuthentication/LdapAuthentication.php" );
-$wgAuth = new LdapAuthenticationPlugin();
-$wgLDAPDomainNames = array( "osha", "editors" );
-#$wgLDAPServerNames = array( "osha" => "ldap.osha.europa.eu" );
-$wgLDAPServerNames = array( "osha" => "194.30.35.128" );
-#$wgLDAPEncryptionType = array("osha" => "ssl" );
-$wgLDAPEncryptionType = array("osha" => "clear" );
-$wgLDAPBaseDNs = array( "osha" => "ou=people,dc=osha,dc=europa,dc=eu");
-$wgLDAPSearchAttributes = array( "osha" =>"mail" );
-$wgLDAPLowerCaseUsername = array( "osha" => true );
-$wgLDAPProxyAgent = array( "osha"=>"cn=Reader,dc=osha,dc=europa,dc=eu");
-$wgLDAPPreferences = array( "osha"=>array( "email"=>"mail","realname"=>"sn","nickname"=>"sn") );
-
-# Restrict to the OSHWIKIEditors group
-$wgLDAPGroupNameAttribute = array( "osha"=>"memberuid" );
-# NOTE: We have patch 
-$wgLDAPGroupUseFullDN = array( "osha"=>true);
-$wgLDAPGroupUseRetrievedUsername = array("osha" => true);
-$wgLDAPGroupBaseDNs = array("osha"=>"ou=OSHWiki,ou=Sites,dc=osha,dc=europa,dc=eu");
-$wgLDAPGroupObjectclass = array( "osha"=>"posixGroup" );
-$wgLDAPGroupAttribute = array( "osha"=>"memberUid" );
-$wgLDAPRequiredGroups = array( "osha"=>array("cn=Editors,ou=OSHWiki,ou=Sites,dc=osha,dc=europa,dc=eu"));
-
-# Password reset
-$wgLDAPMailPassword = array('osha' => true);
-$wgLDAPUpdateLDAP = array('osha' => true);
-$wgLDAPWriterDN = array('osha' => 'uid=oshwikiwriter,dc=osha,dc=europa,dc=eu');
-$wgLDAPPasswordHash = array('osha' => 'crypt');
-
-require_once("$IP/secrets.php");
+	return new \MediaWiki\Extension\LDAPProvider\DomainConfigProvider\InlinePHPArray( $config );
+};
 
 $wgGroupPermissions['*']['createaccount'] = false;
 $wgGroupPermissions['*']['autocreateaccount'] = true;
@@ -79,9 +86,6 @@ $wgGroupPermissions['*']['edit'] = false;
 # By default @ in a username is invalid
 $wgInvalidUsernameCharacters = ':';
 
-$wgLDAPDebug = 0;
-$wgDebugLogGroups['ldap'] = '/var/log/nginx/wiki-debug.log';
-  
 # http://www.mediawiki.org/wiki/Extension:ContributionCredits
 require_once("$IP/extensions/ContributionCredits/ContributionCredits.php");
 
@@ -182,10 +186,10 @@ require_once "$IP/extensions/WikiSEO/WikiSEO.php";
 
 /* $wgDefaultUserOptions['wikieditor-preview'] = 1; */
 
-/* ini_set('display_errors', 'on'); */
-/* error_reporting(E_ALL); */
+ini_set('display_errors', 'on');
+error_reporting(E_ALL);
 
-$wgShowExceptionDetails = false; 
+$wgShowExceptionDetails = true; 
 
 $wgSpecialVersionShowHooks = true;
 

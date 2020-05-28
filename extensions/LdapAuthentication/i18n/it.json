@@ -1,8 +1,0 @@
-{
-	"@metadata": {
-		"authors": [
-			"HalphaZ"
-		]
-	},
-	"ldapauthentication-desc": "Plugin di autenticazione LDAP con supporto a diversi metodi di autenticazione LDAP"
-}
