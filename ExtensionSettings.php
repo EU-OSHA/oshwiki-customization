@@ -55,11 +55,11 @@ $LDAPProviderDomainConfigProvider = function() {
                 "basedn" => "ou=people,dc=osha,dc=europa,dc=eu",
                 "userbasedn" => "ou=people,dc=osha,dc=europa,dc=eu",
                 "groupbasedn" => "ou=OSHWiki,ou=Sites,dc=osha,dc=europa,dc=eu",
-                "searchattribute" => "mail",
+                "searchattribute" => "uid",
                 "userdnsearchattribute" => "mail",
                 "emailattribute" => "mail",
                 "realnameattribute" => "sn",
-                "usernameattribute" => "mail",
+                "usernameattribute" => "uid",
                 "groupobjectclass" => "posixGroup",
                 "groupattribute" => "memberUid",
                 "grouprequest" => "MediaWiki\\Extension\\LDAPProvider\\UserGroupsRequest\\Configurable::factory"
